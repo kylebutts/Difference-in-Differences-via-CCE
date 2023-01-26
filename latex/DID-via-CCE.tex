@@ -1,0 +1,951 @@
+\documentclass[12pt,fleqn]{article}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{a4wide}
+\usepackage{lscape}
+\usepackage{mathpazo}
+\usepackage{rotating}
+\usepackage{subcaption}
+\usepackage{float}
+\usepackage{epstopdf}
+\usepackage{rotating}
+\usepackage{adjustbox}
+\usepackage{setspace}
+\usepackage[margin=0.8in,paper=letterpaper]{geometry}
+\usepackage[flushleft]{threeparttable}
+\setlength\labelsep{0pt}
+\usepackage{booktabs}
+\usepackage{adjustbox}
+\usepackage{bm}
+\usepackage{dsfont}
+%\numberwithin{equation}{section}
+\def\*#1{\mathbf{#1}}
+\def\+#1{\boldsymbol{#1}}
+
+% Fix \input with tables
+% \input fails when \\ is at end of external .tex file
+\makeatletter
+\let\input\@@input
+\makeatother
+
+
+\usepackage[english]{babel}
+\usepackage[round]{natbib}
+\bibliographystyle{abbrvnat}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true, linkcolor=blue, filecolor=magenta,
+    urlcolor=cyan, citecolor=blue, pdftitle={Difference-in-Differences via Common Correlated Effects}
+}
+
+
+
+\begin{document}
+
+\title{\textsc{Difference-in-Differences via Common Correlated Effects}\thanks{Westerlund would like to thank the Knut and Alice Wallenberg Foundation for financial support through a Wallenberg Academy Fellowship.}}
+\author{\and Nicholas Brown\\
+{\small Queen's University} \and Kyle Butts\\
+{\small University of Colorado Boulder} \and Joakim Westerlund\thanks{Corresponding author: Department of Economics, Lund University, Box 7082, 220 07 Lund, Sweden. Telephone: +46 46 222 8997. Fax: +46 46 222 4613. E-mail address: \texttt{joakim.westerlund@nek.lu.se}.}\\
+{\small Lund University}\\
+{\small and}\\
+{\small Deakin University}
+\date{January 21, 2023}}
+
+\maketitle
+%\doublespacing
+\setlength{\baselineskip}{0.83cm}
+
+\begin{abstract}
+We study the effect of treatment on an outcome when parallel trends hold conditional on an interactive fixed effects structure. In contrast to the majority of the literature, we propose identification using time-varying covariates. We assume the untreated outcomes and covariates follow a common correlated effects (CCE) model, where the covariates are linear in the same common time effects. We then demonstrate consistent estimation of the treatment effect coefficients by imputing the untreated potential outcomes in post-treatment time periods. Our method accounts for treatment affecting the distribution of the control variables and is valid when the number of pre-treatment time periods is small. We also decompose the overall treatment effect into estimable direct and mediated components.
+\end{abstract}
+
+\textbf{JEL Classification:} C31, C33, C38.
+
+\textbf{Keywords:} Difference-in-differences, interactive fixed effects, fixed-T, imputation.
+
+\newpage
+
+
+% ------------------------------------------------------------------------------
+\section{Introduction}
+% ------------------------------------------------------------------------------
+
+Econometric analysis of treatment effects often relies on the so-called ``parallel trends'' assumption. This assumption generally states that the change in the counterfactual untreated outcomes is equal to a time-varying effect across units, regardless of treatment status. Recent work in the evaluation of treatment effects has sought to relax this condition by allowing units in the population to select into treatment based on an interactive fixed effects model. Letting $y_{i,t}(\infty)$ be the untreated potential outcome for unit $i$ at time $t$, the new parallel trends assumptions take the form
+\begin{equation}
+    y_{i,t}(\infty) = \sum_{j = 1}^r f_{t,j} \gamma_{j,i} + \epsilon_{i,t},\label{factor_model}
+\end{equation}
+where $\epsilon_{i,t}$ has mean zero and $\sum_{j = 1}^r f_{t,j} \gamma_{j,i}$ is unobserved.
+
+The interactive effects structure in equation \eqref{factor_model} is often called a ''factor model", where the common time-effects $f_{t,r}$ are called factors and the heterogeneous unit-effects $\gamma_{r,i}$ are factor loadings. This model relaxes ``parallel trends'' by allowing the impact of time-effects to vary across individuals in a way that can be correlated with treatment. The usual two-way fixed effects (TWFE) estimator, which estimates fixed effects at the unit and time levels, is generally insufficient for estimating treatment effects when the untreated potential outcomes take the form of a factor model. As such, a new literature has focused on specifically controlling for such error structures while estimating treatment effect functions.
+
+\citet{chan2022pcdid} propose a class of principal components difference-in-differences (PCDID) estimators. They estimate the factors using least squares on the never-treated sample as in \citet{bai2009panel} then use these estimates as proxies in the treated sample. However, their asymptotic theory requires the number of time periods to grow to infinity. Such asymptotic sequences are problematic. First, they put restrictions on the time dynamics of the treatment effects. Second, such a setting is unrealistic in many applications where the number of pre- and post-treatment time periods is small. \citet{Callaway_Karami_2020} and \citet{brown2022generalized} provide consistent estimators of treatment effect functions when the number of time periods is small. The former requires a specific set of time-invariant instruments. The latter relaxes this requirement, but suggests an overidentified GMM problem which is computationally burdensome.
+
+We provide an imputation-based estimator that is both consistent for fixed time periods and simple to implement. We utilize the popular common correlated effects (CCE) scheme first studied in \citet{pesaran2006estimation}. He proposed a regression-based estimator for eliminating unobserved factors in linear panel data models. Assuming a rich set of covariates that are linear in the same factors, he takes the cross-sectional averages of the covariates and the outcome, then treats them as fixed effects in a pooled regression. This pooled CCE (CCEP) estimator has been shown to be asymptotically normal when the number of time periods is fixed \citep{westerlund2019cce,Brown_Schmidt_Wooldridge_2021}. The CCE model also allows a flexible method for parallel trends conditional on both interactive effects and covariates.
+
+We propose the CCE difference-in-differences (CCEDID) estimator. First, we construct proxies of the common factors using cross-sectional averages of the outcome and independent variables from the never-treated sample. Second, we estimate the partial effects of the covariates along with the heterogeneous factor loadings. While inconsistent for the loadings because the number of time periods is fixed, our estimator proxies for the average value of the loadings conditional on treatment status, which \citet{brown2022generalized} show is sufficient. Finally, we use the estimates of the covariate coefficients, factors, and factor loadings to estimate the counterfactual untreated potential outcomes in the post-treatment periods, then average over their difference from the observed treated outcomes. We prove that this estimator of the ATTs is consistent and asymptotically normal. 
+
+Our estimator allows the covariates to change with treatment status using the reduced form CCE model for their untreated status. We also study how treatment status impacts the final treatment effect estimators through the status of the covariates. By assuming a common factor model for the untreated covariates, we are able to leave the post-treatment observables completely arbitrary. We can also decompose the effect of the treatment on the outcome in terms of its direct level effect and its mediated effect through the covariates. While \citet{chan2022pcdid} leave the relationship between the covariates and factors unrestricted, they assume treatment does not affect the distribution of the covariates. We provide a detailed explanation for why this assumption can cause misleading estimates. We also provide a robust CCE-based estimator of the same effect that \citet{chan2022pcdid} estimate under weaker assumptions.
+
+The rest of the paper is divided into the following sections: Section 2 presents the model and estimable quantities of interest. Section 3 defines the CCEDID estimator and gives conditions for asymptotic normality in short panels. Section 4 demonstrates how to separately and consistently estimate the direct and mediated treatment effects. Section 5 provides a brief Monte Carlo experiment. Section 6 presents an empirical application of our estimator. Section 7 gives some concluding remarks.
+
+
+
+% ------------------------------------------------------------------------------
+\section{Treatment model}
+% ------------------------------------------------------------------------------
+
+We are interested in estimating the effect of a particular treatment on some outcome variable $y_{i,t}$, observable for $i=1,...,N$ cross-sectional units and $t=1,...,T$ time periods. We allow for the possibility that the $N$ units can be divided into groups within which treatment timing is the same. We follow \citet{Callaway_SantAnna_2020} in defining a treatment group by the time period in which they enter treatment. There are $G$ groups defined by $\{g_1,...,g_G\} \subset \{2,...,T\}$ where we assume without loss of generality that $g_1 < g_2 < ... < g_G$. A unit that is never treated is a member of group $\infty$.
+
+Let $G_i$ be a random variable with support $\{g_1,...,g_G,\infty\}$ denoting group membership and define $D_{i,g}$ as the dummy variable that is $1$ if $i$ is in group $g$. Then we define $N_g = \sum_{i = 1}^N D_{i,g}$ as the number of units in group $g$. The dummy variable $d_{i,t}$ is one if $t \geq G_i$ and zero otherwise. It is convenient to also define $T_0 = g_1 - 1$ as the last period before the first treatment takes place.
+
+Following the previous literature, we denote by $y_{i,t}(g)$ as the ``potential'' outcome of unit $i \in \mathcal{I}_g$ in period $t$ subject to treatment at period $g$. The term $y_{i,t}(\infty)$ is the potential outcome when the unit is never subject to treatment. In our paper, $y_{i,t}(\infty)$ is given by
+\begin{align}
+y_{i,t}(\infty) = \+\beta_i'\*x_{i,t}(\infty) +  \+\alpha_i'\*f_t + \varepsilon_{i,t},\label{y0}
+\end{align}
+where $\*x_{i,t}(\infty)$ is a $m\times 1$ vector of observable regressors associated with the untreated potential outcomes, $\+\beta_i$ is a $m\times 1$ vector of slope coefficients, $\*f_t$ is a $r \times 1$ vector of unobservable common factors, $\+\alpha_i$ is a $r\times 1$ vector of factor loadings, and $\varepsilon_{i,t}$ is an idiosyncratic error term.
+
+The interactive effects are given here by $\+\alpha_i'\*f_t$. The purpose of these is to capture unobserved differences between treated and untreated units in absence of treatment, often referred to as ``non-parallel trending''. In this terminology, the factors represent common trends and the loadings measure the extent to which the effect of these trends are equal (or ``parallel'') across units. We are not interested in inference on these effects.\footnote{One reason for this is that $\+\alpha_i$ and $\*f_t$ are not separately identifiable.} Accurate estimation of $\+\alpha_i$ is therefore not needed.
+
+Most applications of DID estimators use time-constant covariates to motivate a more plausible \emph{conditional}-parallel trends assumption. When covariates change over time, the validity of DID depends on whether or not treatment status effects the distribution of the covariates \citep{Caetano_Callaway_Payne_Rodrigues_2022}. For example, if we are estimating the effect of a place-based policy on employment, parallel trends might only be plausible when conditioning on poverty rates since treatment is targeted for areas with increasing poverty rates. However, the goal of place-based policies is to indirectly improve poverty rates so that $x_{i,t}(g) \neq x_{i,t}(\infty)$. Then controlling linearly in the post-periods for the observed poverty rate $x_{i,t}$ `absorbs' some of the treatment effect.\footnote{This is what \citet{angrist2009mostly} call a `bad control'.} This indirect mechanism of treatment creates a dilemma where controlling for $x_{i,t}$ induces `post-treatment bias' and not controlling for $x_{i,t}$ introduces `omitted variables bias' \citep{aklin2017can}. We discuss this problem in more details in subsection \ref{sec:post_treatment_bias}. Following \citet{Caetano_Callaway_Payne_Rodrigues_2022}, we propose to solve this dilemma by imputing and controlling for untreated potential value for the covariates, $x_{i,t}(\infty)$. Our paper is the first to consider this solution in a factor model setting. 
+
+Because CCE estimation generally requires covariates that change over $i$ and $t$, we need to impose structure on their distribution with respect to treatment. We assume there are $m$ time- and individual-varying covariates that admit a pure factor structure when not subject to treatment. These covariates are modeled
+\begin{align}
+\*x_{i,t}(\infty) = \+\lambda_i'\*f_t + \*v_{i,t}, \label{x}
+\end{align}
+where $\+\lambda_i$ is a $r \times m$ matrix of factor loadings and $\+ v_{i,t}$ is a $m \times 1$ vector of idiosyncratic errors. The condition that $\*x_{i,t}$ should load on the same factors as $y_{i,t}$ is actually quite natural given that the main reason for considering interactive effects is their likely correlation with the regressors, and the detrimental effect of this on estimation and inference. Hence, if $\*x_{i,t}$ does not load on $\*f_{t}$ the parameters $\+\beta$ can be estimated via OLS as in \citet{Wooldridge_2005}.
+
+We assume the untreated potential covariates are generated according to equation (\ref{x}). Under this setting, we allow treatment to affect the covariate value by proposing the treated potential covariates to be
+\begin{equation}
+    x_{i,t}(g) = \+\tau_{i,g,t} d_{i,t} + x_{i,t}(\infty) = \+\tau_{i,g,t} d_{i,t} + \+\lambda_i'\*f_t + \*v_{i,t}, \label{observed x}
+\end{equation}
+where $\+\tau_{i,g,t} d_{i,t}$ can correlate arbitrarily with the outcome treatment effects. Our imputation procedure for observations with $d_{i,t} = 1$ needs to account for the fact that observed $x_{i,t}$ does not necessarily equal $x_{i,t}(\infty)$. In contrast to equation \eqref{x}, the treated covariates actually place no restrictions on the distribution of $\*x_{i,t}$ because we do not restrict the distribution of $\+\tau_{i,g,t}$.
+
+CCE estimation takes cross-sectional averages of the outcome and covariates to proxy for the space spanned by the factors. We tailor this intuition to the treatment effect case where treatment status can affect the distribution of both the outcomes and covariates in unspecified ways. Thus, to prevent `post-treatment bias`, we use only the never-treated outcomes to proxy for the factors. Then for the treated group, we impute the never-treated potential covariates which in turn are used to impute the never-treated potential outcomes. This method is detailed in the following section.
+
+Unlike $\+\alpha_i$, $\+\beta_i$ is often of some interest. However, since in the present paper $T$ is fixed, we cannot estimate each individual slope accurately. The best that we can hope for is accurate estimation of $\+\beta = \mathbb{E}(\+\beta_i)$. In fact, in many applications in economics (and elsewhere) we are not particularly interested in the marginal effect for a particular unit anyway and so we focus instead on the average marginal effect. Partial effects are random over individuals but assumed unaffected by treatment status. We could impose parsimony on the model by assuming group-specific slopes $\+\beta_g$ for each treated group $g$. These effects could be estimated for each treatment group then aggregated to get an overall partial effect estimate.
+
+\bigskip
+
+\noindent \textbf{Remark 1.} The presence of $\+\beta_i'\*x_{i,t}$ in \eqref{y0} is an allowance and not a requirement. If there are no regressors, we define $\+\beta_i'\*x_{i,t} = 0$. It is important to note, though, that if there are no regressors, the number of factors can be at most one unless there are outside factor proxies ($r \leq 1$), as will be made clear in Section 3. $\blacksquare$
+
+\bigskip
+
+We now introduce this paper's object of interest. The treatment effect for unit $i$ at time $t$ treated in time $g$ is given simply by
+\begin{align}
+\Delta_{i,g,t} = y_{i,t}(g) - y_{i,t}(\infty) . \label{te}
+\end{align}
+Because we do not observe $y_{i,t}(g)$ and $y_{i,t}(\infty)$ simultaneously, $\Delta_{i,g,t}$ must be treated as unknown and estimated from the data. This brings us back to the discussion in the previous paragraph about $\+\beta_i$; because $T$ is fixed, the best that we can do is hope for is accurate estimation of the ATT. The particular ATT that we are interested in is the average $\Delta_{i,g,t}$ for group $g$;
+\begin{align}
+\mathbb{E}(\Delta_{i,g,t}| G_i = g ) = \Delta_{g,t} \label{att}
+\end{align}
+for $t \geq g$ and $g \in \{g_1,...,g_G\}$. Note that while there cannot be any systematic variation across units within groups, we do allow $\Delta_{g,t}$ to vary freely over time and across groups, which means that the effect of the treatment need not take place abruptly at time $g$ but can be gradual in nature. The effect cannot take place prior to treatment, though, which is the so-called ``no anticipation'' condition. Formally, we require that $y_{i,t} = y_{i,t}(0)$ for all non-treated ($g = \infty$) and not-yet-treated ($G_i = g$ and $t < g$) observations\footnote{This condition can be relaxed by redefining the treatment time to $p < g$, so long as there are enough pre-treatment time periods to run the CCE regression.}. 
+
+It is reasonable to allow for the covariates to also enter the treated outcomes:
+\begin{equation}
+    y_{i,t}(g) = \eta_{i,g,t}d_{i,t} + \*x_{i,t}(g)' \+\beta_i + \*f_t' \+\gamma_i + \epsilon_{i,t},\label{treated y}
+\end{equation}
+where $\+\gamma_i$ is unaffected by treatment because it is time-invariant and $\eta_{i,g,t}$ is a unit-time specific intercept that appears with treatment status and defines the error to be $\epsilon_{i,t}$. Under equations \eqref{y0}, \eqref{observed x}, \eqref{te}, and \eqref{treated y}, we can decompose the overall treatment effect $\Delta_{i,g,t}$ as
+\begin{align*}
+    \Delta_{i,g,t} 
+    &= y_{i,t}(g) - y_{i,t}(\infty)\\
+    &= \eta_{i,g,t} + (\*x_{i,t}(g) - \*x_{i,t}(\infty))' \+\beta_i + \epsilon_{i,t}\\
+    &= \eta_{i,g,t} + \+\tau_{i,g,t}' \+\beta_i + \epsilon_{i,t}
+\end{align*}
+where we define
+\begin{align}
+    \+\tau_{g,t} = \mathbb{E}(\+\tau_{i,g,t} | G_i = g)\label{covariate ATT}\\
+    \eta_{g,t} = \mathbb{E}(\eta_{i,g,t} | G_i = g)\label{direct ATT}
+\end{align}
+as the group-specific dynamic ATTs for the covariates and direct effect, respectively. These quantities are useful to define because we later demonstrate how to estimate them individually. Our proposed average of the difference between the treated and untreated potential outcome ($\Delta_{i,t}$) estimates the joint effect while allowing covariates to change with treatment, which we accomplish by imputing the untreated potential covariates in post-treatment periods.
+
+We follow the mediation analysis literature by labeling the treatment-specific intercept $\eta_{i,g,t}$ as the direct effect of treatment and $\+\tau_{i,g,t}'\+\beta_i$ as the mediated effect of treatment through the covariates (sometimes called the indirect effect).\footnote{See, for example, \citet{mackinnon2007mediation} and \citet{huber2014identifying}.} These two effects warrant some discussion. The definition of $\+\tau_{i,g,t}$ in equation \eqref{observed x} allows each individual covariate to have its own effect on the outcome through $\beta_{i,k}$. Thus, mediated effects allow researchers to tie the effect of treatment back to changes in specific covariates. This decomposition is particularly useful for explaining the mechanism through which treatment affects the outcome (a significant estimated mediation effect for the $k$-th covariate). 
+
+Applied researchers will typically apply DID to time-varying covariates that they suspect to be the underlying mechanism of treatment. Significant estimates of treatment effects on $x_{k,i,t}$ ($\tau$ in our notation) are used as evidence that treatment effects partially operate through the specified channels. However, even a change in the covariates that is systemically related to treatment might not translate to the outcome if the partial effect is zero. We allow a more precise decomposition of overall effects into component parts, providing the means for rigorous testing of different channels. The decomposition also allows for various `countervailing' effects to be considered. On the other hand, the direct effect, $\eta_{g,t}$, captures group-specific changes to the average level of the outcomes post-treatment. We think of this as either the treatment directly effecting outcomes or there being unobserved pathways that are uncorrelated with the (observed) intermediate causal mechanisms and unrelated to the heterogeneous factor loadings. 
+
+The hypothetical outcomes, $y_{i,t}(\infty)$ and $y_{i,t}(g)$, should not be confused with the actual outcome, $y_{i,t}$, the model of which can be inferred from \eqref{y0} and \eqref{te}. Note that for units eventually treated at time $g$,
+\begin{align}
+y_{i,t} = y_{i,t}(\infty)(1-d_{i,t}) + y_{i,t}(g)d_{i,t}  = \Delta_{i,g,t}d_{i,t} + \+\beta_i'\*x_{i,t}(\infty) + \+\alpha_i'\*f_t + \varepsilon_{i,t}. \label{y}
+\end{align}
+This model holds in general for all $i \leq N$ and $t \leq T$. Another point of interest concerns the covariates. Only the untreated potential covariates show up in the equation for a general outcome. This fact demonstrates that we need to be sure our model for $\*x_{i,t}(\infty)$ is sufficient in the following imputation method.
+
+
+
+
+% ------------------------------------------------------------------------------
+\section{The CCEDID estimator and its asymptotic properties}
+% ------------------------------------------------------------------------------
+
+\subsection{The estimator}
+
+The estimation of the ATT is carried out using a version of what \citet{borusyak2021revisiting} refer to as the ``imputation'' approach, or what \citet{Xu_2017} refer to as the ``generalized synthetic control'' method, which is based on replacing all unknowns in the definition of $\Delta_{g,t}$ in \eqref{att} by estimates. Note first that since $y_{i,t}(g)$ is observed for treated units in post-treatment periods ($G_i = g$ and $t \geq g$), we have $y_{i,t} = y_{i,t}(g)$. Let us therefore turn to the $y_{i,t}(\infty)$. We need to estimate this counterfactual for all treated units in post-treatment periods. This is done in four steps:
+
+\bigskip
+
+\noindent \textbf{Four-step estimation of counterfactual:}
+
+\begin{enumerate}
+\item Compute
+\begin{align}
+\widehat{\*f}_t = \frac{1}{N_{\infty}}\sum_{i = 1}^N \*z_{i,t} D_{i,\infty} \label{fhat}
+\end{align}
+for all $t\leq T$, where $z_{i,t} = [y_{i,t},\*x_{i,t}']'$ is a $(m+1)\times 1$ vector containing all the observables. The above is the regular CCE estimator of (the space spanned by) $\*f_t$ computed using the never-treated units only. This is crucial since in the present paper both $y_{i,t}$ and $\*x_{i,t}$ may depend on the treatment, and this in turn may well render CCE inconsistent. Equally important is the fact that $\widehat{\*f}_t$ is computed for all time periods. The pre-treatment estimates are used to estimate $\+\beta$ and $\{\+\alpha_i\}_{i=1}^N$, while the post-treatment estimates are used to impute $\*x_{i,t}(\infty)$ and $y_{i,t}(\infty)$ respectively for the treatment period.
+
+\item Estimate
+\begin{align}
+y_{i,t} = \+\beta'\*x_{i,t} + \*a_i'\widehat{\*f}_t + u_{i,t}\label{preregr}
+\end{align}
+by OLS for all $i \leq N$ and $t \leq T_0$. Here, $\*a_i$ is a $(m+1)\times 1$ vector of factor loadings and $u_{i,t} = \+\alpha_i'\*f_t - \*a_i'\widehat{\*f}_t + (\+\beta_i-\+\beta)'\*x_{i,t} +  \varepsilon_{i,t}$ is a composite error term. The above OLS regression with $\widehat{\*f}_t$ in place of $\*f_t$ is regular CCE based on the full pretreatment sample but where $\widehat{\*f}_t$ comes from the subsample of untreated units.\footnote{Note that unlike when using the principal components method, in CCE there is no need to recompute $\widehat{\*f}_t$ if the time period changes, and hence $\{\widehat{\*f}_t\}_{t \geq T_g}$ can be taken directly from step 1.} Define the $T_0\times 1$ vector $\*y_{i} = [y_{i,1},...,y_{i,T_0}]'$, and the $T_0\times m$ matrices $\*x_{i} = [\*x_{i,1},...,\*x_{i,T_0}]'$ and $\widehat{\*f} = [\widehat{\*f}_{1},...,\widehat{\*f}_{T_0}]'$. Let $\*M_{\*A} = \*I_{T_0} - \*A(\*A'\*A)^{-1}\*A'$ for any $T_0$-rowed matrix $\*A$. In this notation, the CCE estimators of $\+\beta$ and $\*a_i$ in \eqref{preregr} are given by
+\begin{align}
+\widehat{\+\beta} &= \left(\sum_{i=1}^N  \*x_{i}'\*M_{\widehat{\*f}}\*x_{i}\right)^{-1}\sum_{i=1}^N \*x_{i}' \*M_{\widehat{\*f}}\*y_{i},\\
+\widehat{\*a}_i &= (\widehat{\*f}'\widehat{\*f})^{-1}\widehat{\*f}'(\*y_{i}-\*x_{i}\widehat{\+\beta}),
+\end{align}
+where the latter estimator is computed for all $i\leq N$. This gives $\widehat{\+\beta}$ and $\{\widehat{\*a}_i\}_{i=1}^N$. The fact that $\widehat{\*a}_i$ is computed for treated units is again important, because in step 3, $y_{i,t}(\infty)$ will be estimated for all treated units.
+
+\item Estimate $\*x_{i,t}(\infty)$ as
+\begin{equation}
+    \widehat{\*x}_{i,t}(\infty) = \widehat{\+\lambda}_i'\widehat{\*f}_t
+\end{equation}
+for all $i$ in group $g$ and $t \geq g$. Here $\{\widehat{\*f}_t\}_{t \geq T_g}$ is from step 1. For $\widehat{\+\lambda}_i$, in the notation used in step 2 above,
+\begin{equation}
+\widehat{\+\lambda}_i = ( \widehat{\*f}' \widehat{\*f} )^{-1} \widehat{\*f}' \*x_i
+\end{equation}
+is the OLS estimator of $\+\lambda_i$ in the following model for all $i \leq N$ and $t \leq T_0$:
+\begin{align}
+\*x_{i,t} = \+\lambda_i'\widehat{\*f}_t + \*w_{i,t}.
+\end{align}
+
+\item The sought counterfactual estimator is given by
+\begin{align}
+\widehat y_{i,t}(\infty) = \widehat{\+\beta}'\widehat{\*x}_{i,t}(\infty) + \widehat{\*a}_i'\widehat{\*f}_t
+\end{align}
+which is again available for all $i\in \mathcal{I}_G^c$ and $t \geq T_g$ with $g < G$. Here $\widehat{\+\beta}$ and $\{\widehat{\*a}_i\}_{i\in \mathcal{I}_G^c}$ are from step 2, $\{\widehat{\*f}_t\}_{t \geq T_g}$ is from step 1, and $\{\widehat{\*x}_{i,t}\}_{ t \geq T_g}$ comes from step 3. $\blacksquare$
+\end{enumerate}
+
+\bigskip
+
+\noindent \textbf{Remark 2.} Because we implement the estimators $\widehat{\*f}$ and $\widehat{\+\beta}$ using only the pre-treatment observations, and the cross-sectional averages of $\*x_i$ are used as factor proxies, our estimator of the average of $\+\beta_i$ is invariant to the inclusion of common variables (e.g. covariates that only change over $i$). This fact of CCE estimation was first pointed out in \citet{Brown_Schmidt_Wooldridge_2021}. Secular time effects can thus be captured in our definition of $\eta_{g,t}$ for their overall effect on the outcome. $\blacksquare$
+
+\bigskip
+
+\bigskip
+
+\noindent \textbf{Remark 3.} One can allow $\+\beta$ to vary systematically across groups without affecting the asymptotic results reported in Section 3.2. The only change needed is that the step-2 estimation of this coefficient has to be carried out group-wise, as opposed to just once for all $N$ units. This gives $\{\widehat{\+\beta}_g\}_{g=1}^{G}$, which should then be inserted instead of $\widehat{\+\beta}$ in step 3. Because these parameters are all consistently estimated for fixed-$T$, this setting effectively allows more slope heterogeneity than the pooled CCE estimator. $\blacksquare$
+
+\bigskip
+
+\noindent \textbf{Remark 4.} While $\widehat{\+\beta}$ is consistent, $\widehat{\*a}_i$ is not and in fact remains random even asymptotically because $T$ is fixed. Moreover, the asymptotic distribution is not centered at $\+\alpha_i$ but at a certain rotation of $\*a_i$. Interestingly, as we show in Section 3.2, these problems do not interfere with the consistency and asymptotic normality of the estimated ATT. This general identification scheme is formally presented in \citet{brown2022generalized}. $\blacksquare$
+
+\bigskip
+
+With $y_{i,t}(g)$ known and $y_{i,t}(\infty)$ imputed, the estimated treatment effect is given by
+\begin{align}
+\widehat \Delta_{i,g,t} = y_{i,t} - \widehat y_{i,t}(\infty) . \label{theat}
+\end{align}
+The estimated ATT for group $g$ at time $t$ is obtained by averaging over the relevant treated group;
+\begin{align}
+\widehat \Delta_{g,t} = \frac{1}{N_g}\sum_{i = 1}^N D_{i,g} \widehat \Delta_{i,g,t}, \label{atthat}
+\end{align}
+which is again available for all $t \geq T_g$ and $g < G$. Equation \eqref{atthat} is the CCEDID estimator of $\Delta_{g,t}$.
+
+Asymptotic standard errors of estimates of the ATT are generally difficult to implement. Many studies therefore resort to bootstrap inference (see, for example, \citet{Callaway_Karami_2020} and \citet{Xu_2017}), which can be computationally unattractive. We instead employ a version of the non-parametric standard error estimator considered by \citet{chudik2011weak} and \citet{pesaran2006estimation}. The appropriate estimator to use in our case is
+\begin{align}
+\widehat \omega_{g,t}^2 = \frac{1}{N_g-1}\sum_{i = 1}^N D_{i,g} \left(\widehat \Delta_{i,g,t}  - \frac{1}{N_g}\sum_{j = 1}^N D_{j,g} \widehat \Delta_{j,t}\right)^2.\label{nonparametric variance estimator}
+\end{align}
+In addition to being simple to compute, non-parametric standard errors tend to perform well in small samples (see, for example, \citet{chudik2011weak}, \citet{pesaran2006estimation}, and \citet{westerlund2022cce}). It also means that the asymptotic variance can be consistently estimated whether or not the number of factor proxies outnumbers the true number of factors ($m+1=r$ or $m+1 > r$).
+
+\bigskip
+
+\noindent \textbf{Remark 5.} It is important to note that the proposed CCEDID estimator does not involve any estimation of the number of factors, $r$. This is in stark contrast to existing principal components-based approaches such as \citet{chan2022pcdid} and \citet{Xu_2017}, as well as quasi-differencing approaches of \citet{Callaway_Karami_2020} and \citet{brown2022generalized}, where the existing asymptotic theory is based on treating $r$ as known. This means that in empirical work, $r$ has to be replaced by an estimator, and accurate estimation of this object is known to be a difficult; see, for example, \citet{moon2015linear} and \citet{breitung2021alternative}. The fact that the proposed estimator does not require estimation of $r$ is therefore a great advantage in practice. $\blacksquare$
+
+\subsection{Asymptotic results}
+
+In this section, we study the asymptotic properties of $\widehat \Delta_{g,t}$ and $\widehat \omega_{g,t}^2$. The conditions that we will be working under are given in Assumptions 1--9. Here and throughout, $\mathrm{tr}\, \*A$, $\mathrm{rank}\, \*A$ and $\|\*A\| = \sqrt{\mathrm{tr}\,(\*A'\*A)}$ denote the trace, the rank, and the Frobenius (Euclidean) norm of the generic matrix $\*A$, respectively. The symbols $\to_d$ and $\to_p$ signify convergence in distribution and probability, respectively.
+
+\bigskip
+
+\noindent \textbf{Assumption 1.} $T_0 > m+1$. $\blacksquare$
+
+\bigskip
+
+\noindent \textbf{Assumption 2.} $N_g/N \to_p \mathds{P}(D_{i,g} = 1) \in (0, 1)$ for $g = g_1,...,g_G,\infty$. $\blacksquare$
+
+\bigskip
+
+Assumptions 1 and 2 are sample size conditions. They ensure that $T_0$ is large enough to ensure that the step-2 regression model in \eqref{preregr} is feasible and also that each group is non-negligible as $N$ increases, which is necessary for accurate estimation of the group-specific ATTs. We write Assumption 2 in terms of convergence in probability because $N_g = \sum_{i = 1}^N D_{i,g}$ is a random quantity. 
+
+\bigskip
+
+\noindent \textbf{Assumption 3.} $\+\beta_{i} = \+\beta + \+\nu_i$, $\Delta_{i,g,t}= \Delta_{g,t} + \upsilon_{i,t}$, and $\+\tau_{i,g,t} = \+\tau_{g,t} + \+\zeta_{i,t}$ where $\+\nu_i$, $\upsilon_{i,t}$, and $\+\zeta_{i,t}$ are independently distributed across $i$ and $t$ with zero mean, and finite fourth-order cumulants. $\blacksquare$
+
+\bigskip
+
+Assumption 3 is a random coefficient condition that is largely the same as in \citet{chan2022pcdid} and \citet{Gobillon_Magnac_2016}. The slopes are not required to be heterogeneous, though, as the covariance matrices of $\+\nu_i$ and $\upsilon_{i,t}$ need not be positive definite.
+
+Before we continue onto Assumption 4, is it useful to first lay out some additional notation. Step 1 uses the cross-sectional averages of the observables in $\*z_{i,t}$ for the untreated units to estimate the factors. This means that both $y_{i,t}$ and $\*x_{i,t}$ have to be informative of those factors. By combining (\ref{y}) and (\ref{x}) we arrive at the following static factor model for $\*z_{i,t}$:
+\begin{align}
+\*z_{i,t} = \+\mu_{i,t}d_{i,t} + \+\Lambda_i'\*f_t + \*e_{i,t}, \label{z}
+\end{align}
+where $\+\mu_{i,t} = [\Delta_{i,g,t} +\+\beta_i'\+\tau_{i,g,t}, \+\tau_{i,g,t}']'$ is $(m+1)\times 1$, $\+\Lambda_i = [\+\alpha_i +\+\lambda_i\+\beta_i, \+\lambda_i]$ is $r\times (m+1)$ and $\*e_{i,t} = [\varepsilon_{i,t} + \+\beta_i'\*v_{i,t}, \*v_{i,t}']'$ is $(m+1)\times 1$. Since $d_{i,t} = 0$ for untreated units, we have
+\begin{align}
+\widehat{\*f}_t = \frac{1}{N_{\infty}}\sum_{i = 1}^N D_{i,\infty} \*z_{i,t} = \left(\frac{1}{N_{\infty}}\sum_{i = 1}^N D_{i,\infty} \+\Lambda_i\right)'\*f_t + \frac{1}{N_{\infty}}\sum_{i = 1}^N D_{i,\infty}\*e_{i,t}.
+\end{align}
+Assumptions 4--6 below ensure that the average $\*e_{i,t}$ tends to zero as $N$ increases and that the average of $\+\Lambda_i$ has full row rank, which in turn ensure that $\widehat{\*f}_t$ is consistent for the space spanned by $\*f_t$.
+
+\bigskip
+
+\noindent \textbf{Assumption 4.} $\varepsilon_{i,t}$ and $\*v_{i,t}$ are independently distributed across $i$ with zero mean, and finite fourth-order cumulants. $\blacksquare$
+
+\bigskip
+
+\noindent \textbf{Assumption 5.} $\*f_t$, $G_i$, $\varepsilon_{i,t}$, $\*v_{i,t}$, $\+\nu_i$, $\+\zeta_{i,t}$, and $\upsilon_{i,t}$ are mutually independent. $\blacksquare$
+
+\bigskip
+
+\noindent \textbf{Assumption 6.} $\mathrm{rank}(N_{\infty}^{-1}\sum_{i= 1}^N D_{i,\infty} \+\Lambda_i ) = r \leq m+1$. $\blacksquare$
+
+\bigskip
+
+\noindent \textbf{Assumption 7.} The $r \times r$ matrix $\sum_{t=1}^T\*f_t\*f_t'$ is positive definite for all $T$. $\blacksquare$
+
+\bigskip
+
+\noindent \textbf{Assumption 8.} $N^{-1}\sum_{i=1}^N \*x_{i}'\*M_{\widehat{\*f}} \*x_{i} \to_p \+\Sigma$ as $N\to\infty$, where the $m\times m$ matrix $\+\Sigma$ is positive definite. $\blacksquare$
+
+\bigskip
+
+Note that Assumption 5 places no restrictions on the correlation between the treatment effects and the model's errors. This fact leaves the treated potential outcomes and covariates unrestricted with respect to their deviation from their untreated states. We also do not restrict the pattern of factor loadings among different treatment statuses. \citet{brown2022generalized} show that TWFE is consistent for the ATTs when heterogeneity is mean independent of treatment assignment. 
+
+Assumptions 7 and 8 are standard non-collinearity conditions. Assumption 7 generalizes the usual ``within assumption'' in the individual fixed effects only model, which rules out time-invariant regressors. Assumption 7 rules out more general ``low-rank'' regressors, as it is almost always done in models with interactive effects (see \citet{moon2015linear} for a discussion). The exclusion restriction is not very restrictive, though, as it does not rule out low rank regressors in the model for $y_{i,t}$ in \eqref{y}. If there are such regressors present in \eqref{y}, then these should be treated as observed factors, which can be appended to $\widehat{\*f}_t$ in step 1.This is an advantage in the sense that while $\+\beta_{i}$ and $\Delta_{i,g,t}$ are subject to the random coefficient condition in Assumption 3, $\+\alpha_i$ is not. Hence, unlike the coefficients of the observed regressors, the coefficients of low rank regressors are not restricted in any way. The disadvantage of this observed factor treatment of low rank regressors is that we cannot estimate their coefficients.
+
+An important point about Assumptions 1--8 is that the time series properties of $\*f_t$, $\varepsilon_{i,t}$, $\*v_{i,t}$ and $\Delta_{i,g,t}$ are essentially unrestricted. \citet{chan2022pcdid} allow for non-stationary factors and regressors (in a large-$T$ setting) but the regression errors have to be stationary, which is tantamount to requiring that the observables are cointegrated with the factors. Assumptions 1--8 are more general in this regard.
+
+One implication of this generality is that as long as $m+1\geq r$ there is no need to model the deterministic component of the data, as deterministic regressors can be treated as additional (unknown) factors to be estimated from the data. However, it is common in practice to include typical known factors like an intercept or a time trend. This can easily be accomplished by inserting them into $\widehat{\*f}$ along with the cross-sectional averages of the data. As with the dynamics, the type of heteroskedasticity that can be permitted is not restricted in any way.
+
+We are now ready to state Theorem 1, which contains our two main results.
+
+\noindent \textbf{Theorem 1.} \emph{Under Assumptions 1--8, as $N\to\infty$,}
+\begin{itemize}
+  \item[(a) ] $\begin{aligned}[t]
+    \frac{\sqrt{N_g}(\widehat \Delta_{g,t} - \Delta_{g,t})}{\omega_{g,t}} \to_d N(0, 1 ),
+    \end{aligned}$
+
+  \item[(b) ] $\begin{aligned}[t]
+    \widehat \omega_{g,t}^2 \to_p \omega_{g,t}^2,
+    \end{aligned}$
+\end{itemize}
+\emph{where the definition of $\omega_{g,t}^2$ is provided in the appendix.}
+
+\bigskip
+
+The proof of Theorem 1 is contained in the appendix, where we show that $\sqrt{N_g}(\widehat \Delta_{g,t} - \Delta_{g,t})$ is asymptotically mixed normal, and that this implies that $\sqrt{N_g}(\widehat \Delta_{g,t} - \Delta_{g,t})/\omega_{g,t}$ is asymptotically standard normal. This result is unintuitive given the inconsistency of $\widehat{\*a}_i$ in step 2 of the counterfactual estimation procedure, as mentioned earlier in Remark 3. However, \citet{brown2022generalized} show that the asymptotic distribution of $\widehat{\*a}_i$ is centered at a rotated version of $\*a_i$, and that the effect of this rotation is absorbed in the estimation of $\*f$. The asymptotic distribution of $\widehat \Delta_{i,g,t} - \Delta_{i,g,t}$ is correctly centered at zero despite the inconsistency, and it is independent across $i$. Asymptotic normality is therefore possible after averaging over the relevant subsample.
+
+Another point about Theorem 1 is that it holds even if $r$ is unknown, provided only that $m+1 \geq r$, so that the number of factors is not under-specified. As we show in the proof, while $\omega_{g,t}^2$ depends on whether $m+1 = r$ or $m+1 > r$, this dependence is successfully mimicked in large samples by $\widehat \omega_{g,t}^2$. We can therefore show that
+\begin{align}
+\frac{\sqrt{N_g}(\widehat \Delta_{g,t} - \Delta_{g,t})}{\widehat \omega_{g,t}} = \frac{\sqrt{N_g}(\widehat \Delta_{g,t} - \Delta_{g,t})}{\omega_{g,t}} + o_p(1) \to_d N(0, 1 )
+\end{align}
+as $N\to\infty$. Asymptotically valid inference is therefore possible for any $r$ satisfying $m+1 \geq r$. This robustness is particularly important given the well-known bias problem of post-selection estimators \citep{leeb2005model}.
+
+
+\section{Estimating direct and mediated effects}
+
+We now discuss estimation and inference of the decomposition of the treatment effects studied in Section 3. We also demonstrate how using observed covariates, while potentially ruling out estimation of the overall treatment effect, can produce a more robust estimator of the direct treatment effect. 
+
+\subsection{Decomposing treatment effects}
+
+This section considers estimation and inference for the constituent parts of the overall treatment effect. We demonstrate in Section 2 how the overall treatment effect $\Delta_{i,g,t}$ can be decomposed into the direct effect $\eta_{i,g,t}$ and the mediated effect $\+\tau_{i,g,t}' \+\beta_i$. We now demonstrate how to consistently estimate these constituent parts of the treatment effect.
+
+
+
+We can estimate $\+\tau_{g,t}$ for post-treatment time periods by averaging the difference between the observed covariates and their imputed untreated counterfactual. We define this estimator as
+\begin{equation}
+    \widehat{\+\tau}_{g,t} = \frac{1}{N_g} \sum_{i = 1}^N D_{i,g} ( \*x_{i,t} - \widehat{\*x}_{i,t}(\infty) ), \label{x treatment effect}
+\end{equation}
+which is simply the overall treatment effect estimator applied to the covariates. The estimated effect on $\+x$ is what researchers typically use as evidence of a causal mechanism (albeit typically under a more restrictive TWFE model). This analysis is incomplete, as the effect of changing the covariate \emph{on the outcome} is determined by the partial effect of the covariates on the outcome variable, which in our model is given by $\+\beta_i$. Our estimate of the mediated effect is the product of $\widehat{\+\tau}_{g,t} \widehat{\+\beta}$ with each component of the vector being the estimated mediated effect of the $k$-th covariate. It is important to see that a consistent estimator requires a pure factor structure in the untreated potential covariates. This fact precludes the use of nonlinear functions of covariates, like squares and interactions, as well as covariates that are likely nonlinear in the common factors, like discrete or bounded variables. We discuss how to weaken this requirement in Section 4.3.
+
+The direct effect of treatment is easy to obtain once we have a consistent estimator of the mediated effect. To get a consistent estimator of the direct effect, we define 
+\begin{equation}
+    \widehat{\eta}_{g,t} = \widehat{\Delta}_{g,t} - \widehat{\+\tau}_{g,t}' \widehat{\+\beta} = \frac{1}{N_g} \sum_{i = 1}^N D_{i,g} (y_{i,t} - \*x_{i,t}' \widehat{\+\beta} - \widehat{\*f}_t' \widehat{\*a}_i).
+\end{equation}
+That is, our estimated direct effect is our estimated overall effect minus the mediated effects that operate through the included covariates.
+
+We can use non-parametric standard errors for inference on the decomposed treatment effects just like in the case of the overall treatment effect. Let $\widehat{\+\tau}_{i,g,t} = \*x_{i,t} - \widehat{\*x}_{i,t}(\infty)$ so that $\widehat{\+\tau}_{g,t}$ is the group average of the $\widehat{\+\tau}_{i,g,t}$ terms. We define the $m \times m$ covariance estimator of the treatment effect on $\*x_{i,t}$ in equation \eqref{x treatment effect} as 
+\begin{equation}
+    \widehat{\+\Omega}_{g, t} = \frac{1}{N_g - 1} \sum_{i = 1}^N D_{i,g} \left( \widehat{\+\tau}_{i,g,t} - \widehat{\+\tau}_{g,t} \right) \left( \widehat{\+\tau}_{i,g,t} - \widehat{\+\tau}_{g,t} \right)' 
+\end{equation}
+By setting $\widehat{\eta}_{i,g,t} = y_{i,t} - \*x_{i,t} \widehat{\beta} - \widehat{\*f}_t' \widehat{\+\gamma}_i$, we similarly define the estimator of the asymptotic variance for the direct effect as 
+\begin{equation}
+    \widehat{\omega}^2_{\eta_{g,t}} = \frac{1}{N_g - 1} \sum_{i = 1}^N D_{i,g} \left( \widehat{\eta}_{i,g,t} - \widehat{\eta}_{g,t} \right)^2
+\end{equation}
+which is identical to the non-parametric variance estimator in equation \eqref{nonparametric variance estimator} but replacing the imputed covariates with their observed counterparts. 
+
+Using the definitions above, we can now present asymptotic convergence results for the direct and indirect treatment effects.
+
+\noindent \textbf{Theorem 2.} \emph{Under Assumptions 1--8 , as $N\to\infty$,}
+\begin{itemize}
+  \item[(a)] $\begin{aligned}[t]
+    \widehat{\+\Omega}_{g, t}^{-1/2} \sqrt{N_g} \left( \widehat{\+\tau}_{g,t} - \+\tau_{g,t} \right) \to_d N(0, \*I_K ),
+    \end{aligned}$
+
+  \item[(b)] $\begin{aligned}[t]
+    \frac{\sqrt{N_g} \left(  \widehat \eta_{g,t} - \eta_{g,t} \right)}{\widehat{\omega}_{\eta_{g,t}}}  \to_d N(0,1).
+    \end{aligned}$
+\end{itemize}
+
+\bigskip
+
+The proof of Theorem 2 follows directly from the work in the proof of Theorem 1. To estimate the mediated effect on treatment, we only have to pre-multiply the indirect treatment effect estimator by $\widehat{\+\beta}'$ and adjust the standard errors accordingly. Because $\widehat{\+\beta}$ is time constant, the estimator is equivalent to averaging over $\left( \*x_{i,t}' - \widehat{\*x}_{i,t}(\infty)' \right) \widehat{\+\beta}$. The relevant asymptotic variance estimator is $\sqrt{\widehat{\+\beta}' \widehat{\+\Omega}_{g,t} \widehat{\+\beta}}$.
+
+% \textbf{Joakim: I presume we don't need additional proofs for Theorem 2, right? It should follow directly from work in the appendix.}
+
+
+\subsection{Consequences of using observed covariates}\label{sec:post_treatment_bias}
+
+%11/7/2022 draft
+This section discusses the problems with identification when a researcher uses the observed covariates $\*x_{i,t}$ in the imputation stage for $\widehat{y}_{i,t}$ instead of the correctly imputed untreated potential covariates. We define this alternative estimator of group $g$'s ATT at time $t$ as $\tilde{\Delta}_{g,t}$ for $t \geq g$. We showed in Section 4.1 that using observed covariates only allows us to estimate the direct effect. 
+
+To see this, note that
+\begin{equation}
+    \tilde{\Delta}_{g,t} = \frac{1}{N_g} \sum_{i = 1}^N D_{i,g} \left( y_{i,t} - \*x_{i,t}' \widehat{\+\beta} - \widehat{\*f}_t' \widehat{\+\gamma}_i \right) = \frac{1}{N_g} \sum_{i = 1}^N D_{i,g} \left( \Delta_{i,g,t} + \*x_{i,t}' (\+\beta - \widehat{\+\beta}) + \left( \*f_t' \+\gamma_i - \widehat{\*f}_t' \widehat{\+\gamma}_i \right) \right)
+\end{equation}
+We demonstrate in the proof of Theorem 1 that $\widehat{\+\beta} - \+\beta = o_p(1)$ and $\frac{1}{N_g} \sum_{i = 1}^N D_{i,g} \left( \widehat{\*f}_t' \widehat{\+\gamma}_i - \*f_t' \+\gamma_i \right) = o_p(1)$. Because $\frac{1}{N_g} \sum_{i = 1}^N D_{i,g} \*x_{i,t} = O_p(1)$, $\tilde{\Delta}_{g,t}$ is only consistent for the direct effect of treatment on the outcomes. This fact demonstrates that the interpretation of the imputation estimator that uses observed covariates is as an estimator of the direct effect; such is the case of the PCDID estimator of \citet{chan2022pcdid}. Researchers who implement interactive fixed effects imputation estimators with time-varying covariates must therefore be careful in interpreting their results.
+
+We can now study the conditions under which $\tilde{\Delta}_{g,t}$ is consistent for the overall effect. Intuitively, the only time $\tilde{\Delta}_{g,t}$ is consistent for the overall ATT (and not just the direct effect) is when the treatment does not affect the outcome via the covariates. To demonstrate this fact, we write $\tilde{\Delta}_{g,t}$ in terms of our overall estimator from Theorem 1:
+\begin{equation}\label{delta tilde and delta hat}
+    \tilde{\Delta}_{g,t} = \widehat{\Delta}_{g,t} - \frac{1}{N_g} \sum_{i = 1}^N D_{i,g} (\widehat{\*x}_{i,t}(\infty) - \*x_{i,t})' \widehat{\+\beta}
+\end{equation}
+Note that $\tilde{\Delta}_{g,t}$ is numerically identical to our direct effect estimate, $\widehat{\eta}_{g,t}$, in the previous section. 
+
+Thus $\tilde{\Delta}_{g,t}$ is consistent for the overall ATT $\Delta_{g,t}$ when $\frac{1}{N_g} \sum_{i = 1}^N D_{i,g} (\widehat{\*x}(\infty) - \*x_{i,t})' \widehat{\+\beta} = o_p(1)$. We demonstrate in equation (A.58) of the Appendix that
+\begin{equation}
+    \frac{1}{N_g} \sum_{i = 1}^N D_{i,g} (\*x_{i,t} - \widehat{\*x}_{i,t}(\infty)) = \frac{1}{N_g} \sum_{i = 1}^N D_{i,g} \+\tau_{i,g,t} + o_p(1)
+\end{equation}
+Equation \eqref{delta tilde and delta hat} then becomes
+\begin{equation}
+    \Tilde{\Delta}_{g,t} = \widehat{\Delta}_{g,t} - \left( \frac{1}{N_g} \sum_{i = 1}^N D_{i,g} \+\tau_{i,g,t} \right)' \widehat{\+\beta} + o_p(1)
+\end{equation}
+
+Because we know the limits of both terms in the above equation, we can demonstrate when replacing the imputed potential covariates with observed covariates leads to a consistent estimator of $\Delta_{g,t}$.
+
+\noindent \textbf{Theorem 3.} \emph{Under Assumptions 1--8, $\Tilde{\Delta}_{g,t} \to_p \Delta_{g,t}$ as $N \to \infty$ if and only if $\+\tau_{g,t} = \*0$ or $\+\beta = \*0$.}
+
+\bigskip
+
+The conditions for consistency of $\Tilde{\Delta}_{g,t}$ are unsurprising. They essentially require the mediated effect on treatment to be zero. The former case, where covariates are unaffected by treatment ($\+\tau_{g,t} = \*0)$, is similar to what \citet{chan2022pcdid} assume for the PCDID estimators. The alternative case occurs when the covariates are uninformative for $y_{i,t}$. This setting implies the $\*x_{i,t}$ are irrelevant to the mean of $y_{i,t}$. However, the covariates can still be used as factor proxies in this setting.
+
+
+
+
+
+% XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+% Suppose the researcher uses the observed covariates $\*x_{i,t}$ in the imputation stage for $\widehat{y}_{i,t}$; we define this estimator as $\tilde{\Delta}_{g,t}$. The estimator for the ATT for group $g$ at time $t$ takes the form
+% \begin{equation}
+%     \tilde{\Delta}_{g,t} = \frac{1}{N_g} \sum_{i = 1}^N D_{i,g} (y_{i,t} - \widehat{\+\beta}' \*x_{i,t} + \widehat{\*a}_i' \widehat{\*f}_t) = \widehat{\Delta}_{g,t} + \frac{1}{N_g} \sum_{i = 1}^N D_{i,g} \widehat{\+\beta}' (\widehat{\*x}_{i,t} - \* x_{i,t}), \label{observed x atthat}
+% \end{equation}
+% where $\widehat{\Delta}_{g,t}$ is the estimator defined in equation (\ref{atthat}).  Intuitively, the imputed covariates $\widehat{\*x}_{i,t}$ are estimates of the untreated potential covariates in the post-treatment time periods, so the asymptotic distribution of $\widehat{\Delta}_{g,t}$ depends on how close the treated covariates are to the untreated covariates.
+
+% The observed covariates take the form in equation (\ref{observed x}) with $d_{i,t} = 1$. After subtracting off the unobserved ATT and normalizing by the appropriate sample size, equation (\ref{observed x atthat}) can be further written as
+% \begin{equation}
+%     \sqrt{N_g}(\tilde{\Delta}_{g,t} - \Delta_{g,t}) = \sqrt{N_g}(\widehat{\Delta}_{g,t} - \Delta_{g,t}) + \frac{1}{\sqrt{N_g}} \sum_{i = 1}^N D_{i,g} \widehat{\+\beta}' (\widehat{\*x}_{i,t} - \*x_{i,t}(\infty)) - \frac{1}{\sqrt{N_g}} \sum_{i = 1}^N D_{i,g} \widehat{\+\beta}' \+\tau_{i,g,t}
+% \end{equation}
+% We prove in the appendix that $\widehat{\*x}_{i,t}$ is a suitable estimator of the untreated potential covariates. However, our asymptotic normality proof made no assumptions on the behavior of $\+\tau_{i,g,t}$ because it is part of the estimated object of interest.
+
+% Asymptotic (mixed) normality of $\sqrt{N_g}(\tilde{\Delta}_{g,t} - \Delta_{g,t})$ depends on the asymptotic properties of $\widehat{\+\beta}' \left( \frac{1}{\sqrt{N}} \sum_{i = 1}^N D_{i,g} \+\tau_{i,g,t} \right)$. Asymptotic normality of this sum requires $\+\tau_{i,g,t}$ to have mean zero over $i$ and $t$, to be mean independent of treatment status and timing, and to have sufficiently thin tails. If these conditions fail, the estimator is no longer consistent or asymptotically (mixed) normal. This assumption would fail whenever (i) the covariates are required to plausibly satisfy a conditional parallel trends assumption and (ii) the same covariates are mechanisms through which the treatment effects outcomes ($x_{i,t}(g) \neq x_{i,t}(\infty)$).
+
+% This section therefore demonstrates why observed covariates cannot be used for the outcome imputation step. Even if the treatment effect on the covariates satisfies the above conditions, the standard errors need to be adjusted to control for the random noise introduced by the additional covariates. Study of these standard errors would also require restrictions on the joint distribution of the $\+\tau_{i,g,t}$ sequence over $i$. We reiterate that asymptotic normality of $\widehat{\Delta}_{g,t}$ required no restrictions on this distribution because it was a quantity being estimated. 
+
+
+
+
+\subsection{Robust direct effect estimation}
+
+%11/22/2022 draft
+
+The results in this paper have so far depended on covariates admitting a common factor structure. This assumption may be too strong for some microeconometric applications. We now discuss consistency under a more general model due to \citet{Brown_Schmidt_Wooldridge_2021}. We show that the direct effect is still estimable under the more general model, but that we can no longer identify the mediated effect without further restrictions.
+
+\citet{Brown_Schmidt_Wooldridge_2021} consider the model in equation \eqref{z} but without treatment effects. When $\overline{\+\Lambda}$ is full rank (like in Assumption 6), they show that 
+\begin{equation}
+    \*F = \overline{\*Z} \overline{\+\Lambda}' \left( \overline{\+\Lambda} \overline{\+\Lambda}' \right)^{-1} + o_p(1)
+\end{equation}
+where $\overline{\*Z} = \frac{1}{N} \sum_{i = 1}^N \*Z_i$ and $\*Z_i$ is the $T \times (m + 1)$ matrix of stacked $\*z_{i,t}$. They assume random sampling in the cross section so that all population equations are written in moment conditions. They then consider the general model 
+\begin{equation}\label{bsw}
+    \*F = \+\Psi \*B
+\end{equation}
+where $\*F$ is the full $T \times r$ matrix of stacked factors, $\+\Psi$ is a $T \times q$ matrix of observed or estimable factor proxies and $\*B$ is an arbitrary $q \times r$ matrix. In the case of the classic CCE model, $\+\Psi = \mathbb{E}(\*Z_i)$ and $\*B = \mathbb{E}(\+\Lambda)$. However, they place no restrictions on the rank of $\*B$ and so the model in equation \eqref{bsw} is strictly more general than CCE. This model allows the DGP of the covariates to be essentially unrestricted, allowing for polynomial functions and interactions, as well as count and limited variables.
+
+Stacking the outcomes over time, and assuming $\+\Psi = \mathbb{E}(\*Z_i)$, equation \eqref{bsw} implies 
+\begin{equation}\label{bsw population}
+    y_{i,t} = \*x_{i,t}' \+\beta_i + \mathbb{E}(\*z_{i,t})\+\rho_i + \epsilon_{i,t}
+\end{equation}
+where $\+\rho_i = \*B \+\gamma_i$. We can adopt this model to our current setting by assuming it holds only for the untreated potential outcomes. We write this model as
+\begin{equation}
+    y_{i,t}(\infty) = \*x_{i,t}(\infty)' \+\beta_i + \mathbb{E}(\*z_{i,t} | G_i = \infty) \+\rho_i + \epsilon_{i,t}
+\end{equation}
+which assumes nothing about the distribution of the treated potential outcomes and covariates. The treated potential outcome for a member of group $g$ at time $t \geq g$ is
+\begin{align*}
+    y_{i,t}(g) 
+    &= \eta_{i,g,t} + y_{i,t}(\infty)\\
+    &= \eta_{i,g,t} + \*x_{i,t}(g)' \+\beta_i + \mathbb{E}(\*z_{i,t} | G_i = \infty) \+\rho_i + \epsilon_{i,t}
+\end{align*}
+
+We can no longer identify aggregates of the overall treatment effect $\eta_{i,g,t} + \+\tau_{i,g,t}' \+\beta_i$ because we no longer have a model for the untreated potential covariates, thus leaving the potential channel for the mediated effect unspecified. However, we can still estimate the direct effect of treatment because $\widehat{\eta}_{t,g}$ corresponds to the treatment effect estimator using observed covariates as in Section 4.1. \citet{Brown_Schmidt_Wooldridge_2021} show that the model in equation \eqref{bsw} implies consistency of the pooled CCE estimator under a similar random slope assumption as our current Assumptions 3 and 5. Instead of being consistent for the factors, $\frac{1}{N_\infty} \sum_{i = 1}^N D_{i,\infty} \*z_{i,t}$ is not consistent for $\*f_t$, but for $\mathbb{E}(\*z_{i,t}|G_i = \infty)$, which is all that we require according to equation \eqref{bsw population}. Further, $\widehat{\*a}_i$ is consistent for a rotation of the transformed loadings $\+\rho_i$ and not $\+\gamma_i$, which again is all we require by equation \eqref{bsw population}.
+
+The only departure from our original procedure under this model comes when we are interested in inference on $\+\beta$. \citet{Brown_Schmidt_Wooldridge_2021} show that without the CCE assumption guaranteeing independence between $(\*I_{T_0} - \*f_t (\*f_t' \*f_t)^{-1} \*f_t') \*X_i$ and $\+\gamma_i$, the cluster-robust standard errors from \citet{westerlund2019cce} are inconsistent. They derive analytic standard errors that correct for this first-stage estimation uncertainty. We could also use a nonparametric bootstrap while re-estimating $\widehat{\*f}$ with every bootstrap sample.
+
+
+% ------------------------------------------------------------------------------
+\section{Monte Carlo simulations}
+% ------------------------------------------------------------------------------
+
+We now present our main simulation results. Our simulations set $N = 200$ and $T = 8$, a relatively small number of cross-sectional units. Treatment turns on at time period $6$ for treated individuals and hence $T_0 = 5$. The data is generated as follows. First, there are two factors, $m = 2$, with $f_1 = [1, \dots, 1]'$ being a vector of ones allowing for unit fixed effects and $f_2 = [1, \dots, T]'$ allowing for unit-specific linear time-trend. 
+
+There are two covariates, $K = 2$, both generated according to (\ref{observed x}) with factor loadings $\lambda_i$ being a $2 \times 2$ matrix with 
+$$
+\lambda_i \sim
+\begin{bmatrix}
+    N(1, 1) & N(0, 1) \\
+    N(0, 1) & N(1, 1)
+\end{bmatrix}
+$$
+The outcome's factor-loadings are generated $\*a_i \sim N(\text{diag}(\lambda_i), I_2)$. Outcomes are generated as follows:
+$$
+y_{i,t} = \Delta * d_{i,t} + \+\beta_0' \big(\*x_{i,t}(\infty) + \+\tau d_{i,t}) + \*a_i' \*f_t + \varepsilon_{i,t}
+$$
+with $\beta_0 = [1, 1]$. The error term is an $AR(1)$ process, i.e. $\varepsilon_{it} = \rho \varepsilon_{i,t-1} + u_{it}$ with $u_{it} \sim N(0, 1)$. We set $\rho = 0.75$.
+
+In the first set of simulations, we assign treatment randomly with unconditional probability of treatment of 50\%. This implies parallel trends holds since the average of factor-loadings are the same in the treated and control group. This simulation aims to show the importance of not controlling for observed $\*x_{i,t}$ as described in the previous section. 
+
+In the second set of simulations, treatment is assigned with probability increasing in the second factor-loading, $a_{i,2}$, such that parallel trends fail (since treated units are more exposed to the time-trend in $f_2$). In particular, we form the term
+$$
+\pi_i = 0.5 + \frac{a_{i2}}{\max_i a_{i2} - min_i a_{i2}}
+$$
+Then, we normalize this by the mean of $\pi_i$, $\pi_i / (\frac{1}{N} \sum_i \pi_i)$, so that the unconditional probability of treatment stays at 50\%.
+
+We run three data-generating processes. First, we generate the data with a direct effect of $\Delta = 0$ and an effect on $\*x$ of $\+\tau = [0, 0]$ such that the true effect of treatment is zero. Second, we allow for a direct effect of $\Delta = 1$ but don't allow treatment to effect the distribution of covariates ($\+\tau = [0, 0]$). Last, we set $\Delta = 1$ and $\tau = [0, 1]$ to have a mediated effect of 1 ($\+\beta' \+\tau$) and a total effect of 2.
+
+We estimate three specifications. First, we estimate a two-way fixed effect event-study model 
+\begin{equation}\label{eq:monte_twfe} 
+    y_{it} = \mu_i + \eta_t + \sum_{k=6}^8 \tau_{k} d_{it}^k + \text{error}_{it}.
+\end{equation}
+where $d_{it}^k$ is an indicator equaling one if unit $i$ is treated and $t = k$. Second, we do what is commonly done in empirical applications and run the same event-study model while controlling for the time-varying covariates 
+\begin{equation}\label{eq:monte_twfe_cov} 
+    y_{it} = \mu_i + \eta_t + \bm X_{it} \bm \beta_t + \sum_{k=6}^8 \tau_{k} d_{it}^k + \text{error}_{it}.
+\end{equation}
+Last, we run our proposed CCEDID procedure. For each estimator, we report the average bias of our estimates $\mathbb{E}\big[ \widehat{\tau}_k - \tau_k \big]$ as well as the mean-squared error, $MSE(\widehat{\tau}_k) \equiv \mathbb{E}\big[ (\tau_k - \widehat{\tau}_k)^2 \big]$ for $k = 6, 7, 8$.
+
+\begin{table}
+\def\arraystretch{1.25}
+\caption{Monte Carlo: Parallel Trends Hold}\label{tab:monte_results_pt}
+
+\begin{center}
+\begin{threeparttable}
+    \begin{tabular}{@{} l @{\extracolsep{4pt}}cccccc @{}} 
+    % Head
+    \toprule \addlinespace[3mm]
+  
+    \multicolumn{7}{@{}l}{
+        \textbf{Panel A:} No Effect. $\eta = [0, 0, 0]$ and $\tau = [0, 0, 0]$.
+    } \\
+    \midrule \addlinespace[3mm]
+    
+    & $\mathbb{E}\big(\widehat{\Delta}_6 - \Delta_6\big)$ & $\text{MSE}\big(\widehat{\Delta}_6\big)$
+    & $\mathbb{E}\big(\widehat{\Delta}_7 - \Delta_7\big)$ & $\text{MSE}\big(\widehat{\Delta}_7\big)$ 
+    & $\mathbb{E}\big(\widehat{\Delta}_8 - \Delta_8\big)$ & $\text{MSE}\big(\widehat{\Delta}_8\big)$ 
+    \\
+    \cmidrule{2-7}
+    
+    \input{../tables/simulation-3-parallel_trends-true}
+
+    \midrule \addlinespace[3mm]
+    \multicolumn{7}{@{}l}{
+        \textbf{Panel B:} Direct Effect. $\eta = [1/3, 2/3, 1]$ and $\tau = [0, 0, 0]$.
+    } \\
+    \midrule \addlinespace[3mm]
+    
+    & $\mathbb{E}\big(\widehat{\Delta}_6 - \Delta_6\big)$ & $\text{MSE}\big(\widehat{\Delta}_6\big)$
+    & $\mathbb{E}\big(\widehat{\Delta}_7 - \Delta_7\big)$ & $\text{MSE}\big(\widehat{\Delta}_7\big)$ 
+    & $\mathbb{E}\big(\widehat{\Delta}_8 - \Delta_8\big)$ & $\text{MSE}\big(\widehat{\Delta}_8\big)$ 
+    \\
+    \cmidrule{2-7}
+    
+    \input{../tables/simulation-2-parallel_trends-true}
+
+    
+    \midrule \addlinespace[3mm]
+    \multicolumn{7}{@{}l}{
+        \textbf{Panel C:} Direct and Mediated Effect. $\eta = [1/3, 2/3, 1]$ and $\tau = [1/3, 2/3, 1]$.
+    } \\
+    \midrule \addlinespace[3mm]
+    
+    & $\mathbb{E}\big(\widehat{\Delta}_6 - \Delta_6\big)$ & $\text{MSE}\big(\widehat{\Delta}_6\big)$
+    & $\mathbb{E}\big(\widehat{\Delta}_7 - \Delta_7\big)$ & $\text{MSE}\big(\widehat{\Delta}_7\big)$ 
+    & $\mathbb{E}\big(\widehat{\Delta}_8 - \Delta_8\big)$ & $\text{MSE}\big(\widehat{\Delta}_8\big)$ 
+    \\
+    
+    \cmidrule{2-7}
+    
+    \input{../tables/simulation-3-parallel_trends-true}
+
+    
+    \bottomrule
+    \end{tabular}
+    
+    % Notes 
+    \begin{tablenotes}[flushleft] \footnotesize
+      \item \textit{Notes.} 
+    \end{tablenotes}
+\end{threeparttable}
+\end{center}
+\end{table}
+
+Table \ref{tab:monte_results_pt} contain results for when parallel trends holds. First note that all three estimates produce unbiased estimates for treatment effects when treatment does not affect the distribution of $\*x$ (Panels A and B). However, note that since $CCEDID$ is absorbing the full factor-model, the mean-square error can be significantly smaller.\footnote{After controlling for time-dummies, $(a_{i2} - \bar{a}_{2}) f_{t,2}$ enters the error term where $\bar{a}_2$ is the cross-sectional average of $a_{i2}$. The variance of this term grows with $t$ and hence the mean-square error is largest in period 8.} 
+In panel C, we allow treatment to effect the distribution of $x_2$. As discussed above, controlling for observed $\bm x_{it}$ is problematic since it absorbs the mediated effect of that covariate. Hence, TWFE with covariates produces very biased estimates for the treatment effect, even in this extreme case where parallel trends hold unconditionally. 
+
+Table \ref{tab:monte_results_no_pt} contains the results of simulations where prallel trends do not hold. In this case, both TWFE estimators are biased across panels. Our proposed CCEDID procedure performs well in all these cases with near-zero bias and consistently the lowest mean-squared error. 
+
+\begin{table}
+\def\arraystretch{1.25}
+\caption{Monte Carlo: Parallel Trends Do Not Hold}\label{tab:monte_results_no_pt}
+
+\begin{center}
+\begin{threeparttable}
+    \begin{tabular}{@{} l @{\extracolsep{4pt}}cccccc @{}} 
+    % Head
+    \toprule \addlinespace[3mm]
+  
+    \multicolumn{7}{@{}l}{
+        \textbf{Panel A:} No Effect. $\eta = [0, 0, 0]$ and $\tau = [0, 0, 0]$.
+    } \\
+    \midrule \addlinespace[3mm]
+    
+    & $\mathbb{E}\big(\widehat{\Delta}_6 - \Delta_6\big)$ & $\text{MSE}\big(\widehat{\Delta}_6\big)$
+    & $\mathbb{E}\big(\widehat{\Delta}_7 - \Delta_7\big)$ & $\text{MSE}\big(\widehat{\Delta}_7\big)$ 
+    & $\mathbb{E}\big(\widehat{\Delta}_8 - \Delta_8\big)$ & $\text{MSE}\big(\widehat{\Delta}_8\big)$ 
+    \\
+    \cmidrule{2-7}
+    
+    \input{../tables/simulation-1-parallel_trends-false} 
+
+    \midrule \addlinespace[3mm]
+    \multicolumn{7}{@{}l}{
+        \textbf{Panel B:} Direct Effect. $\eta = [1/3, 2/3, 1]$ and $\tau = [0, 0, 0]$.
+    } \\
+    \midrule \addlinespace[3mm]
+    
+    & $\mathbb{E}\big(\widehat{\Delta}_6 - \Delta_6\big)$ & $\text{MSE}\big(\widehat{\Delta}_6\big)$
+    & $\mathbb{E}\big(\widehat{\Delta}_7 - \Delta_7\big)$ & $\text{MSE}\big(\widehat{\Delta}_7\big)$ 
+    & $\mathbb{E}\big(\widehat{\Delta}_8 - \Delta_8\big)$ & $\text{MSE}\big(\widehat{\Delta}_8\big)$ 
+    \\
+    \cmidrule{2-7}
+    
+    \input{../tables/simulation-2-parallel_trends-false}
+    
+    \midrule \addlinespace[3mm]
+    \multicolumn{7}{@{}l}{
+        \textbf{Panel C:} Direct and Mediated Effect. $\eta = [1/3, 2/3, 1]$ and $\tau = [1/3, 2/3, 1]$.
+    } \\
+    \midrule \addlinespace[3mm]
+    
+    & $\mathbb{E}\big(\widehat{\Delta}_6 - \Delta_6\big)$ & $\text{MSE}\big(\widehat{\Delta}_6\big)$
+    & $\mathbb{E}\big(\widehat{\Delta}_7 - \Delta_7\big)$ & $\text{MSE}\big(\widehat{\Delta}_7\big)$ 
+    & $\mathbb{E}\big(\widehat{\Delta}_8 - \Delta_8\big)$ & $\text{MSE}\big(\widehat{\Delta}_8\big)$ 
+    \\
+    \cmidrule{2-7}
+    
+    \input{../tables/simulation-3-parallel_trends-false} 
+    
+    \bottomrule
+    \end{tabular}
+    
+    % Notes 
+    \begin{tablenotes}[flushleft] \footnotesize
+    \item \textit{Notes.} 
+    \end{tablenotes}
+\end{threeparttable}
+\end{center}
+\end{table}
+
+
+
+% ------------------------------------------------------------------------------
+\section{Empirical illustration}
+% ------------------------------------------------------------------------------
+
+
+TO BE ADDED.
+
+% ------------------------------------------------------------------------------
+\section{Conclusion}
+% ------------------------------------------------------------------------------
+
+%12/3/2022 draft. This needs to be cleaned up, but I just wanted to get something down. 
+
+
+We derive a consistent estimator of ATTs when untreated potential outcomes are generated by an interactive fixed effects error. Our identification strategy, based on the popular common correlated effects model, relies on time- and individual-varying covariates that admit a pure factor structure. We use the cross-sectional averages of the data to impute the untreated potential outcomes in post-treatment time periods. Our main consistency result allows for a fixed number of time periods, but can easily extend to when there are many pre-treatment observations. 
+
+While most treatment effect analyses omit time-varying covariates due to their possible correlation with treatment status, we explicitly allow treatment to affect the covariates' distribution in an arbitrary way. This model allows us to decompose the effect of treatment via a direct effect on the level of the outcomes and a mediated effect through the covariates and their slopes. Such a decomposition allows researchers to perform inference on the possible mechanisms of an intervention through different relevant channels. We also demonstrate how estimators based on time-varying controls that do not allow indirect effects, such as the principal components estimator of \citet{chan2022pcdid}, are only consistent for the direct effect of treatment unless either the covariates are independent of treatment status or have zero effect on the outcome. This effect is consistently estimated by our CCE estimator under a weaker model proposed by \citet{Brown_Schmidt_Wooldridge_2021}. 
+
+% \textbf{APPLICATION DISCUSSION}
+
+
+
+
+
+% ------------------------------------------------------------------------------
+\pagebreak
+\bibliography{references}
+% ------------------------------------------------------------------------------
+
+
+\pagebreak
+
+\appendix
+
+%\numberwithin{equation}{section}
+\renewcommand{\theequation}{A.\arabic{equation}}
+
+\section*{Appendix}
+
+\noindent \textbf{Proof of Theorem 1.}
+
+\medskip
+
+\noindent We start with part (a). We begin by considering the step-1 estimator of $\*f_t$. In so doing, it is useful to denote by $\overline{\*a}_t = N_{\infty}^{-1}\sum_{i = 1}^N D_{i,\infty} \*a_{i,t}$ the cross-sectional average of any vector $\*a_{i,t}$ for the group of untreated units. In this notation, $\widehat{\*{f}}_t = \overline {\*z}_t$. By inserting \eqref{x} into \eqref{fhat}, and noting that $B_t = 0$ in the pretreatment sample when $t \leq T_0$, we obtain
+\begin{equation}\label{fhat1}
+\widehat{\*{f}}_t = \overline {\*{z}}_t = \overline{\+\Lambda}'\*{f}_t + \overline {\*e}_{t},
+\end{equation}
+If $m+1=r$, $\overline{\+\Lambda}$ is full rank and invertible, which means that \eqref{fhat1} can be rewritten as
+\begin{equation}\label{redefined}
+    \overline{\+\Lambda}^{-1\prime}\widehat{\*{f}}_t=\*{f}_t+\overline{\+\Lambda}^{-1\prime}\overline{\*e}_t .
+\end{equation}
+Because $\|\overline{\*e}_t\|=O_p(N^{-1/2})$ under Assumption 4, we have
+\begin{equation}\label{redefined2}
+\overline{\+\Lambda}^{-1\prime}\widehat{\*{f}}_t = \*{f}_t + O_p(N^{-1/2})
+\end{equation}
+and hence $\overline{\+\Lambda}^{-1\prime} \widehat{\*{f}}_t$ is consistent for $\*{f}_t$. In practice, we never observe $\overline{\+\Lambda}$. However, since $\+{\alpha}_i'\*{f}_t = \+{\alpha}_i' \overline{\+\Lambda}^{-1\prime}\widehat{\*{f}}_t + O_p(N^{-1/2})$, it is enough if we know $\widehat{\*{f}}_t$, because $\overline{\+\Lambda}^{-1}$ is subsumed in the estimation of the coefficient of $\widehat{\*{f}}_t$, which is $\*a_i$ in our notation.
+
+The above analysis is not possible when $m +1> r$ since $\overline{\+{\Lambda}}$ is no longer invertible. However, we still need something similar to (\ref{redefined}), because it determines the object that is being estimated. The way we approach this issue is the same as in \citet{juodis2021robustness}, and others. In particular, we begin by partitioning $\+{\Lambda}_i$ as $\overline{\+{\Lambda}}=[\overline{\+{\Lambda}}_r, \overline{\+{\Lambda}}_{-r}]$, where $\overline{\+{\Lambda}}_{-r}$ is $r\times (m+1-r)$ and $\overline{\+{\Lambda}}_r$ is $r \times r$ and full rank. Note that this partition is without loss of generality under Assumption 6. We then introduce the following $(m+1)\times (m+1)$ rotation matrix, which is chosen such that $\overline{\+{\Lambda}}\overline{\*{H}}= [\*{I}_r, \*{0}_{r\times (m+1-r)}]$ and that is going to play the same role as $\overline{\+{\Lambda}}^{-1}$ under $m+1=r$:
+\begin{equation}
+    \overline{\*{H}} =\left[\begin{array}{cc}\overline{\+{\Lambda}}_r^{-1} & -\overline{\+{\Lambda}}_r^{-1}\overline{\+{\Lambda}}_{-r}\\
+    \*{0}_{(m+1-r)\times r} & \*{I}_{m+1-r}\end{array}\right]=[\overline{\*{H}}_r,\, \overline{\*{H}}_{-r}],
+\end{equation}
+where $\overline{\*{H}}_r=[\overline{\+{\Lambda}}_r^{-1\prime}, \*{0}_{r\times (m+1-r)} ]'$ is $(m+1)\times r$, while $\overline{\*{H}}_{-r}=[ -\overline{\+{\Lambda}}_{-r}'\overline{\+{\Lambda}}_r^{-1\prime}, \*{I}_{m+1-r}]'$ is $(m+1)\times (m+1-r)$. If $m+1=r$, we define $\overline{\*{H}}=\overline{\*{H}}_r=\overline{\+{\Lambda}}_r^{-1}=\overline{\+{\Lambda}}^{-1}$. We further introduce the $(m+1)\times (m+1)$ matrix $\*{D}_N= \mathrm{diag}(\*{I}_r , \sqrt{N}\*{I}_{m+1-r})$ with $\*{D}_N=\*{I}_{m+1}$ if $m+1=r$. By pre-multiplying $\widehat{\*{f}}_t$ by $\*{D}_N\overline{\*{H}}'$, we obtain
+\begin{equation}\label{fhat0}
+    \*{D}_N\overline{\*{H}}'\widehat{\*{f}}_t=\widehat{\*{f}}^0_t= \*{D}_N\overline{\*{H}}'\overline{\+{\Lambda}}'\*{f}_t+ \*{D}_N\overline{\*{H}}'\overline{\*e}_t=\*{f}^0_t+\overline{\*e}^0_t,
+\end{equation}
+where $\*{f}^0_t=[\*{f}'_t, \*{0}_{(m+1-r)\times 1}']'$ and $\overline{\*e}^0_t=[\overline{\*e}_{t}'\overline{\*H}_r, \sqrt{N}\overline{\*{e}}_{t}'\overline{\*H}_{-r}]'=
+[\overline{\*{e}}^{0\prime}_{r,t}, \overline{\*{e}}^{0\prime}_{-r,t}]'$ are both $(m+1)\times 1$ with $\overline{\*{e}}_{r,t}^0$ and $\overline{\*{e}}_{-r,t}^0$ being $r\times 1$ and $(m+1-r)\times 1$, respectively. Hence, since $\|\overline{\*{e}}_{r,t}^0\| =O_p(N^{-1/2})$ and $\|\overline{\*{e}}_{-r,t}^0\| =O_p(1)$, when $m + 1> r$ we are no longer estimating $\*{f}_t$ but rather $\*f_t^+ = [\*{f}_t', \overline{\*{e}}_{-r,t}^{0\prime}]'$;
+\begin{align}
+\widehat{\*{f}}_t^0 = \*f_t^{0} + \overline{\*e}_t^{0} = \left[\begin{array}{c} \*f_t \\
+    \*{0}_{(m+1-r)\times 1} \end{array}\right] + \left[\begin{array}{c} \overline{\*e}_{r,t}^{0} \\
+    \overline{\*e}_{-r,t}^{0} \end{array}\right] = \*f_t^+ +  O_p(N^{-1/2}),
+\end{align}
+The fact that $\*{f}_t$ is included in $\*f_t^+$ suggests that asymptotically CCEDID should be able to account for the unknown factors even if $m + 1> r$. By ensuring the existence of $\overline{\*{H}}$, Assumption 6 makes this possible. However, we also note that because of the presence of $\overline{\*{e}}_{-r,t}^0$, the asymptotic distribution theory will in general depend on whether $m+1=r$ or $m +1> r$.
+
+It is useful to be able to use the above notation not only when $m+1> r$ but also when $m+1=r$. We therefore define $\widehat{\*{f}}^0_t=\overline{\+{\Lambda}}^{-1\prime}\widehat{\*{f}}_t$, $\*{f}^0_t = \*{f}_t$ and $\overline{\*{e}}^0_t = \overline{\+{\Lambda}}^{-1\prime}\overline{\*{e}}_t$ if $m+1=r$, so that we are back in (\ref{redefined}).
+
+Let us now consider $\widehat \Delta_{i,g,t}$, which, unlike $\widehat{\*f}_t$, is computed based on treated units in post-treatment periods ($i\in \mathcal{I}_g$, $g < G$ and $t \geq T_g$). From Assumption 3, and the definitions of $y_{i,t}$ and $\widehat y_{i,t}(0)$, 
+\begin{align}
+\widehat \Delta_{i,g,t} & = y_{i,t} - \widehat y_{i,t}(\infty) \notag\\
+& = \eta_{i,g,t} + \+\beta_i'\*x_{i,t} + \+\alpha_i'\*f_t + \varepsilon_{i,t} - [\widehat{\+\beta}'\widehat{\*x}_{i,t}(\infty) + \widehat{\*a}_i'\widehat{\*f}_t]  \notag\\
+& = \eta_{i,g,t} + \+\beta_i'\*x_{i,t} + \+\alpha_i'\*f_t + \varepsilon_{i,t} - (\widehat{\+\beta}'\*x_{i,t} + \widehat{\*a}_i'\widehat{\*f}_t) + \widehat{\+\beta}'[\*x_{i,t} - \widehat{\*x}_{i,t}(\infty)]  \notag\\
+& = \eta_{i,g,t} - (\widehat{\+\beta} - \+\beta_i)'\*x_{i,t}- (\widehat{\*a}_i'\widehat{\*f}_t - \+\alpha_i'\*f_t)  + \widehat{\+\beta}'[\*x_{i,t} - \widehat{\*x}_{i,t}(\infty)] + \varepsilon_{i,t} \notag\\
+& = \eta_{i,g,t} - (\widehat{\+\beta} - \+\beta_i)'\*x_{i,t} - (\widehat{\*a}_i'\widehat{\*f}_t - \+\alpha_i'\*f_t)  + \widehat{\+\beta}'[\*x_{i,t} - \widehat{\*x}_{i,t}(\infty)] + \varepsilon_{i,t} ,
+\end{align}
+where the last equality makes use of the fact that $D_iB_t = 1$ for all $i\in \mathcal{I}_g$, $g < G$ and $t \geq T_g$. Consider $\widehat{\*a}_i'\widehat{\*f}_t - \+\alpha_i'\*f_t$. While the $(m+1)\times r$ matrix $\mathbf{D}_N\overline{\mathbf{H}}'\overline{\boldsymbol{\Lambda}}'$ is not necessarily square under Assumption 6, it has full column rank. This means that we can compute its Moore--Penrose inverse, which is given by $(\mathbf{D}_N\overline{\mathbf{H}}'\overline{\boldsymbol{\Lambda}}')^+ = (\mathbf{D}_N\overline{\mathbf{H}}'\overline{\boldsymbol{\Lambda}}')' = [ \mathbf{I}_r, \mathbf{0}_{r\times (m+1-r)} ]$, such that $(\mathbf{D}_N\overline{\mathbf{H}}'\overline{\boldsymbol{\Lambda}}')^+ \mathbf{D}_N\overline{\mathbf{H}}'\overline{\boldsymbol{\Lambda}}' = \mathbf{I}_r$. Hence, $\mathbf{D}_N\overline{\mathbf{H}}'\overline{\boldsymbol{\Lambda}}'\*f_t = [\*f_t', \mathbf{0}_{(m+1-r)\times 1}']' = \*f_t^0$ and we also have $\*{D}_N\overline{\*{H}}'\widehat{\*{f}}_t=\widehat{\*{f}}^0_t$. Making use of this, and letting $\widehat{\*a}_i^0 = (\*{D}_N\overline{\*{H}}')^{-1\prime}\widehat{\*a}_i= (\overline{\*{H}}\*{D}_N)^{-1}\widehat{\*a}_i$ and $\+\alpha_i^0 = (\mathbf{D}_N\overline{\mathbf{H}}'\overline{\boldsymbol{\Lambda}}')^{+\prime} \+\alpha_i= \mathbf{D}_N\overline{\mathbf{H}}'\overline{\boldsymbol{\Lambda}}'\+\alpha_i = [ \+\alpha_i ', \mathbf{0}_{1\times (m+1-r)} ]'$,
+\begin{align}
+\widehat{\*a}_i'\widehat{\*f}_t - \+\alpha_i'\*f_t &= \widehat{\*a}_i'(\*{D}_N\overline{\*{H}}')^{-1}\*{D}_N\overline{\*{H}}'\widehat{\*f}_t - \+\alpha_i'(\mathbf{D}_N\overline{\mathbf{H}}'\overline{\boldsymbol{\Lambda}}')^+\mathbf{D}_N\overline{\mathbf{H}}'\overline{\boldsymbol{\Lambda}}'\*f_t \notag\\
+& = \widehat{\*a}_i^{0\prime}\widehat{\*f}_t^0 - \+\alpha_i^{0\prime}\*f_t^0 \notag\\
+& = \+\alpha_i^{0\prime}(\widehat{\*f}_t^0-\*f_t^0) + (\widehat{\*a}_i^{0} - \+\alpha_i^0)'\widehat{\*f}_t^0,
+\end{align}
+from which it follows that
+\begin{align}
+\widehat \Delta_{i,g,t}  = \eta_{i,g,t} - (\widehat{\+\beta} - \+\beta_i)'\*x_{i,t}  - \+\alpha_i^{0\prime}(\widehat{\*f}_t^0-\*f_t^0) - (\widehat{\*a}_i^{0} - \+\alpha_i^0)'\widehat{\*f}_t^0  + \widehat{\+\beta}'[\*x_{i,t} - \widehat{\*x}_{i,t}(0)] + \varepsilon_{i,t}
+\end{align}
+
+Amongst the terms appearing on the right-hand side of the above equation, the one involving $\widehat{\*a}_i^0 - \+\alpha_i^0$ requires most work. We therefore start with this. Note first that since $\widehat{\*a}_i$ is estimated based on the pretreatment period only, $D_i = 0$. By using this and $\overline{\+\Lambda}\overline{\*H}_{r} = \*I_{r}$, we get
+\begin{eqnarray}
+\*y_{i}= \*x_{i}\+\beta_i + \widehat{\*f}\overline{\*H}_{r}\+\alpha_i - (\widehat{\*f} - \*f\overline{\+\Lambda})\overline{\*H}_{r}\+\alpha_i+  \+\varepsilon_{i}  = \*x_{i}\+\beta_i + \widehat{\*f} \overline{\*H}_{r}\+\alpha_i - \overline{\*e}_{r}^0\+\alpha_i +  \+\varepsilon_{i}, \label{ystack}
+\end{eqnarray}
+where the $T_0$-rowed matrices $\*f$ and $\+\varepsilon_{i}$ are defined analogously to $\*y_{i}$, $\*x_{i}$ and $\widehat{\*f}$. Note also that in the notation of the step-2 regression in \eqref{preregr}, we have $\*a_i = \overline{\*H}_{r}\+\alpha_i$. By inserting this and \eqref{ystack} into the expression given for $\widehat{\*a}_i$ in step 2,
+\begin{align}
+\widehat{\*a}_i &= (\widehat{\*f}'\widehat{\*f})^{-1}\widehat{\*f}'(\*y_{i}-\*x_{i}\widehat{\+\beta}) \notag\\
+& = (\widehat{\*f}'\widehat{\*f})^{-1}\widehat{\*f}'(\*x_{i}\+\beta_i + \widehat{\*f} \*a_i - \overline{\*e}_{r}^0\+\alpha_i +  \+\varepsilon_{i}-\*x_{i}\widehat{\+\beta}) \notag\\
+& =  \*a_i + (\widehat{\*f}'\widehat{\*f})^{-1}\widehat{\*f}'[- \*x_{i}(\widehat{\+\beta}-\+\beta_i)  - \overline{\*e}_{r}^0\+\alpha_i +  \+\varepsilon_{i} ],
+\end{align}
+implying
+\begin{align}
+\widehat{\*a}_i^0 & = (\overline{\*{H}}\*{D}_N)^{-1}\widehat{\*a}_i \notag\\
+& = (\overline{\*{H}}\*{D}_N)^{-1}\*a_i + (\overline{\*{H}}\*{D}_N)^{-1}(\widehat{\*f}'\widehat{\*f})^{-1}\widehat{\*f}'[- \*x_{i}(\widehat{\+\beta}-\+\beta_i) - \overline{\*e}_{r}^0\+\alpha_i +  \+\varepsilon_{i} ] \notag\\
+& = (\overline{\*{H}}\*{D}_N)^{-1}\*a_i +  (
+\*{D}_N\overline{\*{H}}'\widehat{\*f}'\widehat{\*f}\overline{\*{H}}\*{D}_N)^{-1}\*{D}_N\overline{\*{H}}'\widehat{\*f}' [ - \*x_{i}(\widehat{\+\beta}-\+\beta_i)  - \overline{\*e}_{r}^0\+\alpha_i +  \+\varepsilon_{i}]
+\notag\\
+& = (\overline{\*{H}}\*{D}_N)^{-1}\*a_i + (\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}^{0\prime}[- \*x_{i}(\widehat{\+\beta}-\+\beta_i)  - \overline{\*e}_{r}^0\+\alpha_i +  \+\varepsilon_{i} ]
+\end{align}
+where $\widehat{\*f}^0 = [\widehat{\*f}_1^0,...,\widehat{\*f}_{T_0}^0]' = \widehat{\*f}\overline{\*{H}}\*{D}_N$ is $T_0\times (m+1)$. Consider the first term on the right-hand side. A direct calculation using the rules for the inverse of a partitioned matrix (see, for example, \citet{abadir2005matrix}, Exercise 5.16) reveals that
+\begin{equation}
+    (\*{D}_N\overline{\*{H}})^{-1} =\left[\begin{array}{cc}\overline{\+{\Lambda}}_r & \overline{\+{\Lambda}}_{-r}\\
+    \*{0}_{(m+1-r)\times r} & N^{-1/2}\*{I}_{m+1-r}\end{array}\right],
+\end{equation}
+so that
+\begin{align}
+(\overline{\*{H}}\*{D}_N)^{-1}\overline{\*H}_{r} = \left[\begin{array}{cc}\overline{\+{\Lambda}}_r & \overline{\+{\Lambda}}_{-r}\\
+    \*{0}_{(m+1-r)\times r} & N^{-1/2}\*{I}_{m+1-r}\end{array}\right]\left[\begin{array}{c}\overline{\+{\Lambda}}_r^{-1} \\
+    \*{0}_{(m+1-r)\times r} \end{array}\right] = \left[\begin{array}{c} \*I_r \\
+    \*{0}_{(m+1-r)\times r} \end{array}\right].
+\end{align}
+This implies
+\begin{align}
+(\overline{\*{H}}\*{D}_N)^{-1}\*a_i = \left[\begin{array}{c} \+\alpha_i \\
+    \*{0}_{(m+1-r)\times 1} \end{array}\right] = \+\alpha_i^0,
+\end{align}
+leading to the following expression for $\widehat{\*a}_i^0-\+\alpha_i^0$:
+\begin{align}
+\widehat{\*a}_i^0 - \+\alpha_i^0 & = (\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}^{0\prime}[- \*x_{i}(\widehat{\+\beta}-\+\beta_i)  - \overline{\*e}_{r}^0\+\alpha_i +  \+\varepsilon_{i} ].
+\end{align}
+We similarly have
+\begin{equation}
+\widehat{\*x}_{i,t}(\infty) = \widehat{\+\lambda}_i'\widehat{\*f}_t = \*x_i'\widehat{\*f}( \widehat{\*f}' \widehat{\*f} )^{-1} \widehat{\*f}_t= \*x_i'\widehat{\*f}^0( \widehat{\*f}^{0\prime} \widehat{\*f}^0 )^{-1} \widehat{\*f}_t^0 ,
+\end{equation}
+from which it follows that
+\begin{equation}
+\widehat{\+\beta}'[\*x_{i,t} - \widehat{\*x}_{i,t}(\infty)] = \widehat{\+\beta}'[\*x_{i,t} - \*x_i'\widehat{\*f}^0( \widehat{\*f}^{0\prime} \widehat{\*f}^0 )^{-1} \widehat{\*f}_t^0].
+\end{equation}
+By inserting the above expressions into the one given earlier for $\widehat \Delta_{i,g,t}$, we get
+\begin{align}
+\widehat \Delta_{i,g,t} & = \eta_{i,g,t} - (\widehat{\+\beta} - \+\beta_i)'\*x_{i,t} - \+\alpha_i^{0\prime}(\widehat{\*f}_t^0-\*f_t^0) - (\widehat{\*a}_i^{0} - \+\alpha_i^0)'\widehat{\*f}_t^0 + \widehat{\+\beta}'[\*x_{i,t} - \widehat{\*x}_{i,t}(\infty)] + \varepsilon_{i,t}\notag\\
+& = \eta_{i,g,t} - (\widehat{\+\beta} - \+\beta_i)'\*x_{i,t} - \+\alpha_i'\overline{\*e}_{r,t}^0 \notag\\
+& - [- \*x_{i}(\widehat{\+\beta}-\+\beta_i)  - \overline{\*e}_{r}^0\+\alpha_i +  \+\varepsilon_{i} ]' \widehat{\*f}^{0} (\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}_t^0 + \widehat{\+\beta}'[\*x_{i,t} - \*x_i'\widehat{\*f}^0( \widehat{\*f}^{0\prime} \widehat{\*f}^0 )^{-1} \widehat{\*f}_t^0] + \varepsilon_{i,t}\notag\\
+& = \eta_{i,g,t} + \+\beta_i'\*x_{i,t} - \+\alpha_i'\overline{\*e}_{r,t}^0 + \varepsilon_{i,t} - ( \*x_{i}\+\beta_i  - \overline{\*e}_{r}^0\+\alpha_i +  \+\varepsilon_{i} )' \widehat{\*f}^{0} (\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}_t^0  .
+\end{align}
+Further use of $\widehat{\*f} = \widehat{\*f}^0\*D_{N}^{-1}\overline{\*H}^{-1}$ gives
+\begin{eqnarray}
+\*x_i = \*f\+\lambda_i + \*v_i = \widehat{\*f}\overline{\*H}_{r}\+\lambda_i -  (\widehat{\*f} - \*f\overline{\+\Lambda})\overline{\*H}_{r}\+\lambda_i  + \*v_i =  \widehat{\*f}^0\*D_{N}^{-1}\overline{\*H}^{-1}\overline{\*H}_{r}\+\lambda_i  - \overline{\*e}_{r}^0\+\lambda_i  + \*v_i ,
+\end{eqnarray}
+for $t\leq T_0$. If, on the other hand, $t > T_0$, then 
+\begin{eqnarray}
+\*x_{i,t} = \+\tau_{i,g,t} + \+\lambda_i'\*f_t + \*v_{i,t} =  \+\tau_{i,g,t} + \+\lambda_i' \overline{\*H}_{r}'\overline{\*H}^{-1\prime}\*D_{N}^{-1}\widehat{\*f}_t^0  - \+\lambda_i'\overline{\*e}_{r,t}^0  + \*v_{i,t}.
+\end{eqnarray}
+These two last results imply
+\begin{align}
+& \*x_{i,t} -  \*x_{i}' \widehat{\*f}^{0}(\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}_t^0 \notag\\
+& = \+\tau_{i,g,t} + \+\lambda_i' \overline{\*H}_{r}'\overline{\*H}^{-1\prime}\*D_{N}^{-1}\widehat{\*f}_t^0  - \+\lambda_i'\overline{\*e}_{r,t}^0  + \*v_{i,t} -  (\widehat{\*f}^0\*D_{N}^{-1}\overline{\*H}^{-1}\overline{\*H}_{r}\+\lambda_i  - \overline{\*e}_{r}^0\+\lambda_i  + \*v_i)' \widehat{\*f}^{0}(\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}_t^0\notag\\
+& = \+\tau_{i,g,t}  - \+\lambda_i'\overline{\*e}_{r,t}^0  + \*v_{i,t} -  ( - \overline{\*e}_{r}^0\+\lambda_i  + \*v_i)' \widehat{\*f}^{0}(\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}_t^0,
+\end{align}
+and so we arrive at the following expression for $\widehat \Delta_{i,g,t}$:
+\begin{align}
+\widehat \Delta_{i,g,t} & = \eta_{i,g,t} + \+\beta_i'(\+\tau_{i,g,t}  - \+\lambda_i'\overline{\*e}_{r,t}^0  + \*v_{i,t}) - \+\alpha_i'\overline{\*e}_{r,t}^0 + \varepsilon_{i,t}\notag\\
+& - [ (- \overline{\*e}_{r}^0\+\lambda_i  + \*v_i)\+\beta_i  - \overline{\*e}_{r}^0\+\alpha_i +  \+\varepsilon_{i} ]' \widehat{\*f}^{0} (\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}_t^0 \notag\\
+& = \Delta_{i,g,t} - (\+\lambda_i\+\beta_i + \+\alpha_i)'\overline{\*e}_{r,t}^0 + \+\beta_i'\*v_{i,t} + \varepsilon_{i,t} \notag\\
+& - [ - \overline{\*e}_{r}^0(\+\lambda_i\+\beta_i +\+\alpha_i) + \*v_i\+\beta_i+  \+\varepsilon_{i} ]' \widehat{\*f}^{0} (\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}_t^0  .
+\end{align}
+where $\Delta_{i,g,t} = \eta_{i,g,t} + \+\beta_i'\+\tau_{i,g,t}$ as defined at the end of Section 2.
+
+The above expression for $\widehat \Delta_{i,g,t}$ is the cleanest possible without exploiting the fact that $N$ is large. Hence, in what remains we are going to let $N\to\infty$. We begin by considering $\widehat{\*f}^{0} (\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}_t^0$. Define $\*f^+ = [\*f_1^+,... \*f_{T_0}^+]' = [\*f, \overline{\*e}_{-r}^{0}]$, a $T_0\times (m+1)$ matrix. We have already shown that $\widehat{\*{f}}^0 = \*f^+ +  O_p(N^{-1/2})$. By using this and the results provided in the proof of Lemma A.1 in \citet{westerlund2019cce}, we have that $\|\widehat{\*f}^{0\prime}\widehat{\*f}^0 - \*f^{+\prime}\*f^+\|= O_p(N^{-1/2})$ and, more importantly,
+\begin{align}
+\|(\widehat{\*f}^{0\prime}\widehat{\*f}^0 )^{-1} - (\*f^{+\prime}\*f^+)^{-1}\| = O_p(N^{-1/2}),
+\end{align}
+where
+\begin{align}
+\*f^{+\prime}\*f^+ &= \left[\begin{array}{cc} \*f'\*f & \*f'\overline{\*e}_{-r}^0 \\ \overline{\*e}_{-r}^{0\prime}\*f  & \overline{\*e}_{-r}^{0\prime}\overline{\*e}_{-r}^0 \end{array}\right] ,\\
+(\*f^{+\prime}\*f^+)^{-1} &= \left[\begin{array}{c} (\*f'\*f)^{-1} + (\*f'\*f)^{-1}\*f'\overline{\*e}_{-r}^0(\overline{\*e}_{-r}^{0\prime}\*M_{\*f}\overline{\*e}_{-r}^0)^{-1}\overline{\*e}_{-r}^{0\prime} \*f(\*f'\*f)^{-1}  \\
+-(\overline{\*e}_{-r}^{0\prime}\*M_{\*f}\overline{\*e}_{-r}^0)^{-1}\overline{\*e}_{-r}^{0\prime}\*f (\*f'\*f)^{-1} \end{array}\right. \notag\\
+& \left. \begin{array}{c}  -(\*f'\*f)^{-1}\*f'\overline{\*e}_{-r}^0(\overline{\*e}_{-r}^{0\prime}\*M_{\*f}\overline{\*e}_{-r}^0)^{-1} \\
+ (\overline{\*e}_{-r}^{0\prime}\*M_{\*f}\overline{\*e}_{-r}^0)^{-1} \end{array}\right].
+\end{align}
+The expression for $(\*f^{+\prime}\*f^+)^{-1}$ is again obtained by using the rules for the inverse of a partitioned matrix. The fact that $\|(\widehat{\*f}^{0\prime}\widehat{\*f}^0 )^{-1} - (\*f^{+\prime}\*f^+)^{-1}\| = O_p(N^{-1/2})$ together with $\widehat{\*{f}}^0 = \*f^+ +  O_p(N^{-1/2})$ imply that
+\begin{align}
+\widehat{\*f}_t^{0\prime}(\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}^{0\prime} & =  \widehat{\*f}_t^{0\prime}[(\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1} - (\*f^{+\prime}\*f^+)^{-1} ]\widehat{\*f}^{0\prime} + \widehat{\*f}_t^{0\prime}(\*f^{+\prime}\*f^+)^{-1}\widehat{\*f}^{0\prime} \notag\\
+& = \widehat{\*f}_t^{0\prime}(\*f^{+\prime}\*f^+)^{-1}\widehat{\*f}^{0\prime} + O_p(N^{-1/2})\notag\\
+& = \*f_t^{+\prime}(\*f^{+\prime}\*f^+)^{-1}\*f^{+\prime} + O_p(N^{-1/2}).
+\end{align}
+where, defining $\*M_{\*f}$ analogously to $\*M_{\widehat{\*f}}$,
+\begin{align}
+& \*f_t^{+\prime}(\*f^{+\prime}\*f^+)^{-1}\*f^{+\prime} \notag\\
+& = [\*f_t', \overline{\*e}_{-r,t}^{0\prime}]\left[\begin{array}{c} (\*f'\*f)^{-1} + (\*f'\*f)^{-1}\*f'\overline{\*e}_{-r}^0(\overline{\*e}_{-r}^{0\prime}\*M_{\*f}\overline{\*e}_{-r}^0)^{-1}\overline{\*e}_{-r}^{0\prime} \*f(\*f'\*f)^{-1}  \\
+-(\overline{\*e}_{-r}^{0\prime}\*M_{\*f}\overline{\*e}_{-r}^0)^{-1}\overline{\*e}_{-r}^{0\prime}\*f (\*f'\*f)^{-1} \end{array}\right. \notag\\
+& \left. \begin{array}{c}  -(\*f'\*f)^{-1}\*f'\overline{\*e}_{-r}^0(\overline{\*e}_{-r}^{0\prime}\*M_{\*f}\overline{\*e}_{-r}^0)^{-1} \\
+ (\overline{\*e}_{-r}^{0\prime}\*M_{\*f}\overline{\*e}_{-r}^0)^{-1} \end{array}\right]\left[\begin{array}{c} \*f' \\
+    \overline{\*e}_{-r}^{0\prime} \end{array}\right]  \notag\\
+& = \*f_t'(\*f'\*f)^{-1}\*f'[\*I_{T_0} -  \overline{\*e}_{-r}^{0}(\overline{\*e}_{-r}^{0\prime}\*M_{\*f}\overline{\*e}_{-r}^0)^{-1} \overline{\*e}_{-r}^{0\prime}\*M_{\*f}] + \overline{\*e}_{-r,t}^{0\prime}(\overline{\*e}_{-r}^{0\prime}\*M_{\*f}\overline{\*e}_{-r}^0)^{-1}\overline{\*e}_{-r}^{0\prime}\*M_{\*f}.
+\end{align}
+The fact that $\|\widehat{\*f}_t^{0\prime}(\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}^{0\prime} - \*f_t^{+\prime}(\*f^{+\prime}\*f^+)^{-1}\*f^{+\prime}\| = O_p(N^{-1/2})$ implies
+\begin{align}
+\widehat \Delta_{i,g,t} & = \Delta_{i,g,t} - (\+\lambda_i\+\beta_i + \+\alpha_i)'\overline{\*e}_{r,t}^0 + \+\beta_i'\*v_{i,t} + \varepsilon_{i,t} \notag\\
+& - [ - \overline{\*e}_{r}^0(\+\lambda_i\+\beta_i +\+\alpha_i) + \*v_i\+\beta_i+  \+\varepsilon_{i} ]'  \*f^{+} (\*f^{+\prime}\*f^+)^{-1}\*f_t^+ + O_p(N^{-1/2})\notag\\
+& = \Delta_{i,g,t} - (\+\lambda_i\+\beta_i + \+\alpha_i)'\overline{\*e}_{r,t}^{0\ast} + \+\beta_i'\*v_{i,t}^* + \varepsilon_{i,t}^*  + O_p(N^{-1/2}),
+\end{align}
+where
+\begin{align}
+\*a_{i,t}^* = \*a_{i,t} - \*a_i' \*f^{+} (\*f^{+\prime}\*f^+)^{-1}\*f_t^+ = \*a_{i,t} - \sum_{s=1}^{T_0} \*a_{i,s}\*f_s^{+\prime} (\*f^{+\prime}\*f^+)^{-1}\*f_t^+
+\end{align}
+for any vector $\*a_{i,t}$ with $T_0$-rowed stack $\*a_i = [\*a_{i,1},...,\*a_{i,T_0}]'$. In words, $\*a_{i,t}^*$ is the limiting ``defactored'' version of $\*a_{i,t}$.
+
+We now make use of the above expression for $\widehat \Delta_{i,g,t}$ to evaluate $\widehat \Delta_{g,t}$. In so doing, it is important to note that the order of the reminder incurred when replacing $\widehat{\*f}_t^{0\prime}(\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}^{0\prime}$ with $\*f_t^{+\prime}(\*f^{+\prime}\*f^+)^{-1}\*f^{+\prime}$ is the same even after averaging over group $g$ and multiplying by $\sqrt{N_g}$. In order to appreciate this, we make use of the fact that $\|\sqrt{N_g}\overline{\*e}_{r}^0\| = O_p(1)$, and since $\*v_{i}$ and $\+\beta_i$ are independent with $\*v_i$ mean zero and independent also across $i$, we also have $\|N_g^{-1/2}\sum_{i= 1}^{N} D_{i,g} \*v_{i}\+\beta_i\| = O_p(1)$. It follows that
+\begin{align}
+& \left\|\frac{1}{\sqrt{N_g}}\sum_{i= 1}^{N} D_{i,g}[ - \overline{\*e}_{r}^0(\+\lambda_i\+\beta_i +\+\alpha_i) + \*v_i\+\beta_i+  \+\varepsilon_{i} ] \right\|\notag\\
+& \leq \|\sqrt{N_g}\overline{\*e}_{r}^0\|\left\|\frac{1}{N_g} \sum_{i= 1}^{N} D_{i,g} (\+\lambda_i\+\beta_i +\+\alpha_i)\right\| + \left\| \frac{1}{\sqrt{N_g}} \sum_{i= 1}^{N} D_{i,g} \*v_{i}\+\beta_i \right\| +  \left\|\frac{1}{\sqrt{N_g}} \sum_{i= 1}^{N} D_{i,g} \+\varepsilon_{i}\right\| =O_p(1).
+\end{align}
+We can therefore show that
+\begin{align}
+& \left\|\frac{1}{\sqrt{N_g}}\sum_{i= 1}^{N} D_{i,g}[ - \overline{\*e}_{r}^0(\+\lambda_i\+\beta_i +\+\alpha_i) + \*v_i\+\beta_i+  \+\varepsilon_{i} ]'[\*f^{+} (\*f^{+\prime}\*f^+)^{-1}\*f_t^+ - \widehat{\*f}^{0} (\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}_t^0] \right\| \notag\\
+& \leq
+\left\| \frac{1}{\sqrt{N_g}}\sum_{i= 1}^{N} D_{i,g}[ - \overline{\*e}_{r}^0(\+\lambda_i\+\beta_i +\+\alpha_i) + \*v_i\+\beta_i+  \+\varepsilon_{i} ]\right\| \|\*f^{+} (\*f^{+\prime}\*f^+)^{-1}\*f_t^+ - \widehat{\*f}^{0} (\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}_t^0\|\notag\\
+& = O_p(N^{-1/2}),
+\end{align}
+which means that the reminder incurred when replacing $\widehat{\*f}_t^{0\prime}(\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}^{0\prime}$ with $\*f_t^{+\prime}(\*f^{+\prime}\*f^+)^{-1}\*f^{+\prime}$ is $O_p(N^{-1/2})$ after averaging over group $g$ and multiplying by $\sqrt{N_g}$. 
+
+For $\Delta_{i,g,t}$, we make use of the fact that $\Delta_{i,g,t}= \Delta_{g,t} + \upsilon_{i,t}$ and $\+\tau_{i,g,t} = \+\tau_{g,t} + \+\zeta_{i,t}$ for $i\in \mathcal{I}_g$ by Assumption 3, giving
+\begin{align}
+\Delta_{i,g,t} & = \eta_{i,g,t} + \+\beta_i'\+\tau_{i,g,t} = \Delta_{g,t} + \upsilon_{i,t} + (\+\beta + \+\nu_i)'(\+\tau_{g,t} + \+\zeta_{i,t}) \notag\\
+& = \Delta_{g,t}  + \+\beta'\+\tau_{g,t} + \upsilon_{i,t}  + \+\beta'\+\zeta_{i,t} + \+\nu_i'(\+\tau_{g,t} + \+\zeta_{i,t})\notag\\
+& = \Delta_{g,t}^0 + \upsilon_{i,t}^0,
+\end{align}
+where $\Delta_{g,t}^0 = \Delta_{g,t} + \+\beta'\+\nu_{i,t}$ and $\upsilon_{i,t}^0 = \upsilon_{i,t}  + \+\beta'\+\zeta_{i,t} + \+\nu_i'\+\tau_{i,g,t}$.
+
+By putting everything together, 
+\begin{align}
+ \sqrt{N_g}(\widehat \Delta_{g,t} - \Delta_{g,t}^0) & = \frac{1}{\sqrt{N_g}} \sum_{i= 1}^{N} D_{i,g} (\widehat \Delta_{i,g,t} - \Delta_{g,t}^0) \notag\\
+& = \frac{1}{\sqrt{N_g}} \sum_{i= 1}^{N} D_{i,g} (\widehat \Delta_{i,g,t} - \Delta_{i,g,t}^0 + \upsilon_{i,t}^0) \notag\\
+& = \frac{1}{\sqrt{N_g}} \sum_{i= 1}^{N} D_{i,g} [\upsilon_{i,t}^0 - (\+\lambda_i\+\beta_i + \+\alpha_i)'\overline{\*e}_{r,t}^{0\ast} + \+\beta_i'\*v_{i,t}^* + \varepsilon_{i,t}^* ] + O_p(N^{-1/2}) .
+\end{align}
+Moreover, Assumption 2 gives us $N_g/N \to_p \mathds{P}(D_{i,g} = 1)$. Hence, if we also define $\*a_g = \lim_{N\to\infty} N_g^{-1} \sum_{i= 1}^{N} D_{i,g} (\+\lambda_i\+\beta_i + \+\alpha_i)$, the above expression for $\sqrt{N_g}(\widehat \Delta_{g,t} - \Delta_{g,t}^0)$ becomes
+\begin{align}
+& \sqrt{N_g}(\widehat \Delta_{g,t} - \Delta_{g,t}) \notag\\
+&= \frac{1}{\sqrt{N_g}}\sum_{i= 1}^{N} D_{i,g}(\upsilon_{i,t}^0  + \+\beta_i'\*v_{i,t}^* + \varepsilon_{i,t}^*) - \sqrt{\frac{N_g}{N}} \frac{1}{N_g}\sum_{i= 1}^{N} D_{i,g} (\+\lambda_i\+\beta_i + \+\alpha_i)'\sqrt{N}\overline{\*e}_{r,t}^{0\ast} + O_p(N^{-1/2}) \notag\\
+&= \frac{1}{\sqrt{N_g}}\sum_{i= 1}^{N} D_{i,g} (\upsilon_{i,t}^0  + \+\beta_i'\*v_{i,t}^* + \varepsilon_{i,t}^* ) - \sqrt{\mathds{P}(D_{i,g} = 1)}\*a_g'\sqrt{N}\overline{\*e}_{r,t}^{0*} + o_p(1).
+\end{align}
+All the terms on the right-hand side of the above equation are mean zero and independent across $i$ (conditionally on $\*f$). They are therefore asymptotically normal by a central limit law for independent variables. However, they are not uncorrelated with each other, which complicates the calculation of the asymptotic variance. Let us therefore define $\omega_{g,t}^2 = \mathrm{var}(\sqrt{N_g}(\widehat \Delta_{g,t} - \Delta_{g,t})  |\mathcal{C})$, where $\mathcal{C}$ is the sigma-field generated by $\*f$. The asymptotic distribution of $\sqrt{N_g}(\widehat \Delta_{g,t} - \Delta_{g,t})$ as $N\to\infty$ can now be stated in the following way:
+\begin{align}
+\sqrt{N_g}(\widehat \Delta_{g,t} - \Delta_{g,t}) \to_d MN(0, \omega_{g,t}^2 ),
+\end{align}
+where $MN(\cdot,\cdot)$ signifies a mixed normal distribution that is normal conditionally on $\mathcal{C}$. This means that the conditional distribution of $\sqrt{N_g}(\widehat \Delta_{g,t} - \Delta_{g,t})/\omega_{g,t}$ is also the unconditional distribution. Hence,
+\begin{align}
+\frac{\sqrt{N_g}(\widehat \Delta_{g,t} - \Delta_{g,t})}{\omega_{g,t}} \to_d N(0, 1),
+\end{align}
+as required for part (a). 
+
+It remains to prove (b) and the consistency of $\widehat \omega_{g,t}^2$. From before,
+\begin{align}
+\widehat \Delta_{i,g,t} & = \Delta_{g,t}^0 + \upsilon_{i,t}^0 - (\+\lambda_i\+\beta_i + \+\alpha_i)'\overline{\*e}_{r,t}^{0\ast} + \+\beta_i'\*v_{i,t}^* + \varepsilon_{i,t}^* + O_p(N^{-1/2}), \\
+\frac{1}{N_g}\sum_{i\in \mathcal{I}_g} \widehat \Delta_{i,g,t} & = \Delta_{g,t}^0+ \frac{1}{N_g}\sum_{i= 1}^{N} D_{i,g} [\upsilon_{i,t}^0 - (\+\lambda_i\+\beta_i + \+\alpha_i)'\overline{\*e}_{r,t}^{0\ast} + \+\beta_i'\*v_{i,t}^* + \varepsilon_{i,t}^*] + O_p(N^{-1/2}).
+\end{align}
+It follows that if we let $z_{i,t} = \upsilon_{i,t}^0 - (\+\lambda_i\+\beta_i + \+\alpha_i)'\overline{\*e}_{r,t}^{0\ast} + \+\beta_i'\*v_{i,t}^* + \varepsilon_{i,t}^*$, then
+\begin{align}
+\widehat \Delta_{i,g,t}  - \frac{1}{N_g}\sum_{j = 1}^{N} D_{j,g} \widehat \Delta_{j,g,t} & = z_{i,t}  - \frac{1}{N_g}\sum_{j= 1}^{N} D_{j,g} z_{j,t} + O_p(N^{-1/2}).
+\end{align}
+Hence, since $d_{i,t}$ is again independent across $i$, by a law of large numbers for independent variables,
+\begin{align}
+\widehat \omega_{g,t}^2 & = \frac{1}{N_g-1}\sum_{i= 1}^{N} D_{i,g}\left(\widehat \Delta_{i,g,t}  - \frac{1}{N_g}\sum_{j= 1}^{N} D_{j,g} \widehat \Delta_{j,g,t}\right)^2 \notag\\
+& = \frac{1}{N_g-1} \sum_{i= 1}^{N} D_{i,g} \left(z_{i,t}  - \frac{1}{N_g} \sum_{j = 1}^{N} D_{j,g} z_{j,t}\right)^2 + O_p(N^{-1/2}) \to_p \omega_{g,t}^2
+\end{align}
+as $N\to\infty$ (see \citealp{pesaran2006estimation}, page 985, for a similar argument). This establishes part (b) and hence the proof of the theorem is complete.\hfill{$\blacksquare$}
+
+
+
+\end{document}
+
+
+
+
