@@ -24,3 +24,6 @@ submissions/**/*
 *.nav
 *.snm
 
+# WIP Applications
+code/hurricanes/*
+

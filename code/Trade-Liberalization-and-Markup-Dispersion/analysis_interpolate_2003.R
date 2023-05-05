@@ -51,74 +51,6 @@ df[, pre_post := fcase(
 )]
 
 
-# N = 164
-# df$sic3 |> unique() |> length()
-# T = 9
-# df$year |> unique() |> length()
-# 2001 Tariff summary
-# df[year == 2001, ][order(tariff), summary(tariff)]
-
-# Figure 4 ---------------------------------------------------------------------
-
-# feols(
-#   theil ~ 0 + i(year, ref = 1998) | sic3,
-#   df,
-#   split = ~hightariff
-# ) |>
-#   iplot()
-
-
-# TWFE -------------------------------------------------------------------------
-
-est_ln_theil_twfe <- feols(
-  ln_theil ~ i(rel_year, ref = c(-1, -Inf)) | sic3 + year,
-  df,
-  cluster = ~sic3
-)
-
-# Add time-varying covariates
-est_ln_theil_twfe_cov <- feols(
-  ln_theil ~ ln_theil_tfp + eg_3dt_city + i(rel_year, ref = c(-1, -Inf)) | sic3 + year,
-  df,
-  cluster = ~sic3
-)
-
-# iplot(
-#   list(est_ln_theil_twfe, est_ln_theil_twfe_cov)
-# )
-
-# did2s ------------------------------------------------------------------------
-
-est_ln_theil_did2s <- did2s:::did2s(
-  df,
-  yname = "ln_theil",
-  first_stage = ~ 0 | sic3 + year,
-  second_stage = ~ i(rel_year, ref = -Inf),
-  treatment = "hightariff_post02",
-  cluster_var = "sic3"
-)
-
-# Add time-varying covariates
-est_ln_theil_did2s_cov <- did2s:::did2s(
-  df,
-  yname = "ln_theil",
-  first_stage = ~ ln_theil_tfp + eg_3dt_city | sic3 + year,
-  second_stage = ~ i(rel_year, ref = -Inf),
-  treatment = "hightariff_post02",
-  cluster_var = "sic3"
-)
-
-# coefplot(list(est_ln_theil_did2s, est_ln_theil_did2s_cov))
-est_ln_theil_did2s_pre_post <- did2s:::did2s(
-  df,
-  yname = "ln_theil",
-  first_stage = ~ ln_theil_tfp + eg_3dt_city | sic3 + year,
-  second_stage = ~ i(pre_post, ref = "control"),
-  treatment = "hightariff_post02",
-  cluster_var = "sic3"
-)
-
-
 # CCE DID ----------------------------------------------------------------------
 
 setorder(df, sic3, year)
@@ -127,13 +59,8 @@ setDT(df)
 df$y <- df$ln_theil
 df$x1 <- df$ln_theil_tfp
 
-
 xvars <- c("x1")
 df <- df[!(is.na(y) | is.na(x1)), ]
-
-# df$x2 <- df$lnn_surv
-# xvars <- c("x1", "x2")
-# df <- df[!(is.na(y) | is.na(x1) | is.na(x2)), ]
 
 df[, n := .N, by = "sic3"]
 df <- df[n == 8, ]
@@ -147,6 +74,40 @@ df[, g := ifelse(hightariff == TRUE, 2002, Inf)]
   ), 
   by = year
 ])
+
+
+(plot_ln_theil_tfp <- ggplot() +
+  geom_point(
+    aes(x = year, y = ln_theil_tfp),
+    data = df,
+    size = 1.1
+  ) + 
+  geom_point(
+    aes(x = year, y = mean_ln_theil_tfp),
+    data = collapse,
+    color = "blue",
+    size = 2, shape = 16
+  ) + 
+  labs(x = NULL, y = r'($\ln($Theil TFP$)$)') + 
+  kfbmisc::theme_kyle(base_size = 10))
+
+
+tikzDevice::tikz(
+  here("figures/plot_ln_theil_tfp.tex"), 
+  width = 10 * (6.9 / 10), height = 5 * (6.9 / 10),
+  standAlone = FALSE
+)
+plot(plot_ln_theil_tfp)
+dev.off()
+compile_tikz(here("figures/plot_ln_theil_tfp.tex"))
+
+
+# Linearly Interpolate 2002 and 2004
+df[, 
+  x1 := 
+    ifelse(year == 2003, (x1[year == 2002] + x1[year == 2004])/2, x1), 
+  by = "sic3"
+]
 
 ## CCE pooled estimate of \beta hat --------------------------------------------
 
@@ -336,18 +297,6 @@ esttable(list(est_ln_theil_cce, est_x1_cce))
 
 # Plot Results ----------------------------------------------------------------
 
-coefplot(
-  list(est_ln_theil_did2s, est_ln_theil_cce, est_x1_cce),
-  keep = "rel_year"
-)
-
-# coefplot(
-#   list(est_ln_theil_did2s, est_ln_theil_cce, est_x1_cce, est_x2_cce),
-#   keep = "rel_year"
-# )
-# coefplot(est_x1_cce)
-# coefplot(est_x2_cce)
-
 ## Graph: CCEDID ---------------------------------------------------------------
 
 ests <- broom::tidy(est_ln_theil_cce)
@@ -380,7 +329,7 @@ colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#
   geom_vline(xintercept = 2002, linetype = "dashed") +
   annotate(
     "text",
-    x = 2002.1, y = 0.15, hjust = 0,
+    x = 2002.1, y = 0.03, hjust = 0,
     label = r'($\leftarrow$ China joins WTO)', size = 3
   ) +
   geom_errorbar(
@@ -426,7 +375,7 @@ colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#
     linewidth = 1,
     linetype = "dotted"
   ) + 
-  scale_y_continuous(limits = c(-0.5, 0.15)) + 
+  scale_y_continuous(limits = c(-0.12, 0.04)) + 
   scale_x_continuous(breaks = 2002 + -4:3) +
   labs(x = NULL, y = r'(Estimated Effect on $\log($Theil$)$)') +
   kfbmisc::theme_kyle(base_size = 7) +
@@ -447,13 +396,13 @@ colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#
 # ggsave(here("figures/trade-est.pdf"), p, width = 10 * 6.9/10, height = 5 * 6.9/10, bg = "white")
 
 tikzDevice::tikz(
-  here("figures/trade-cce_est.tex"), 
+  here("figures/trade-cce_est_interpolated.tex"), 
   width = 10 * 6.9 / 10, height = 3.5 * 6.9 / 10,
   standAlone = FALSE
 )
 plot(p)
 dev.off()
-compile_tikz(here("figures/trade-cce_est.tex"))
+compile_tikz(here("figures/trade-cce_est_interpolated.tex"))
 
 
 
@@ -489,7 +438,7 @@ colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#
   geom_vline(xintercept = 2002, linetype = "dashed") +
   annotate(
     "text",
-    x = 2002.1, y = 0.15, hjust = 0,
+    x = 2002.1, y = 0.03, hjust = 0,
     label = r'($\leftarrow$ China joins WTO)', size = 3
   ) +
   geom_errorbar(
@@ -509,7 +458,7 @@ colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#
       x = rel_year + 2002, y = estimate
     ),
     size = 1, 
-    color = colors[7], shape = 15
+    color = colors[1], shape = 15
   ) +
   geom_ribbon(
     data = ests_pre_post,
@@ -535,7 +484,7 @@ colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#
     linewidth = 1,
     linetype = "dotted"
   ) + 
-  scale_y_continuous(limits = c(-0.5, 0.15)) + 
+  scale_y_continuous(limits = c(-0.12, 0.04)) + 
   scale_x_continuous(breaks = 2002 + -4:3) +
   labs(x = NULL, y = r'(Estimated Effect on $\log($Theil$)$)') +
   kfbmisc::theme_kyle(base_size = 7) +
@@ -556,13 +505,13 @@ colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#
 # ggsave(here("figures/trade-est.pdf"), p, width = 10 * 6.9/10, height = 5 * 6.9/10, bg = "white")
 
 tikzDevice::tikz(
-  here("figures/trade-cce_mediated_est.tex"), 
+  here("figures/trade-cce_mediated_est_interpolated.tex"), 
   width = 10 * 6.9 / 10, height = 3.5 * 6.9 / 10,
   standAlone = FALSE
 )
 plot(p)
 dev.off()
-compile_tikz(here("figures/trade-cce_mediated_est.tex"))
+compile_tikz(here("figures/trade-cce_mediated_est_interpolated.tex"))
 
 
 
@@ -594,7 +543,7 @@ colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#
   geom_vline(xintercept = 2002, linetype = "dashed") +
   annotate(
     "text",
-    x = 2002.1, y = 0.15, hjust = 0,
+    x = 2002.1, y = 0.05, hjust = 0,
     label = r'($\leftarrow$ China joins WTO)', size = 3
   ) +
   geom_errorbar(
@@ -638,193 +587,11 @@ colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#
     axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))
   ))
 
-tikzDevice::tikz(here("figures/trade-x0-vs-obs-x.tex"), width = 10 * 6.9 / 10, height = 3.5 * 6.9 / 10, bg = "white", standAlone = FALSE)
+tikzDevice::tikz(here("figures/trade-x0-vs-obs-x_interpolated.tex"), width = 10 * 6.9 / 10, height = 3.5 * 6.9 / 10, bg = "white", standAlone = FALSE)
 plot(p)
 dev.off()
-compile_tikz(here("figures/trade-x0-vs-obs-x.tex"))
+compile_tikz(here("figures/trade-x0-vs-obs-x_interpolated.tex"))
 
-
-## Graph: TWFE Imputation vs. CCEDID -------------------------------------------
-
-est1 <- broom::tidy(est_ln_theil_did2s)
-est1$estimator <- "TWFE Imputation"
-est1$estimator_num <- 1
-est2 <- broom::tidy(est_ln_theil_cce)
-est2$estimator <- "CCEDID"
-est2$estimator_num <- 2
-# est3 <- broom::tidy(est_x2_cce)
-# est3$estimator <- "CCEDID Mechanism"
-# est3$estimator_num <- 3
-
-ests <- rbindlist(list(est1, est2))
-ests$rel_year <- stringr::str_replace(ests$term, "rel_year::", "") |>
-  as.numeric()
-
-ests[, rel_year := data.table::fcase(
-  estimator_num == 1, rel_year - 0.1,
-  estimator_num == 2, rel_year + 0.1
-)]
-
-ests$estimator <- forcats::as_factor(ests$estimator)
-
-# https://stats.stackexchange.com/questions/118033/best-series-of-colors-to-use-for-differentiating-series-in-publication-quality
-colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#CC6677", "#882255", "#AA4499")
-
-(p <- ggplot() +
-  geom_hline(yintercept = 0, linetype = "dashed") +
-  geom_vline(xintercept = 2002, linetype = "dashed") +
-  annotate(
-    "text",
-    x = 2002.1, y = 0.15, hjust = 0,
-    label = r'($\leftarrow$ China joins WTO)', size = 3
-  ) +
-  geom_errorbar(
-    data = ests,
-    aes(
-      x = rel_year + 2002,
-      ymin = estimate - 1.96 * std.error, ymax = estimate + 1.96 * std.error,
-      color = estimator
-    ),
-    # Change to 1 for pdf version
-    linewidth = 1.5,
-    width = 0.08
-  ) +
-  geom_point(
-    data = ests,
-    aes(
-      x = rel_year + 2002, y = estimate,
-      color = estimator, shape = estimator
-    ),
-    size = 1.5
-  ) +
-  scale_x_continuous(breaks = 2002 + -4:3) +
-  scale_color_manual(values = c(colors[7], "black")) +
-  scale_shape_manual(values = c(15, 16, 18, 15)) +
-  labs(x = NULL, y = r'(Estimated Effect on $\log($Theil$)$)', color = NULL, shape = NULL) +
-  guides(color = guide_legend(
-    # label.position = "bottom",
-    override.aes = list(linetype = 0)
-  )) +
-  theme_bw(base_size = 9) +
-  theme(
-    panel.border = element_blank(),
-    axis.line = element_line(),
-    legend.position = "bottom",
-    legend.title = element_text(size = 10),
-    legend.background = element_rect(fill = "white"),
-    legend.spacing.x = unit(0.1, "cm"),
-    legend.key.width = unit(1, "cm"),
-    legend.text = element_text(size = 8, margin = margin(t = 0, r = 10, b = 0, l = -10)),
-    axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
-    axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))
-  ))
-
-
-# ggsave(here("figures/trade-est.pdf"), p, width = 10 * 6.9/10, height = 5 * 6.9/10, bg = "white")
-
-tikzDevice::tikz(
-  here("figures/trade-est.tex"), 
-  width = 10 * 6.9 / 10, height = 5 * 6.9 / 10,
-  standAlone = FALSE
-)
-plot(p)
-dev.off()
-compile_tikz(here("figures/trade-est.tex"))
-
-## Graph: Decomposition of Effects ---------------------------------------------
-
-est1 <- broom::tidy(est_ln_theil_cce)
-est1$estimator <- r'(Total effect: $\Delta_t + \gamma_{1t}$)'
-est1$estimator_num <- 1
-
-est2 <- broom::tidy(est_ln_theil_cce_obs_x)
-est2$estimator <- r'(Direct effect: $\Delta_t$)'
-est2$estimator_num <- 2
-
-est3 <- broom::tidy(est_x1_cce)
-est3$estimator <- r'(Indirect effect: $\gamma_{1t}$)'
-est3$estimator_num <- 3
-
-# est4 <- broom::tidy(est_x2_cce)
-# est4$estimator <- r'(Indirect effect: $\gamma_{2t}$)'
-# est4$estimator_num <- 4
-
-ests <- rbindlist(list(est1, est2, est3))
-# ests <- rbindlist(list(est1, est2, est3, est4))
-ests$rel_year <- stringr::str_replace(ests$term, "rel_year::", "") |>
-  as.numeric()
-
-ests[, rel_year := data.table::fcase(
-  estimator_num == 1, rel_year - 0.15,
-  estimator_num == 2, rel_year + 0.1,
-  estimator_num == 3, rel_year + 0.2,
-  estimator_num == 4, rel_year + 0.3
-)]
-
-ests$estimator <- forcats::as_factor(ests$estimator)
-
-# https://stats.stackexchange.com/questions/118033/best-series-of-colors-to-use-for-differentiating-series-in-publication-quality
-colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#CC6677", "#882255", "#AA4499")
-
-
-
-(p <- ggplot() +
-  geom_hline(yintercept = 0, linetype = "dashed") +
-  geom_vline(xintercept = 2002, linetype = "dashed") +
-  annotate(
-    "text",
-    x = 2002.1, y = 0.15, hjust = 0,
-    label = r'($\leftarrow$ China joins WTO)', size = 3
-  ) +
-  geom_errorbar(
-    data = ests,
-    aes(
-      x = rel_year + 2002,
-      ymin = estimate - 1.96 * std.error, ymax = estimate + 1.96 * std.error,
-      color = estimator,
-      alpha = estimator
-    ),
-    # Change to 1 for pdf version
-    linewidth = 1.5,
-    width = 0.08
-  ) +
-  geom_point(
-    data = ests,
-    aes(
-      x = rel_year + 2002, y = estimate,
-      color = estimator, shape = estimator
-    ),
-    size = 1.5
-  ) +
-  scale_x_continuous(breaks = 2002 + -4:3) +
-  scale_color_manual(values = c("black", "gray35", "gray35", "gray35")) +
-  scale_shape_manual(values = c(15, 16, 18, 18)) +
-  scale_alpha_manual(values = c(1, 1, 1, 1)) +
-  labs(x = NULL, y = r'(Estimated Effect on $\log($Theil$)$)', color = NULL, shape = NULL, alpha = NULL) +
-  guides(color = guide_legend(
-    # label.position = "bottom",
-    override.aes = list(linetype = 0, alpha = 1)
-  )) +
-  theme_bw(base_size = 9) +
-  theme(
-    panel.border = element_blank(),
-    axis.line = element_line(),
-    legend.position = "bottom",
-    legend.title = element_text(size = 10),
-    legend.background = element_rect(fill = "white"),
-    legend.spacing.x = unit(0.1, "cm"),
-    legend.key.width = unit(1, "cm"),
-    legend.text = element_text(size = 8, margin = margin(t = 0, r = 10, b = 0, l = -10)),
-    axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
-    axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))
-  ))
-
-# ggsave(here("figures/trade-est.pdf"), p, width = 10 * 6.9/10, height = 5 * 6.9/10, bg = "white")
-
-tikzDevice::tikz(here("figures/trade-decomposition.tex"), width = 10 * 6.9 / 10, height = 5 * 6.9 / 10, bg = "white", standAlone = FALSE)
-plot(p)
-dev.off()
-compile_tikz(here("figures/trade-decomposition.tex"))
 
 
 
