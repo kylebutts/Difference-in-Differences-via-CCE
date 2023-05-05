@@ -17,8 +17,9 @@
 \setlength\labelsep{0pt}
 \usepackage{booktabs}
 \usepackage{adjustbox}
-\usepackage{bm}
 \usepackage{dsfont}
+\usepackage{bm}
+\usepackage{tikz}
 %\numberwithin{equation}{section}
 \def\*#1{\mathbf{#1}}
 \def\+#1{\boldsymbol{#1}}
@@ -29,14 +30,13 @@
 \let\input\@@input
 \makeatother
 
-
 \usepackage[english]{babel}
 \usepackage[round]{natbib}
 \bibliographystyle{abbrvnat}
 \usepackage{hyperref}
 \hypersetup{
     colorlinks=true, linkcolor=blue, filecolor=magenta,
-    urlcolor=cyan, citecolor=blue, pdftitle={Difference-in-Differences via Common Correlated Effects}
+    urlcolor=cyan, citecolor=blue, pdftitle={TO BE ADDED}
 }
 
 
@@ -50,14 +50,14 @@
 {\small Lund University}\\
 {\small and}\\
 {\small Deakin University}
-\date{January 21, 2023}}
+\date{March 23, 2023}}
 
 \maketitle
 %\doublespacing
 \setlength{\baselineskip}{0.83cm}
 
 \begin{abstract}
-We study the effect of treatment on an outcome when parallel trends hold conditional on an interactive fixed effects structure. In contrast to the majority of the literature, we propose identification using time-varying covariates. We assume the untreated outcomes and covariates follow a common correlated effects (CCE) model, where the covariates are linear in the same common time effects. We then demonstrate consistent estimation of the treatment effect coefficients by imputing the untreated potential outcomes in post-treatment time periods. Our method accounts for treatment affecting the distribution of the control variables and is valid when the number of pre-treatment time periods is small. We also decompose the overall treatment effect into estimable direct and mediated components.
+We study the effect of treatment on an outcome when parallel trends hold conditional on an interactive fixed effects structure. In contrast to the majority of the literature, we propose identification using time-varying covariates. We assume the untreated outcomes and covariates follow a common correlated effects (CCE) model, where the covariates are linear in the same common time effects. We then demonstrate consistent estimation of the treatment effect coefficients by imputing the untreated potential outcomes in post-treatment time periods. Our method accounts for treatment affecting the distribution of the control variables and is valid when the number of pre-treatment time periods is small. We also decompose the overall treatment effect into estimable direct and mediated components allowing researchers to explain mechanisms driving causal effects. We illustrate the practical importance of this decomposition in an application revisiting the effects of China's WTO accession on industry level markup dispersion studied by \citet{lu2015trade}.
 \end{abstract}
 
 \textbf{JEL Classification:} C31, C33, C38.
@@ -66,10 +66,7 @@ We study the effect of treatment on an outcome when parallel trends hold conditi
 
 \newpage
 
-
-% ------------------------------------------------------------------------------
 \section{Introduction}
-% ------------------------------------------------------------------------------
 
 Econometric analysis of treatment effects often relies on the so-called ``parallel trends'' assumption. This assumption generally states that the change in the counterfactual untreated outcomes is equal to a time-varying effect across units, regardless of treatment status. Recent work in the evaluation of treatment effects has sought to relax this condition by allowing units in the population to select into treatment based on an interactive fixed effects model. Letting $y_{i,t}(\infty)$ be the untreated potential outcome for unit $i$ at time $t$, the new parallel trends assumptions take the form
 \begin{equation}
@@ -79,31 +76,33 @@ where $\epsilon_{i,t}$ has mean zero and $\sum_{j = 1}^r f_{t,j} \gamma_{j,i}$ i
 
 The interactive effects structure in equation \eqref{factor_model} is often called a ''factor model", where the common time-effects $f_{t,r}$ are called factors and the heterogeneous unit-effects $\gamma_{r,i}$ are factor loadings. This model relaxes ``parallel trends'' by allowing the impact of time-effects to vary across individuals in a way that can be correlated with treatment. The usual two-way fixed effects (TWFE) estimator, which estimates fixed effects at the unit and time levels, is generally insufficient for estimating treatment effects when the untreated potential outcomes take the form of a factor model. As such, a new literature has focused on specifically controlling for such error structures while estimating treatment effect functions.
 
-\citet{chan2022pcdid} propose a class of principal components difference-in-differences (PCDID) estimators. They estimate the factors using least squares on the never-treated sample as in \citet{bai2009panel} then use these estimates as proxies in the treated sample. However, their asymptotic theory requires the number of time periods to grow to infinity. Such asymptotic sequences are problematic. First, they put restrictions on the time dynamics of the treatment effects. Second, such a setting is unrealistic in many applications where the number of pre- and post-treatment time periods is small. \citet{Callaway_Karami_2020} and \citet{brown2022generalized} provide consistent estimators of treatment effect functions when the number of time periods is small. The former requires a specific set of time-invariant instruments. The latter relaxes this requirement, but suggests an overidentified GMM problem which is computationally burdensome.
+\citet{chan2022pcdid} propose a class of principal components difference-in-differences (PCDID) estimators that attempt to deal with this selection problem. They estimate the factors using least squares on the never-treated sample as in \citet{bai2009panel}, then use these estimates as proxies in the treated sample. While simple to implement, their asymptotic theory requires the number of time periods to grow to infinity. Such asymptotic sequences are problematic. First, they put restrictions on the time dynamics of the treatment effects. Second, such a setting is unrealistic in many applications where the number of pre- and post-treatment time periods is small. \citet{Callaway_Karami_2020} and \citet{brown2022generalized} provide consistent estimators of treatment effect functions when the number of time periods is small. The former requires a specific set of time-invariant instruments. The latter relaxes this requirement, but suggests an overidentified GMM problem which is computationally burdensome.
 
 We provide an imputation-based estimator that is both consistent for fixed time periods and simple to implement. We utilize the popular common correlated effects (CCE) scheme first studied in \citet{pesaran2006estimation}. He proposed a regression-based estimator for eliminating unobserved factors in linear panel data models. Assuming a rich set of covariates that are linear in the same factors, he takes the cross-sectional averages of the covariates and the outcome, then treats them as fixed effects in a pooled regression. This pooled CCE (CCEP) estimator has been shown to be asymptotically normal when the number of time periods is fixed \citep{westerlund2019cce,Brown_Schmidt_Wooldridge_2021}. The CCE model also allows a flexible method for parallel trends conditional on both interactive effects and covariates.
 
 We propose the CCE difference-in-differences (CCEDID) estimator. First, we construct proxies of the common factors using cross-sectional averages of the outcome and independent variables from the never-treated sample. Second, we estimate the partial effects of the covariates along with the heterogeneous factor loadings. While inconsistent for the loadings because the number of time periods is fixed, our estimator proxies for the average value of the loadings conditional on treatment status, which \citet{brown2022generalized} show is sufficient. Finally, we use the estimates of the covariate coefficients, factors, and factor loadings to estimate the counterfactual untreated potential outcomes in the post-treatment periods, then average over their difference from the observed treated outcomes. We prove that this estimator of the ATTs is consistent and asymptotically normal. 
 
-Our estimator allows the covariates to change with treatment status using the reduced form CCE model for their untreated status. We also study how treatment status impacts the final treatment effect estimators through the status of the covariates. By assuming a common factor model for the untreated covariates, we are able to leave the post-treatment observables completely arbitrary. We can also decompose the effect of the treatment on the outcome in terms of its direct level effect and its mediated effect through the covariates. While \citet{chan2022pcdid} leave the relationship between the covariates and factors unrestricted, they assume treatment does not affect the distribution of the covariates. We provide a detailed explanation for why this assumption can cause misleading estimates. We also provide a robust CCE-based estimator of the same effect that \citet{chan2022pcdid} estimate under weaker assumptions.
+Our estimator allows the covariates to change with treatment status using the reduced form CCE model for their untreated status.\footnote{See \citet{Caetano_Callaway_Payne_Rodrigues_2022} for a similar framework in a difference-in-differences setting.}
+We also study how treatment status impacts the final treatment effect estimators through the status of the covariates. By assuming a common factor model for the untreated covariates, we are able to leave the post-treatment observables completely arbitrary. This process allows us to decompose the effect of the treatment on the outcome in terms of its direct level effect and its mediated effect through changing values of the covariates. While the PCDID estimator of \citet{chan2022pcdid} allows the relationship between the covariates and factors to be unrestricted, they assume treatment does not affect the distribution of the covariates. We provide a detailed explanation for why this assumption can cause misleading estimates. We also provide a robust CCE-based estimator of the same effect that \citet{chan2022pcdid} estimate under weaker assumptions.
+
+
+As an illustration of our estimator, we revisit the analysis by \citet{lu2015trade} and estimate the effects of increased trade competition on the dispersion of U.S. industry markups. Using our estimator, we find slightly larger and more precisely estimated effects of around a 10\% decline in markup dispersion in highly affected industries after China entered the WTO. \citet{lu2015trade} present suggestive evidence that some of this decrease in markup dispersion is due to a decrease in marginal cost dispersion. Our framework allows us to formally test this suggestion. We find that about 25\% of the decrease in markup dispersion is due to a decrease in marginal cost dispersion. 
 
 The rest of the paper is divided into the following sections: Section 2 presents the model and estimable quantities of interest. Section 3 defines the CCEDID estimator and gives conditions for asymptotic normality in short panels. Section 4 demonstrates how to separately and consistently estimate the direct and mediated treatment effects. Section 5 provides a brief Monte Carlo experiment. Section 6 presents an empirical application of our estimator. Section 7 gives some concluding remarks.
 
-
-
 % ------------------------------------------------------------------------------
-\section{Treatment model}
+\section{Treatment model}\label{sec:treatment_model}
 % ------------------------------------------------------------------------------
 
 We are interested in estimating the effect of a particular treatment on some outcome variable $y_{i,t}$, observable for $i=1,...,N$ cross-sectional units and $t=1,...,T$ time periods. We allow for the possibility that the $N$ units can be divided into groups within which treatment timing is the same. We follow \citet{Callaway_SantAnna_2020} in defining a treatment group by the time period in which they enter treatment. There are $G$ groups defined by $\{g_1,...,g_G\} \subset \{2,...,T\}$ where we assume without loss of generality that $g_1 < g_2 < ... < g_G$. A unit that is never treated is a member of group $\infty$.
 
 Let $G_i$ be a random variable with support $\{g_1,...,g_G,\infty\}$ denoting group membership and define $D_{i,g}$ as the dummy variable that is $1$ if $i$ is in group $g$. Then we define $N_g = \sum_{i = 1}^N D_{i,g}$ as the number of units in group $g$. The dummy variable $d_{i,t}$ is one if $t \geq G_i$ and zero otherwise. It is convenient to also define $T_0 = g_1 - 1$ as the last period before the first treatment takes place.
 
-Following the previous literature, we denote by $y_{i,t}(g)$ as the ``potential'' outcome of unit $i \in \mathcal{I}_g$ in period $t$ subject to treatment at period $g$. The term $y_{i,t}(\infty)$ is the potential outcome when the unit is never subject to treatment. In our paper, $y_{i,t}(\infty)$ is given by
+Following the previous literature, we denote by $y_{i,t}(g)$ as the ``potential'' outcome of unit $i$ in period $t$ subject to treatment at period $g$. The term $y_{i,t}(\infty)$ is the potential outcome when the unit is never subject to treatment. In our paper, $y_{i,t}(\infty)$ is given by
 \begin{align}
 y_{i,t}(\infty) = \+\beta_i'\*x_{i,t}(\infty) +  \+\alpha_i'\*f_t + \varepsilon_{i,t},\label{y0}
 \end{align}
-where $\*x_{i,t}(\infty)$ is a $m\times 1$ vector of observable regressors associated with the untreated potential outcomes, $\+\beta_i$ is a $m\times 1$ vector of slope coefficients, $\*f_t$ is a $r \times 1$ vector of unobservable common factors, $\+\alpha_i$ is a $r\times 1$ vector of factor loadings, and $\varepsilon_{i,t}$ is an idiosyncratic error term.
+where $\*x_{i,t}(\infty)$ is a $m\times 1$ vector of observable regressors associated with the untreated potential outcomes, $\+\beta_i$ is a $m\times 1$ vector of heterogeneous slope coefficients, $\*f_t$ is a $r \times 1$ vector of unobservable common factors, $\+\alpha_i$ is a $r\times 1$ vector of factor loadings, and $\varepsilon_{i,t}$ is an idiosyncratic error term.
 
 The interactive effects are given here by $\+\alpha_i'\*f_t$. The purpose of these is to capture unobserved differences between treated and untreated units in absence of treatment, often referred to as ``non-parallel trending''. In this terminology, the factors represent common trends and the loadings measure the extent to which the effect of these trends are equal (or ``parallel'') across units. We are not interested in inference on these effects.\footnote{One reason for this is that $\+\alpha_i$ and $\*f_t$ are not separately identifiable.} Accurate estimation of $\+\alpha_i$ is therefore not needed.
 
@@ -113,7 +112,7 @@ Because CCE estimation generally requires covariates that change over $i$ and $t
 \begin{align}
 \*x_{i,t}(\infty) = \+\lambda_i'\*f_t + \*v_{i,t}, \label{x}
 \end{align}
-where $\+\lambda_i$ is a $r \times m$ matrix of factor loadings and $\+ v_{i,t}$ is a $m \times 1$ vector of idiosyncratic errors. The condition that $\*x_{i,t}$ should load on the same factors as $y_{i,t}$ is actually quite natural given that the main reason for considering interactive effects is their likely correlation with the regressors, and the detrimental effect of this on estimation and inference. Hence, if $\*x_{i,t}$ does not load on $\*f_{t}$ the parameters $\+\beta$ can be estimated via OLS as in \citet{Wooldridge_2005}.
+where $\+\lambda_i$ is a $r \times m$ matrix of factor loadings and $\+ v_{i,t}$ is a $m \times 1$ vector of idiosyncratic errors. The condition that $\*x_{i,t}$ should load on the same factors as $y_{i,t}$ is actually quite natural given that the main reason for considering interactive effects is their likely correlation with the regressors, and the detrimental effect of this on estimation and inference. Hence, if $\*x_{i,t}$ does not load on $\*f_{t}$ the parameters $\+\beta_i$ can be estimated via OLS as in \citet{Wooldridge_2005}.
 
 We assume the untreated potential covariates are generated according to equation (\ref{x}). Under this setting, we allow treatment to affect the covariate value by proposing the treated potential covariates to be
 \begin{equation}
@@ -145,12 +144,12 @@ It is reasonable to allow for the covariates to also enter the treated outcomes:
 \begin{equation}
     y_{i,t}(g) = \eta_{i,g,t}d_{i,t} + \*x_{i,t}(g)' \+\beta_i + \*f_t' \+\gamma_i + \epsilon_{i,t},\label{treated y}
 \end{equation}
-where $\+\gamma_i$ is unaffected by treatment because it is time-invariant and $\eta_{i,g,t}$ is a unit-time specific intercept that appears with treatment status and defines the error to be $\epsilon_{i,t}$. Under equations \eqref{y0}, \eqref{observed x}, \eqref{te}, and \eqref{treated y}, we can decompose the overall treatment effect $\Delta_{i,g,t}$ as
+where $\+\gamma_i$ is unaffected by treatment because it is time-invariant and $\eta_{i,g,t}$ is a unit-time specific intercept that appears with treatment status and defines the error to be $\epsilon_{i,t}$. The $\eta_{i,g,t}$ term still allows the treated potential outcomes to have an arbitrary distribution\footnote{We could simply have defined $y_{i,t}(g) = e_{i,t,g} + \*x_{i,t}(g)' \+\beta_i$. Because we assume $\epsilon_{i,t}$ has mean zero, the expected values of $e_{i,t,g}$ and $\eta_{i,t,g} + \epsilon_{i,t}$ are the same.}. Under equations \eqref{y0}, \eqref{observed x}, \eqref{te}, and \eqref{treated y}, we can decompose the overall treatment effect $\Delta_{i,g,t}$ as
 \begin{align*}
     \Delta_{i,g,t} 
     &= y_{i,t}(g) - y_{i,t}(\infty)\\
-    &= \eta_{i,g,t} + (\*x_{i,t}(g) - \*x_{i,t}(\infty))' \+\beta_i + \epsilon_{i,t}\\
-    &= \eta_{i,g,t} + \+\tau_{i,g,t}' \+\beta_i + \epsilon_{i,t}
+    &= \eta_{i,g,t} + (\*x_{i,t}(g) - \*x_{i,t}(\infty))' \+\beta_i \\
+    &= \eta_{i,g,t} + \+\tau_{i,g,t}' \+\beta_i
 \end{align*}
 where we define
 \begin{align}
@@ -161,7 +160,7 @@ as the group-specific dynamic ATTs for the covariates and direct effect, respect
 
 We follow the mediation analysis literature by labeling the treatment-specific intercept $\eta_{i,g,t}$ as the direct effect of treatment and $\+\tau_{i,g,t}'\+\beta_i$ as the mediated effect of treatment through the covariates (sometimes called the indirect effect).\footnote{See, for example, \citet{mackinnon2007mediation} and \citet{huber2014identifying}.} These two effects warrant some discussion. The definition of $\+\tau_{i,g,t}$ in equation \eqref{observed x} allows each individual covariate to have its own effect on the outcome through $\beta_{i,k}$. Thus, mediated effects allow researchers to tie the effect of treatment back to changes in specific covariates. This decomposition is particularly useful for explaining the mechanism through which treatment affects the outcome (a significant estimated mediation effect for the $k$-th covariate). 
 
-Applied researchers will typically apply DID to time-varying covariates that they suspect to be the underlying mechanism of treatment. Significant estimates of treatment effects on $x_{k,i,t}$ ($\tau$ in our notation) are used as evidence that treatment effects partially operate through the specified channels. However, even a change in the covariates that is systemically related to treatment might not translate to the outcome if the partial effect is zero. We allow a more precise decomposition of overall effects into component parts, providing the means for rigorous testing of different channels. The decomposition also allows for various `countervailing' effects to be considered. On the other hand, the direct effect, $\eta_{g,t}$, captures group-specific changes to the average level of the outcomes post-treatment. We think of this as either the treatment directly effecting outcomes or there being unobserved pathways that are uncorrelated with the (observed) intermediate causal mechanisms and unrelated to the heterogeneous factor loadings. 
+Applied researchers will typically apply DID to time-varying covariates that they suspect to be the underlying mechanism of treatment. Significant estimates of treatment effects on $x_{k,i,t}$ ($\tau$ in our notation) are used as evidence that treatment effects partially operate through the specified channels. However, even a change in the covariates that is systemically related to treatment might not translate to the outcome if the partial effect is zero. We allow a more precise decomposition of overall effects into component parts, providing the means for rigorous testing of different channels. The decomposition also allows for various `countervailing' effects to be considered. On the other hand, the direct effect, $\eta_{g,t}$, captures group-specific changes to the average level of the outcomes post-treatment. We think of this as either the treatment directly effecting outcomes or there being unobserved pathways that are uncorrelated with the (observed) intermediate causal mechanisms and the heterogeneous factor loadings. 
 
 The hypothetical outcomes, $y_{i,t}(\infty)$ and $y_{i,t}(g)$, should not be confused with the actual outcome, $y_{i,t}$, the model of which can be inferred from \eqref{y0} and \eqref{te}. Note that for units eventually treated at time $g$,
 \begin{align}
@@ -179,7 +178,7 @@ This model holds in general for all $i \leq N$ and $t \leq T$. Another point of 
 \subsection{The estimator}
 
 The estimation of the ATT is carried out using a version of what \citet{borusyak2021revisiting} refer to as the ``imputation'' approach, or what \citet{Xu_2017} refer to as the ``generalized synthetic control'' method, which is based on replacing all unknowns in the definition of $\Delta_{g,t}$ in \eqref{att} by estimates. Note first that since $y_{i,t}(g)$ is observed for treated units in post-treatment periods ($G_i = g$ and $t \geq g$), we have $y_{i,t} = y_{i,t}(g)$. Let us therefore turn to the $y_{i,t}(\infty)$. We need to estimate this counterfactual for all treated units in post-treatment periods. This is done in four steps:
-
+\textbf{}
 \bigskip
 
 \noindent \textbf{Four-step estimation of counterfactual:}
@@ -189,7 +188,7 @@ The estimation of the ATT is carried out using a version of what \citet{borusyak
 \begin{align}
 \widehat{\*f}_t = \frac{1}{N_{\infty}}\sum_{i = 1}^N \*z_{i,t} D_{i,\infty} \label{fhat}
 \end{align}
-for all $t\leq T$, where $z_{i,t} = [y_{i,t},\*x_{i,t}']'$ is a $(m+1)\times 1$ vector containing all the observables. The above is the regular CCE estimator of (the space spanned by) $\*f_t$ computed using the never-treated units only. This is crucial since in the present paper both $y_{i,t}$ and $\*x_{i,t}$ may depend on the treatment, and this in turn may well render CCE inconsistent. Equally important is the fact that $\widehat{\*f}_t$ is computed for all time periods. The pre-treatment estimates are used to estimate $\+\beta$ and $\{\+\alpha_i\}_{i=1}^N$, while the post-treatment estimates are used to impute $\*x_{i,t}(\infty)$ and $y_{i,t}(\infty)$ respectively for the treatment period.
+for all $t\leq T$, where $z_{i,t} = [y_{i,t},\*x_{i,t}']'$ is a $(m+1)\times 1$ vector containing all the observables. The above is the regular CCE estimator of (the space spanned by) $\*f_t$ computed using the never-treated units only. This is crucial since in the present paper both $y_{i,t}$ and $\*x_{i,t}$ may depend on the treatment, and this in turn may well render CCE inconsistent. Equally important is the fact that $\widehat{\*f}_t$ is computed for all time periods. The pre-treatment estimates are used to estimate $\+\beta$ and $\{\+\alpha_i\}_{i=1}^N$, while the post-treatment estimates are used to impute $\*x_{i,t}(\infty)$ and $y_{i,t}(\infty)$ respectively for the treated group.
 
 \item Estimate
 \begin{align}
@@ -200,7 +199,7 @@ by OLS for all $i \leq N$ and $t \leq T_0$. Here, $\*a_i$ is a $(m+1)\times 1$ v
 \widehat{\+\beta} &= \left(\sum_{i=1}^N  \*x_{i}'\*M_{\widehat{\*f}}\*x_{i}\right)^{-1}\sum_{i=1}^N \*x_{i}' \*M_{\widehat{\*f}}\*y_{i},\\
 \widehat{\*a}_i &= (\widehat{\*f}'\widehat{\*f})^{-1}\widehat{\*f}'(\*y_{i}-\*x_{i}\widehat{\+\beta}),
 \end{align}
-where the latter estimator is computed for all $i\leq N$. This gives $\widehat{\+\beta}$ and $\{\widehat{\*a}_i\}_{i=1}^N$. The fact that $\widehat{\*a}_i$ is computed for treated units is again important, because in step 3, $y_{i,t}(\infty)$ will be estimated for all treated units.
+where the latter estimator is computed for all $i\leq N$. The fact that $\widehat{\*a}_i$ is computed for treated units is again important, because in step 3, $y_{i,t}(\infty)$ will be estimated for all treated units.
 
 \item Estimate $\*x_{i,t}(\infty)$ as
 \begin{equation}
@@ -353,7 +352,7 @@ We now discuss estimation and inference of the decomposition of the treatment ef
 
 \subsection{Decomposing treatment effects}
 
-This section considers estimation and inference for the constituent parts of the overall treatment effect. We demonstrate in Section 2 how the overall treatment effect $\Delta_{i,g,t}$ can be decomposed into the direct effect $\eta_{i,g,t}$ and the mediated effect $\+\tau_{i,g,t}' \+\beta_i$. We now demonstrate how to consistently estimate these constituent parts of the treatment effect.
+This section considers estimation and inference for the constituent parts of the overall treatment effect. We demonstrate in Section 2 how the overall treatment effect $\Delta_{i,g,t}$ can be decomposed into the direct effect $\eta_{i,g,t}$ and the mediated effect $\+\tau_{i,g,t}' \+\beta_i$. We now demonstrate how to consistently estimate these constituent parts.
 
 
 
@@ -361,7 +360,7 @@ We can estimate $\+\tau_{g,t}$ for post-treatment time periods by averaging the 
 \begin{equation}
     \widehat{\+\tau}_{g,t} = \frac{1}{N_g} \sum_{i = 1}^N D_{i,g} ( \*x_{i,t} - \widehat{\*x}_{i,t}(\infty) ), \label{x treatment effect}
 \end{equation}
-which is simply the overall treatment effect estimator applied to the covariates. The estimated effect on $\+x$ is what researchers typically use as evidence of a causal mechanism (albeit typically under a more restrictive TWFE model). This analysis is incomplete, as the effect of changing the covariate \emph{on the outcome} is determined by the partial effect of the covariates on the outcome variable, which in our model is given by $\+\beta_i$. Our estimate of the mediated effect is the product of $\widehat{\+\tau}_{g,t} \widehat{\+\beta}$ with each component of the vector being the estimated mediated effect of the $k$-th covariate. It is important to see that a consistent estimator requires a pure factor structure in the untreated potential covariates. This fact precludes the use of nonlinear functions of covariates, like squares and interactions, as well as covariates that are likely nonlinear in the common factors, like discrete or bounded variables. We discuss how to weaken this requirement in Section 4.3.
+which is simply the overall treatment effect estimator applied to the covariates. The estimated effect on $\+x$ is what researchers typically use as evidence of a causal mechanism (albeit typically under a more restrictive TWFE model). This analysis is incomplete, as the effect of changing the covariate \emph{on the outcome} is determined by the partial effect of the covariates on the outcome variable, which in our model is given by $\+\beta_i$. Our estimate of the mediated effect is the product of $\widehat{\+\tau}_{g,t} \widehat{\+\beta}$ with each component of the vector being the estimated mediated effect of the $k$-th covariate. 
 
 The direct effect of treatment is easy to obtain once we have a consistent estimator of the mediated effect. To get a consistent estimator of the direct effect, we define 
 \begin{equation}
@@ -396,8 +395,6 @@ Using the definitions above, we can now present asymptotic convergence results f
 
 The proof of Theorem 2 follows directly from the work in the proof of Theorem 1. To estimate the mediated effect on treatment, we only have to pre-multiply the indirect treatment effect estimator by $\widehat{\+\beta}'$ and adjust the standard errors accordingly. Because $\widehat{\+\beta}$ is time constant, the estimator is equivalent to averaging over $\left( \*x_{i,t}' - \widehat{\*x}_{i,t}(\infty)' \right) \widehat{\+\beta}$. The relevant asymptotic variance estimator is $\sqrt{\widehat{\+\beta}' \widehat{\+\Omega}_{g,t} \widehat{\+\beta}}$.
 
-% \textbf{Joakim: I presume we don't need additional proofs for Theorem 2, right? It should follow directly from work in the appendix.}
-
 
 \subsection{Consequences of using observed covariates}\label{sec:post_treatment_bias}
 
@@ -406,17 +403,17 @@ This section discusses the problems with identification when a researcher uses t
 
 To see this, note that
 \begin{equation}
-    \tilde{\Delta}_{g,t} = \frac{1}{N_g} \sum_{i = 1}^N D_{i,g} \left( y_{i,t} - \*x_{i,t}' \widehat{\+\beta} - \widehat{\*f}_t' \widehat{\+\gamma}_i \right) = \frac{1}{N_g} \sum_{i = 1}^N D_{i,g} \left( \Delta_{i,g,t} + \*x_{i,t}' (\+\beta - \widehat{\+\beta}) + \left( \*f_t' \+\gamma_i - \widehat{\*f}_t' \widehat{\+\gamma}_i \right) \right)
+    \tilde{\Delta}_{g,t} = \frac{1}{N_g} \sum_{i = 1}^N D_{i,g} \left( y_{i,t} - \*x_{i,t}' \widehat{\+\beta} - \widehat{\*f}_t' \widehat{\+\gamma}_i \right) = \frac{1}{N_g} \sum_{i = 1}^N D_{i,g} \left( \eta_{i,g,t} + \*x_{i,t}' (\+\beta - \widehat{\+\beta}) + \left( \*f_t' \+\gamma_i - \widehat{\*f}_t' \widehat{\+\gamma}_i \right) + \epsilon_{i,t} \right)
 \end{equation}
-We demonstrate in the proof of Theorem 1 that $\widehat{\+\beta} - \+\beta = o_p(1)$ and $\frac{1}{N_g} \sum_{i = 1}^N D_{i,g} \left( \widehat{\*f}_t' \widehat{\+\gamma}_i - \*f_t' \+\gamma_i \right) = o_p(1)$. Because $\frac{1}{N_g} \sum_{i = 1}^N D_{i,g} \*x_{i,t} = O_p(1)$, $\tilde{\Delta}_{g,t}$ is only consistent for the direct effect of treatment on the outcomes. This fact demonstrates that the interpretation of the imputation estimator that uses observed covariates is as an estimator of the direct effect; such is the case of the PCDID estimator of \citet{chan2022pcdid}. Researchers who implement interactive fixed effects imputation estimators with time-varying covariates must therefore be careful in interpreting their results.
+We demonstrate in the proof of Theorem 1 that $\widehat{\+\beta} - \+\beta = o_p(1)$ and $\frac{1}{N_g} \sum_{i = 1}^N D_{i,g} \left( \widehat{\*f}_t' \widehat{\+\gamma}_i - \*f_t' \+\gamma_i \right) = o_p(1)$. Because $\frac{1}{N_g} \sum_{i = 1}^N D_{i,g} \*x_{i,t} = O_p(1)$ and $\frac{1}{N_g} \sum_{i = 1}^N \epsilon_{i,t} = o_p(1)$, $\tilde{\Delta}_{g,t}$ is only consistent for the direct effect of treatment on the outcomes. This fact demonstrates that the interpretation of the imputation estimator that uses observed covariates is as an estimator of the direct effect; such is the case of the PCDID estimator of \citet{chan2022pcdid}. Researchers who implement interactive fixed effects imputation estimators with time-varying covariates must therefore be careful in interpreting their results.
 
 We can now study the conditions under which $\tilde{\Delta}_{g,t}$ is consistent for the overall effect. Intuitively, the only time $\tilde{\Delta}_{g,t}$ is consistent for the overall ATT (and not just the direct effect) is when the treatment does not affect the outcome via the covariates. To demonstrate this fact, we write $\tilde{\Delta}_{g,t}$ in terms of our overall estimator from Theorem 1:
 \begin{equation}\label{delta tilde and delta hat}
-    \tilde{\Delta}_{g,t} = \widehat{\Delta}_{g,t} - \frac{1}{N_g} \sum_{i = 1}^N D_{i,g} (\widehat{\*x}_{i,t}(\infty) - \*x_{i,t})' \widehat{\+\beta}
+    \tilde{\Delta}_{g,t} = \widehat{\Delta}_{g,t} - \frac{1}{N_g} \sum_{i = 1}^N D_{i,g} (\*x_{i,t} - \widehat{\*x}_{i,t}(\infty))' \widehat{\+\beta}
 \end{equation}
 Note that $\tilde{\Delta}_{g,t}$ is numerically identical to our direct effect estimate, $\widehat{\eta}_{g,t}$, in the previous section. 
 
-Thus $\tilde{\Delta}_{g,t}$ is consistent for the overall ATT $\Delta_{g,t}$ when $\frac{1}{N_g} \sum_{i = 1}^N D_{i,g} (\widehat{\*x}(\infty) - \*x_{i,t})' \widehat{\+\beta} = o_p(1)$. We demonstrate in equation (A.58) of the Appendix that
+Thus $\tilde{\Delta}_{g,t}$ is consistent for the overall ATT $\Delta_{g,t}$ when $\frac{1}{N_g} \sum_{i = 1}^N D_{i,g} (\widehat{\*x}(\infty) - \*x_{i,t})' \widehat{\+\beta} = o_p(1)$. We demonstrate in the Appendix that
 \begin{equation}
     \frac{1}{N_g} \sum_{i = 1}^N D_{i,g} (\*x_{i,t} - \widehat{\*x}_{i,t}(\infty)) = \frac{1}{N_g} \sum_{i = 1}^N D_{i,g} \+\tau_{i,g,t} + o_p(1)
 \end{equation}
@@ -472,7 +469,8 @@ where $\overline{\*Z} = \frac{1}{N} \sum_{i = 1}^N \*Z_i$ and $\*Z_i$ is the $T 
 \begin{equation}\label{bsw}
     \*F = \+\Psi \*B
 \end{equation}
-where $\*F$ is the full $T \times r$ matrix of stacked factors, $\+\Psi$ is a $T \times q$ matrix of observed or estimable factor proxies and $\*B$ is an arbitrary $q \times r$ matrix. In the case of the classic CCE model, $\+\Psi = \mathbb{E}(\*Z_i)$ and $\*B = \mathbb{E}(\+\Lambda)$. However, they place no restrictions on the rank of $\*B$ and so the model in equation \eqref{bsw} is strictly more general than CCE. This model allows the DGP of the covariates to be essentially unrestricted, allowing for polynomial functions and interactions, as well as count and limited variables.
+where $\*F$ is the full $T \times r$ matrix of stacked factors, $\+\Psi$ is a $T \times q$ matrix of observed or estimable factor proxies and $\*B$ is an arbitrary $q \times r$ matrix of constants. In the case of the classic CCE model, $\+\Psi = \mathbb{E}(\*Z_i)$ and $\*B = \mathbb{E}(\+\Lambda)$. % KYLE: This had \expec{\+\Lambda} but \expec is not defined
+However, they place no restrictions on the rank of $\*B$ and so the model in equation \eqref{bsw} is strictly more general than CCE. This model allows the DGP of the covariates to be essentially unrestricted, allowing for polynomial functions and interactions, as well as count variables and variables with limited supports.
 
 Stacking the outcomes over time, and assuming $\+\Psi = \mathbb{E}(\*Z_i)$, equation \eqref{bsw} implies 
 \begin{equation}\label{bsw population}
@@ -498,9 +496,8 @@ The only departure from our original procedure under this model comes when we ar
 \section{Monte Carlo simulations}
 % ------------------------------------------------------------------------------
 
-We now present our main simulation results. Our simulations set $N = 200$ and $T = 8$, a relatively small number of cross-sectional units. Treatment turns on at time period $6$ for treated individuals and hence $T_0 = 5$. The data is generated as follows. First, there are two factors, $m = 2$, with $f_1 = [1, \dots, 1]'$ being a vector of ones allowing for unit fixed effects and $f_2 = [1, \dots, T]'$ allowing for unit-specific linear time-trend. 
-
-There are two covariates, $K = 2$, both generated according to (\ref{observed x}) with factor loadings $\lambda_i$ being a $2 \times 2$ matrix with 
+We now present our main simulation results. Our simulations set $N = 200$ and $T = 9$ approximately matching the dimensions from our empirical application. We have one treatment timing group where treatment turns on at time period $7$ for treated individuals and hence $T_0 = 6$. We randomly assign treatment with probability of treatment equal to 50\%. 
+There are two factors, $m = 2$, with $f_1 = [1, \dots, 1]'$ being a vector of ones and $f_2 = [1, \dots, T]'$. There are two covariates, $K = 2$, both generated according to (\ref{observed x}) with factor loadings $\lambda_i$ being a $2 \times 2$ matrix of independent normal draws: 
 $$
 \lambda_i \sim
 \begin{bmatrix}
@@ -508,58 +505,34 @@ $$
     N(0, 1) & N(1, 1)
 \end{bmatrix}
 $$
-The outcome's factor-loadings are generated $\*a_i \sim N(\text{diag}(\lambda_i), I_2)$. Outcomes are generated as follows:
-$$
-y_{i,t} = \Delta * d_{i,t} + \+\beta_0' \big(\*x_{i,t}(\infty) + \+\tau d_{i,t}) + \*a_i' \*f_t + \varepsilon_{i,t}
-$$
-with $\beta_0 = [1, 1]$. The error term is an $AR(1)$ process, i.e. $\varepsilon_{it} = \rho \varepsilon_{i,t-1} + u_{it}$ with $u_{it} \sim N(0, 1)$. We set $\rho = 0.75$.
+We vary the effect on the covariates $\tau_{i,g,t}$ across simulations. 
 
-In the first set of simulations, we assign treatment randomly with unconditional probability of treatment of 50\%. This implies parallel trends holds since the average of factor-loadings are the same in the treated and control group. This simulation aims to show the importance of not controlling for observed $\*x_{i,t}$ as described in the previous section. 
+The outcome's factor-loadings are generated $\+\alpha_i \sim N(\text{diag}(\lambda_i) + a * D_i, I_2)$. The parameter $a$ determines whether the treated and untreated units have equal expected factor-loadings (when $a = [0, 0]$) and we vary these across simulations. When $a_2 \neq 0$, parallel trends fails to hold and TWFE is inconsistent.  Outcomes are generated by (\ref{y}) with $\beta_0 = [1, 1]$ and the error term is an $AR(1)$ process with autocorrelation coefficient of $\rho = 0.75$.
 
-In the second set of simulations, treatment is assigned with probability increasing in the second factor-loading, $a_{i,2}$, such that parallel trends fail (since treated units are more exposed to the time-trend in $f_2$). In particular, we form the term
-$$
-\pi_i = 0.5 + \frac{a_{i2}}{\max_i a_{i2} - min_i a_{i2}}
-$$
-Then, we normalize this by the mean of $\pi_i$, $\pi_i / (\frac{1}{N} \sum_i \pi_i)$, so that the unconditional probability of treatment stays at 50\%.
-
-We run three data-generating processes. First, we generate the data with a direct effect of $\Delta = 0$ and an effect on $\*x$ of $\+\tau = [0, 0]$ such that the true effect of treatment is zero. Second, we allow for a direct effect of $\Delta = 1$ but don't allow treatment to effect the distribution of covariates ($\+\tau = [0, 0]$). Last, we set $\Delta = 1$ and $\tau = [0, 1]$ to have a mediated effect of 1 ($\+\beta' \+\tau$) and a total effect of 2.
+We consider two simulations. First, to show potential efficiency gains are possible \emph{even when} parallel trends holds, we set $a = [0, 0]$. Second, we introduce non-parallel trends by setting $a = [0, 1]$ which implies the treated units are more `exposed' to the trend factor $f_2$. We run three data-generating processes for each case. First, we generate the data with a direct effect of $\eta = 0$ and an effect on $\*x$ of $\+\tau = [0, 0]$ such that the true effect of treatment is zero. Second, we allow for a direct effect of $\eta = 1$ but don't allow treatment to effect the distribution of covariates ($\+\tau = [0, 0]$). Last, we set $\eta = 1$ and $\tau = [0, 1]$ to have a mediated effect of 1 ($\+\beta' \+\tau$) and a total effect of 2.
 
 We estimate three specifications. First, we estimate a two-way fixed effect event-study model 
 \begin{equation}\label{eq:monte_twfe} 
-    y_{it} = \mu_i + \eta_t + \sum_{k=6}^8 \tau_{k} d_{it}^k + \text{error}_{it}.
+    y_{it} = \mu_i + \mu_t + \sum_{k=7}^9 \Delta_{k} d_{it}^k + \text{error}_{it}.
 \end{equation}
-where $d_{it}^k$ is an indicator equaling one if unit $i$ is treated and $t = k$. Second, we do what is commonly done in empirical applications and run the same event-study model while controlling for the time-varying covariates 
+where $d_{it}^k$ is an indicator equaling one if unit $i$ is treated and $t = k$. The event-study estimates $\Delta_{k}$ are aiming to estimate the average effect for treated observations in period $k$. Second, we do what is commonly done in empirical applications and run the same event-study model while controlling for the time-varying covariates 
 \begin{equation}\label{eq:monte_twfe_cov} 
-    y_{it} = \mu_i + \eta_t + \bm X_{it} \bm \beta_t + \sum_{k=6}^8 \tau_{k} d_{it}^k + \text{error}_{it}.
+    y_{it} = \mu_i + \mu_t + \bm X_{it} \bm \beta + \sum_{k=7}^9 \Delta_{k} d_{it}^k + \text{error}_{it}.
 \end{equation}
-Last, we run our proposed CCEDID procedure. For each estimator, we report the average bias of our estimates $\mathbb{E}\big[ \widehat{\tau}_k - \tau_k \big]$ as well as the mean-squared error, $MSE(\widehat{\tau}_k) \equiv \mathbb{E}\big[ (\tau_k - \widehat{\tau}_k)^2 \big]$ for $k = 6, 7, 8$.
+Last, we run our proposed CCEDID procedure and aggregate estimated treatment effects into event-study estimates. For each estimator, we report the average bias of our estimates $\mathbb{E}\big[ \widehat{\Delta}_k - \Delta_k \big]$ as well as the mean-squared error, $MSE(\widehat{\Delta}_k) \equiv \mathbb{E}\big[ (\widehat{\Delta}_k - \Delta_k)^2 \big]$ for $k = 7,8,9$.
 
 \begin{table}
 \def\arraystretch{1.25}
 \caption{Monte Carlo: Parallel Trends Hold}\label{tab:monte_results_pt}
 
 \begin{center}
+\begin{adjustbox}{max width=\textwidth}
 \begin{threeparttable}
     \begin{tabular}{@{} l @{\extracolsep{4pt}}cccccc @{}} 
     % Head
     \toprule \addlinespace[3mm]
-  
     \multicolumn{7}{@{}l}{
-        \textbf{Panel A:} No Effect. $\eta = [0, 0, 0]$ and $\tau = [0, 0, 0]$.
-    } \\
-    \midrule \addlinespace[3mm]
-    
-    & $\mathbb{E}\big(\widehat{\Delta}_6 - \Delta_6\big)$ & $\text{MSE}\big(\widehat{\Delta}_6\big)$
-    & $\mathbb{E}\big(\widehat{\Delta}_7 - \Delta_7\big)$ & $\text{MSE}\big(\widehat{\Delta}_7\big)$ 
-    & $\mathbb{E}\big(\widehat{\Delta}_8 - \Delta_8\big)$ & $\text{MSE}\big(\widehat{\Delta}_8\big)$ 
-    \\
-    \cmidrule{2-7}
-    
-    \input{../tables/simulation-3-parallel_trends-true}
-
-    \midrule \addlinespace[3mm]
-    \multicolumn{7}{@{}l}{
-        \textbf{Panel B:} Direct Effect. $\eta = [1/3, 2/3, 1]$ and $\tau = [0, 0, 0]$.
+        \textbf{Panel A:} Direct Effect. $\eta = 1$ and $\tau = [0, 0]$.
     } \\
     \midrule \addlinespace[3mm]
     
@@ -574,7 +547,7 @@ Last, we run our proposed CCEDID procedure. For each estimator, we report the av
     
     \midrule \addlinespace[3mm]
     \multicolumn{7}{@{}l}{
-        \textbf{Panel C:} Direct and Mediated Effect. $\eta = [1/3, 2/3, 1]$ and $\tau = [1/3, 2/3, 1]$.
+        \textbf{Panel B:} Direct and Mediated Effect. $\eta = 1$ and $\tau = [0, 1]$.
     } \\
     \midrule \addlinespace[3mm]
     
@@ -593,43 +566,31 @@ Last, we run our proposed CCEDID procedure. For each estimator, we report the av
     
     % Notes 
     \begin{tablenotes}[flushleft] \footnotesize
-      \item \textit{Notes.} 
+    \item \textit{Notes:} This table reports results from our Monte Carlo simulations. This simulation has parallel trends holding under the two-way fixed effects model. The data-generating process is described in the text and the direct effect and indirect effect parameters are labeled in the panel headings. Rows labeled `TWFE' estimates (\ref{eq:monte_twfe}); rows labeled `TWFE with Covariates' estimates (\ref{eq:monte_twfe_cov}); and rows labeled `CCEDID' estimates our proposed CCEDID estimator.
     \end{tablenotes}
 \end{threeparttable}
+\end{adjustbox}
 \end{center}
 \end{table}
 
-Table \ref{tab:monte_results_pt} contain results for when parallel trends holds. First note that all three estimates produce unbiased estimates for treatment effects when treatment does not affect the distribution of $\*x$ (Panels A and B). However, note that since $CCEDID$ is absorbing the full factor-model, the mean-square error can be significantly smaller.\footnote{After controlling for time-dummies, $(a_{i2} - \bar{a}_{2}) f_{t,2}$ enters the error term where $\bar{a}_2$ is the cross-sectional average of $a_{i2}$. The variance of this term grows with $t$ and hence the mean-square error is largest in period 8.} 
-In panel C, we allow treatment to effect the distribution of $x_2$. As discussed above, controlling for observed $\bm x_{it}$ is problematic since it absorbs the mediated effect of that covariate. Hence, TWFE with covariates produces very biased estimates for the treatment effect, even in this extreme case where parallel trends hold unconditionally. 
+Table \ref{tab:monte_results_pt} contain results for when parallel trends holds. First note that all three estimates produce unbiased estimates for treatment effects when treatment does not affect the distribution of $\*x$ (Panel A). However, note that since $CCEDID$ is absorbing the full factor-model, the mean-square error can be significantly smaller.\footnote{After controlling for time-dummies, $(\alpha_{i2} - \bar{\alpha}_{2}) f_{t,2}$ enters the error term where $\bar{\alpha}_2$ is the cross-sectional average of $\alpha_{i2}$. The variance of this term grows with $t$ and hence the mean-square error is largest in period 8.} This mirrors the decrease in standard errors we see in our empirical application. 
 
-Table \ref{tab:monte_results_no_pt} contains the results of simulations where prallel trends do not hold. In this case, both TWFE estimators are biased across panels. Our proposed CCEDID procedure performs well in all these cases with near-zero bias and consistently the lowest mean-squared error. 
+In panel B, we allow treatment to effect the distribution of $x_2$. As discussed above, controlling for observed $\bm x_{it}$ is problematic since it absorbs the mediated effect of that covariate. Hence, TWFE with covariates produces very biased estimates for the treatment effect, even in this extreme case where parallel trends hold unconditionally. 
+
+Table \ref{tab:monte_results_no_pt} contains the results of simulations where parallel trends do not hold. In this case, both TWFE estimators are biased across panels. Our proposed CCEDID procedure performs well in all these cases with near-zero bias and consistently the lowest mean-squared error. The TWFE estimators fail estimate the effect of treatment since parallel trends fails. The TWFE estimator conflates the parallel trend failures as dynamic effects as is evidenced by the increasing bias.
 
 \begin{table}
 \def\arraystretch{1.25}
 \caption{Monte Carlo: Parallel Trends Do Not Hold}\label{tab:monte_results_no_pt}
 
 \begin{center}
+\begin{adjustbox}{max width=\textwidth}
 \begin{threeparttable}
     \begin{tabular}{@{} l @{\extracolsep{4pt}}cccccc @{}} 
     % Head
     \toprule \addlinespace[3mm]
-  
     \multicolumn{7}{@{}l}{
-        \textbf{Panel A:} No Effect. $\eta = [0, 0, 0]$ and $\tau = [0, 0, 0]$.
-    } \\
-    \midrule \addlinespace[3mm]
-    
-    & $\mathbb{E}\big(\widehat{\Delta}_6 - \Delta_6\big)$ & $\text{MSE}\big(\widehat{\Delta}_6\big)$
-    & $\mathbb{E}\big(\widehat{\Delta}_7 - \Delta_7\big)$ & $\text{MSE}\big(\widehat{\Delta}_7\big)$ 
-    & $\mathbb{E}\big(\widehat{\Delta}_8 - \Delta_8\big)$ & $\text{MSE}\big(\widehat{\Delta}_8\big)$ 
-    \\
-    \cmidrule{2-7}
-    
-    \input{../tables/simulation-1-parallel_trends-false} 
-
-    \midrule \addlinespace[3mm]
-    \multicolumn{7}{@{}l}{
-        \textbf{Panel B:} Direct Effect. $\eta = [1/3, 2/3, 1]$ and $\tau = [0, 0, 0]$.
+        \textbf{Panel A:} Direct Effect. $\eta = 1$ and $\tau = [0, 0]$.
     } \\
     \midrule \addlinespace[3mm]
     
@@ -640,10 +601,11 @@ Table \ref{tab:monte_results_no_pt} contains the results of simulations where pr
     \cmidrule{2-7}
     
     \input{../tables/simulation-2-parallel_trends-false}
+
     
     \midrule \addlinespace[3mm]
     \multicolumn{7}{@{}l}{
-        \textbf{Panel C:} Direct and Mediated Effect. $\eta = [1/3, 2/3, 1]$ and $\tau = [1/3, 2/3, 1]$.
+        \textbf{Panel B:} Direct and Mediated Effect. $\eta = 1$ and $\tau = [0, 1]$.
     } \\
     \midrule \addlinespace[3mm]
     
@@ -651,18 +613,21 @@ Table \ref{tab:monte_results_no_pt} contains the results of simulations where pr
     & $\mathbb{E}\big(\widehat{\Delta}_7 - \Delta_7\big)$ & $\text{MSE}\big(\widehat{\Delta}_7\big)$ 
     & $\mathbb{E}\big(\widehat{\Delta}_8 - \Delta_8\big)$ & $\text{MSE}\big(\widehat{\Delta}_8\big)$ 
     \\
+    
     \cmidrule{2-7}
     
-    \input{../tables/simulation-3-parallel_trends-false} 
+    \input{../tables/simulation-3-parallel_trends-false}
+
     
     \bottomrule
     \end{tabular}
     
     % Notes 
     \begin{tablenotes}[flushleft] \footnotesize
-    \item \textit{Notes.} 
+    \item \textit{Notes:} This table reports results from our Monte Carlo simulations. This simulation has parallel trends holding under the two-way fixed effects model. The data-generating process is described in the text and the direct effect and indirect effect parameters are labeled in the panel headings. Rows labeled `TWFE' estimates (\ref{eq:monte_twfe}); rows labeled `TWFE with Covariates' estimates (\ref{eq:monte_twfe_cov}); and rows labeled `CCEDID' estimates our proposed CCEDID estimator.
     \end{tablenotes}
 \end{threeparttable}
+\end{adjustbox}
 \end{center}
 \end{table}
 
@@ -672,8 +637,78 @@ Table \ref{tab:monte_results_no_pt} contains the results of simulations where pr
 \section{Empirical illustration}
 % ------------------------------------------------------------------------------
 
+To highlight the utility of our estimator, we replicate and extend research by \citet{lu2015trade}. Their analysis focuses on China's accession into the World Trade Organization (WTO) in 2002 and the subsequent impacts of trade liberalization on the dispersion of Chinese firm-level markups. The unit of observation is an industry as measured by the 3-digit SIC codes. The authors classify industries as `treated' if they had above-median tariff rates (as measured in 2001) with China.\footnote{There are 194 industries and 9 years of data (1998 to 2005). In 2001, the median tariff rate is 0.15, the 1st and 3rd quartiles are 0.106 and 0.217 respectively.} The intuition is that the Chinese firms facing a larger reduction in tariffs experienced a larger increase in competition after China entered the WTO. In preliminary analysis, the authors consider the binary treatment we describe here, but they later use a continuous measure of pre-WTO tariff rate with China to estimate a `marginal effect'. Considering a continuous treatment is out of the scope of this paper. We instead use the binary treatment variable of above-median tariffs. 
 
-TO BE ADDED.
+The outcome of interest is the dispersion of firm level markups in industry $i$. Lu and Yu follow \citet{loecker2012markups} and estimate firm-level production functions using Chinese microdata from the \emph{Annual Survey of Industrial Firms}. The production function estimates are used to estimate the firm's markup (see their section VIC for full details). The resulting dataset, which we accessed via their replication file, is a vector of firm-year markup estimates $\{ m_{ft} \}$ with $f$ denoting firm and $t$ denoting year. Dispersion of these estimated markups within industry $i$ is given by the Theil index
+\begin{equation}\label{eq:theil_index}
+  \text{Theil}_{it} \equiv \frac{1}{n_{it}} \sum_{f = 1}^{n_{it}} \frac{m_{ft}}{\overline{m}_{it}} log\left( \frac{m_{ft}}{\overline{m}_{it}} \right),
+\end{equation}
+where $n_{it}$ is the number of firms in industry $i$ in year $t$ and $\overline{m}_{it}$ is the average of $m_{ft}$. Larger values of $\text{Theil}_{it}$ imply a larger dispersion in markups across firms within that industry-year.
+
+\citet{lu2015trade} note that changes in markup dispersion can come from either a change in the dispersion of prices or through a change in the dispersion of costs. To estimate the extent of each of these channels, they include the Theil index of total factor productivity as an additional outcome. The firm's total factor productivity (TFP) is used as a `proxy' for marginal-cost since the latter can not be estimated from the available data. Since the estimated effect on TFP is significant, they conclude that cost channels play a role in the decrease in the dispersion of markups. Using our novel methods, we can directly estimate this effect and test for its significance as a channel of treatment mediation. In additional to the cross-sectional averages of the outcome and the covariate, we include a constant in our estimate of $\hat{F}$ which is equivalent to a unit fixed-effect. 
+
+\begin{figure}
+    \caption{China WTO Ascension and Markup Dispersion}
+    \label{fig:trade}
+
+    \begin{subfigure}[b]{\textwidth}
+        \caption{Total Effect}
+        \input{../figures/trade-cce_est.tex}
+    \end{subfigure}
+    
+    \begin{subfigure}[b]{\textwidth}
+        \caption{Mediated Effect via TFP Dispersion}
+        \input{../figures/trade-cce_mediated_est.tex}
+    \end{subfigure}
+    
+    {\footnotesize\emph{Notes:} These figures presents event-study estimates and 95\% confidence intervals for the effect of China WTO ascension on the dispersion of firm-level markups within an industry defined by the Theil index given in (\ref{eq:theil_index}). Treatment is equal to one for industries with above-median 2001 tariff rates with China for years 2002 and beyond. Estimates are computed using the CCEDID estimator proposed in the paper with the Theil index of firm-level total factor productivity as the covariate X. A constant factor is included as an observed factor. Panel (a) presents estimates of the total effect of WTO Ascension, $\Delta$, and panel (b) presents the portion of the effect mediated by the Theil index in firm-level total factor productivity.}
+\end{figure}
+
+\begin{figure}
+    \caption{China WTO Ascension and Markup Dispersion (with 2003 Interpolated)}
+    \label{fig:trade_interpolation}
+
+    \begin{subfigure}[b]{\textwidth}
+        \caption{Total Effect}
+        \input{../figures/trade-cce_est_interpolated.tex}
+    \end{subfigure}
+    
+    \begin{subfigure}[b]{\textwidth}
+        \caption{Mediated Effect via TFP Dispersion}
+        \input{../figures/trade-cce_mediated_est_interpolated.tex}
+    \end{subfigure}
+    
+    {\footnotesize\emph{Notes:} These figures presents event-study estimates and 95\% confidence intervals for the effect of China WTO ascension on the dispersion of firm-level markups within an industry defined by the Theil index given in (\ref{eq:theil_index}). Treatment is equal to one for industries with above-median 2001 tariff rates with China for years 2002 and beyond. Estimates are computed using the CCEDID estimator proposed in the paper with the Theil index of firm-level total factor productivity as the covariate X. A constant factor is included as an observed factor. Panel (a) presents estimates of the total effect of WTO Ascension, $\Delta$, and panel (b) presents the portion of the effect mediated by the Theil index in firm-level total factor productivity. This figure replaces the Theil index in firm-level total factor productivity for 2003 with the linear intepolation between 2002 and 2004 as discussed in the text.}
+\end{figure}
+
+We report event-study estimates from our CCEDID estimator of the average treatment effects in panel (a) of Figure \ref{fig:trade}. Over the event-study estimates, we present an alternative aggregation where we average over all the post-periods and all the pre-periods to have a summary estimate of the effect. Our estimates suggest a reduction in the $log(\text{Theil}_{\text{markup}})$ of around 4\% in 2002 when China joined the WTO, and around 10\% in the following three years, in line with the estimates of Figure 4 in \citet{lu2015trade}. We also note that estimates in the pre-period are very tightly estimated and contain zero suggesting that the markup dispersion in firms with above-average tariffs and below-average tariffs were evolving similarly over time before WTO ascension. 
+
+It is worth noting that the point estimate in 2003 is very noisily estimated. The likely reason for this is the log Theil index of firm-level TFP looks very different from the other years. In our estimator, this manifests as an extremely large macroeconomic shock that adds a lot of noise to our 2003 estimate. \citet{lu2015trade} explain significant changes to the way industries were classified in 2003. This likely coincided with changes to the survey design that explain the shift of TFP estimates in 2003. For this reason, we recreate estimates in Figure \ref{fig:trade_interpolation} where we replace the log of Theil TFP index for 2003 with a linearly interpolation between 2002 and 2004's value.The estimates look very similar in all the other years, but the 2003 estimates are much more precise.
+
+Our framework allows us to directly estimate whether the decrease in markup dispersion is caused by a decrease in TFP dispersion (what the authors call the marginal cost channel). Panel (b) of figure \ref{fig:trade} reports mediated effect event-study estiamtes which is the product of the estimated marginal effect $\hat{\beta}$ and the mean shift of the log Theil TFP index in relative year $k$, $\hat{\tau}^k$. We find significant declines in the dispersion of total factor productivity in above-median industries after China entered the WTO. Indeed, estimates of the mediated effect in 2004 and 2005 suggest that around half of the decline in markup dispersion is due to the effect of a declining TFP dispersion.\footnote{In this example, $\hat{\beta}$ is positive so the estimated effect on marginal cost dispersion itself is negative.} 
+
+As discussed in Section \ref{sec:post_treatment_bias}, imputation using the observed post-treatment $X_{it}$ instead of the imputed $\hat{X}_{it}(0)$ results in a `post-treatment' bias. In Figure \ref{fig:trade_observed_x}, we compare the CCEDID estimates that occurs when using observed $X_{it}$. The estimated total effect is smaller in magnitude for all years due to `removing' the mediated effects from the estimates. For example, the estimated effect in 2004 and 2005 are both statistically insignificant when using the observed $X_{it}$ (with and without interpolation of 2003 log Thiel TFP index). This illustrates the importance of allowing treatment effects to `operate' through observed $X$ variables. 
+
+\begin{figure}
+    \caption{Estimates when Using Observed $X_{it}$}
+    \label{fig:trade_observed_x}
+
+    \begin{subfigure}[b]{\textwidth}
+        \caption{Without 2003 Interpolation}
+        \input{../figures/trade-x0-vs-obs-x.tex}
+    \end{subfigure}
+    
+    \begin{subfigure}[b]{\textwidth}
+        \caption{With 2003 Interpolation}
+        \input{../figures/trade-x0-vs-obs-x_interpolated.tex}
+    \end{subfigure}
+    
+    {\footnotesize\emph{Notes:} These figures presents event-study estimates and 95\% confidence intervals for the effect of China WTO ascension on the dispersion of firm-level markups within an industry defined by the Theil index given in (\ref{eq:theil_index}). Treatment is equal to one for industries with above-median 2001 tariff rates with China for years 2002 and beyond. Estimates are computed using the CCEDID estimator proposed in the paper with the Theil index of firm-level total factor productivity as the covariate X. A constant factor is included as an observed factor. Panel (a) presents estimates of the total effect of WTO Ascension, $\Delta$, and panel (b) presents the portion of the effect mediated by the Theil index in firm-level total factor productivity. This figure replaces the Theil index in firm-level total factor productivity for 2003 with the linear intepolation between 2002 and 2004 as discussed in the text.}
+\end{figure}
+
+
+
+
 
 % ------------------------------------------------------------------------------
 \section{Conclusion}
@@ -684,9 +719,9 @@ TO BE ADDED.
 
 We derive a consistent estimator of ATTs when untreated potential outcomes are generated by an interactive fixed effects error. Our identification strategy, based on the popular common correlated effects model, relies on time- and individual-varying covariates that admit a pure factor structure. We use the cross-sectional averages of the data to impute the untreated potential outcomes in post-treatment time periods. Our main consistency result allows for a fixed number of time periods, but can easily extend to when there are many pre-treatment observations. 
 
-While most treatment effect analyses omit time-varying covariates due to their possible correlation with treatment status, we explicitly allow treatment to affect the covariates' distribution in an arbitrary way. This model allows us to decompose the effect of treatment via a direct effect on the level of the outcomes and a mediated effect through the covariates and their slopes. Such a decomposition allows researchers to perform inference on the possible mechanisms of an intervention through different relevant channels. We also demonstrate how estimators based on time-varying controls that do not allow indirect effects, such as the principal components estimator of \citet{chan2022pcdid}, are only consistent for the direct effect of treatment unless either the covariates are independent of treatment status or have zero effect on the outcome. This effect is consistently estimated by our CCE estimator under a weaker model proposed by \citet{Brown_Schmidt_Wooldridge_2021}. 
+While most treatment effect analyses omit time-varying covariates due to their possible correlation with treatment status, we explicitly allow treatment to affect the covariates' distribution in an arbitrary way. This model allows us to decompose the effect of treatment via a direct effect on the level of the outcomes and a mediated effect through the covariates. Such a decomposition allows researchers to perform inference on the possible mechanisms of an intervention through different relevant channels. We also demonstrate how estimators based on time-varying controls that do not allow indirect effects, such as the principal components estimator of \citet{chan2022pcdid}, are only consistent for the direct effect of treatment unless either the covariates are independent of treatment status or have zero effect on the outcome. This effect is consistently estimated by our CCE estimator under a weaker model proposed by \citet{Brown_Schmidt_Wooldridge_2021}. 
 
-% \textbf{APPLICATION DISCUSSION}
+We illustrated the importance of this decomposition in our analysis of markup dispersion. Our estimator is able to quantify potential mechanisms \emph{underlying} an estimated causal effect. In our example, we show that a decrease in marginal cost markups explain 25\% of the estimated decrease in the dispersion of markups among U.S. industries after China entered the WTO. Our results are similar to the existing literature and provide causal evidence on the importance of total factor productivity dispersion on markup dispersion.
 
 
 
@@ -703,7 +738,7 @@ While most treatment effect analyses omit time-varying covariates due to their p
 \appendix
 
 %\numberwithin{equation}{section}
-\renewcommand{\theequation}{A.\arabic{equation}}
+\renewcommand{\theequation}{A.\arabic{equation}}\textbf{}
 
 \section*{Appendix}
 
@@ -945,7 +980,4 @@ as $N\to\infty$ (see \citealp{pesaran2006estimation}, page 985, for a similar ar
 
 
 \end{document}
-
-
-
 
