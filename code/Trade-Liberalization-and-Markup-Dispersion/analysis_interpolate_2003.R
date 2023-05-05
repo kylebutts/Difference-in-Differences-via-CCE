@@ -458,7 +458,7 @@ colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#
       x = rel_year + 2002, y = estimate
     ),
     size = 1, 
-    color = colors[1], shape = 15
+    color = colors[7], shape = 15
   ) +
   geom_ribbon(
     data = ests_pre_post,
