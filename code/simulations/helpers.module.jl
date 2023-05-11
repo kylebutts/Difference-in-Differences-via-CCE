@@ -1,10 +1,11 @@
 function generate_data(rng, dgp, parallel_trends=false)
+  
   f1 = ones(T)
   f2 = 1.0:T
   f = [f1 f2]
   p = size(f, 2)
 
-  Δ = [1 * (t > T0) for t in 1:T] .* (dgp > 1)
+  Δ = [1 * (t > T0) for t in 1:T] .* (dgp >= 2)
   τ = [1 * (t > T0) for t in 1:T] .* (dgp == 3)
 
   # Correlation matrix for errors
@@ -30,20 +31,18 @@ function generate_data(rng, dgp, parallel_trends=false)
 
   for i in 1:N
     draw = randn(rng, 4)
-
     idx = ((i - 1) * p + 1):(i * p)
     G[idx, :] = [
       1+draw[1] draw[2]
       draw[3] 1+draw[4]
     ]
 
-    d = MvNormal(diag(G[idx, :]), I(p))
-
-    if parallel_trends == true
-      g[idx, :] = rand(rng, d, 1)'
-    else
-      # Mean shift in second factor loading if treated
-      g[idx, :] = rand(rng, d, 1)' + [0 1] .* ever_treated[1 + (i-1)*T]
+    d = MvNormal(diag(I(2)), I(p))
+    g[idx, :] = rand(rng, d, 1)'
+    
+    # Mean shift in second factor loading if treated and PT is false
+    if parallel_trends == false
+      g[idx, :] = g[idx, :] + ([0 1] .* ever_treated[1 + (i-1)*T])'
     end
   end
 
@@ -54,17 +53,18 @@ function generate_data(rng, dgp, parallel_trends=false)
 
   # typical element: f * G[1:2, :] + [V1 V2][1:3, 1:2]
   X = kron(I(N), f) * G + [V1 V2]
-
+  X0 = X
   X[:, 2] = X[:, 2] .+ repeat(τ, N) .* treat
 
-  # Generating y(0)
+  # Error term
   d = MvNormal(zeros(T), C)
   u = (x -> reduce(vcat, x))(rand(rng, d, N))
-
-  y0 = X * b + 4 * kron(I(N), f) * g + u
+  
+  # Generating y(0)
+  y0 = X0 * b + kron(I(N), f) * g + u
 
   # Generate y
-  y = y0 + repeat(Δ, N) .* treat
+  y = repeat(Δ, N) .* treat + X * b + kron(I(N), f) * g + u 
 
   return data = DataFrame(;
     id=id,
@@ -75,6 +75,8 @@ function generate_data(rng, dgp, parallel_trends=false)
     y=vec(y),
     X1=X[:, 1],
     X2=X[:, 2],
+    X1_0=X0[:, 1],
+    X2_0=X0[:, 2],
   )
 end
 
@@ -164,7 +166,7 @@ function est_twfe_w_covariates(data)
 
   est = reg(
     data,
-    @formula(y ~ rel_year + fe(t) & X1 + fe(t) & X2 + fe(id) + fe(t));
+    @formula(y ~ rel_year + X1 + X2 + fe(id) + fe(t));
     contrasts=Dict(:rel_year => DummyCoding(; base=-1)),
     save=:fe,
   )

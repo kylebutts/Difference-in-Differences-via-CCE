@@ -3,7 +3,7 @@
 # estimator to TWFE. Currently there is no treatment effect
 
 using Random, Distributions, Statistics, LinearAlgebra
-using Plots, PrettyTables
+using Plots, PrettyTables, CSV
 using DataFrames, Chain, FixedEffectModels, Printf
 
 include("helpers.module.jl")
@@ -20,6 +20,9 @@ parallel_trends = true
 sims = DataFrame(;
   dgp=[2, 3, 2, 3], parallel_trends=[true, true, false, false]
 )
+# sims = DataFrame(;
+#   dgp=[2], parallel_trends=[false]
+# )
 
 # parameters
 N = 200
@@ -27,7 +30,7 @@ T = 9
 T0 = 6
 b = [1.0, 1.0]
 K = 2
-S = 5000
+S = 250
 
 
 for sim in eachrow(sims)
@@ -48,6 +51,7 @@ for sim in eachrow(sims)
     # Generate data ------------------------------------------------------------
     data = generate_data(rng, dgp, parallel_trends)
     # data[[1:3; 598:600], :]
+    CSV.write("data.csv", data)
 
     # CCEDID -------------------------------------------------------------------
     (bhat, est) = est_ccedid(data)
