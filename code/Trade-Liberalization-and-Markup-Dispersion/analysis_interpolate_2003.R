@@ -69,8 +69,8 @@ df[, g := ifelse(hightariff == TRUE, 2002, Inf)]
 
 (collapse = df[, 
   .(
-    mean_ln_theil_tfp = mean(ln_theil_tfp, na.rm = T), 
-    sd_ln_theil_tfp = sd(ln_theil_tfp, na.rm = T)
+    mean_ln_theil_tfp = mean(ln_theil_tfp, na.rm = TRUE), 
+    sd_ln_theil_tfp = sd(ln_theil_tfp, na.rm = TRUE)
   ), 
   by = year
 ])
@@ -92,14 +92,14 @@ df[, g := ifelse(hightariff == TRUE, 2002, Inf)]
   kfbmisc::theme_kyle(base_size = 10))
 
 
-tikzDevice::tikz(
-  here("figures/plot_ln_theil_tfp.tex"), 
-  width = 10 * (6.9 / 10), height = 5 * (6.9 / 10),
-  standAlone = FALSE
-)
-plot(plot_ln_theil_tfp)
-dev.off()
-compile_tikz(here("figures/plot_ln_theil_tfp.tex"))
+# tikzDevice::tikz(
+#   here("figures/plot_ln_theil_tfp.tex"), 
+#   width = 10 * (6.9 / 10), height = 5 * (6.9 / 10),
+#   standAlone = FALSE
+# )
+# plot(plot_ln_theil_tfp)
+# dev.off()
+# compile_tikz(here("figures/plot_ln_theil_tfp.tex"))
 
 
 # Linearly Interpolate 2002 and 2004
@@ -441,6 +441,14 @@ colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#
     x = 2002.1, y = 0.03, hjust = 0,
     label = r'($\leftarrow$ China joins WTO)', size = 3
   ) +
+  annotate(
+    geom = "label", x = 1998, y = -0.08, 
+    label = r'($\hat{\beta} = 0.238$)',
+    bg = "white", hjust = 0,
+    label.padding = unit(0.5, "lines"),
+    label.r = unit(0, "lines"),
+    label.size = 0
+  ) + 
   geom_errorbar(
     data = ests,
     aes(

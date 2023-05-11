@@ -142,8 +142,8 @@ df[, g := ifelse(hightariff == TRUE, 2002, Inf)]
 
 (collapse = df[, 
   .(
-    mean_ln_theil_tfp = mean(ln_theil_tfp, na.rm = T), 
-    sd_ln_theil_tfp = sd(ln_theil_tfp, na.rm = T)
+    mean_ln_theil_tfp = mean(ln_theil_tfp, na.rm = TRUE), 
+    sd_ln_theil_tfp = sd(ln_theil_tfp, na.rm = TRUE)
   ), 
   by = year
 ])
@@ -492,6 +492,14 @@ colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#
     x = 2002.1, y = 0.15, hjust = 0,
     label = r'($\leftarrow$ China joins WTO)', size = 3
   ) +
+  annotate(
+    geom = "label", x = 1998, y = -0.07, 
+    label = r'($\hat{\beta} = 0.238$)',
+    bg = "white", hjust = 0,
+    label.padding = unit(0.5, "lines"),
+    label.r = unit(0, "lines"),
+    label.size = 0
+  ) + 
   geom_errorbar(
     data = ests,
     aes(
@@ -535,7 +543,7 @@ colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#
     linewidth = 1,
     linetype = "dotted"
   ) + 
-  scale_y_continuous(limits = c(-0.5, 0.15)) + 
+  scale_y_continuous(limits = c(-0.1, 0.15)) + 
   scale_x_continuous(breaks = 2002 + -4:3) +
   labs(x = NULL, y = r'(Estimated Effect on $\log($Theil$)$)') +
   kfbmisc::theme_kyle(base_size = 7) +
