@@ -1,0 +1,28 @@
+project:
+  type: website
+  pre-render: copy_readme.R
+  render: 
+    - "**/index.md"
+
+website:
+  title: "Difference-in-Differences with Spatial Spillovers"
+  sidebar: 
+    style: "docked"
+    contents: 
+      - section: Trade Liberalization and Markup Dispersion
+        contents: Trade-Liberalization-and-Markup-Dispersion/**
+      - section: "Simulations"
+        contents: simulations/**
+      
+
+format:
+  html:
+    theme: 
+      - cosmo
+      - repro.scss
+    highlight-style: github
+    toc: true
+    toc-depth: 4
+    toc-expand: 4
+    include-after-body: 
+      - toggle-code.html # Button to toggle code visibility

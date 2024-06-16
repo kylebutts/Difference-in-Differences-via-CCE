@@ -1,0 +1,507 @@
+/*
+** GAUSS Code for "Simple Treatment Effect Estimation In Fixed-T Panels With Interactive Fixed Effects"
+*/
+
+new;
+
+/*
+** does the bias and rmse sims without bootstrap
+*/
+
+nsim  = 2000;
+seed  = 299;
+b_0   = 1;              
+d_0y  = 1;
+d_0x  = 0;              // 0 = no te in x, 1 = et in x
+d_0   = d_0y+d_0x*b_0;
+het   = 0.2;            // 0.2 = as in pesaran (kappa2 = 0.04)
+part  = 0;              // 0 = no jump in loading, 1 = jump in loading
+fact  = 0;              // 0 = f is const, 1 = f is AR, 2 = f is trend
+
+it  = 1;
+do while it <= 8;  
+
+if it eq 1;  t = 8;  n = 40;   endif;
+if it eq 2;  t = 8;  n = 80;   endif;
+if it eq 3;  t = 8;  n = 160;  endif;
+if it eq 4;  t = 8;  n = 320;  endif;
+
+if it eq 5;  t = 16; n = 40;   endif;
+if it eq 6;  t = 16; n = 80;   endif;
+if it eq 7;  t = 16; n = 160;  endif;
+if it eq 8;  t = 16; n = 320;  endif;
+
+if fact eq 0; f = ones(t,1);                      endif;
+if fact eq 1; f = 1+filter(rndns(t,1,seed),0.5);  endif;
+if fact eq 2; f = seqa(1,1,t);                    endif;
+l_y = 1 + rndns(n,1,seed);
+
+is    = 1;
+rej1  = zeros(1,t);
+rej2  = zeros(1,t);
+rej3  = 0;
+rej4  = 0;
+bias1 = zeros(t,nsim);
+bias2 = zeros(t,nsim);
+bias3 = zeros(1,nsim);
+bias4 = zeros(1,nsim);
+rmse1 = zeros(t,nsim);
+rmse2 = zeros(t,nsim);
+rmse3 = zeros(1,nsim);
+rmse4 = zeros(1,nsim);
+tsta1 = zeros(t,nsim);
+tsta2 = zeros(t,nsim);
+tsta3 = zeros(1,nsim);
+tsta4 = zeros(1,nsim);
+do while is <= nsim;
+
+i       = 1;
+y       = zeros(t,n);
+x       = zeros(t,n);
+t_0     = t/2;
+n_0     = n/2;
+dt      = (zeros(t_0,1)|ones(t-t_0,1));   
+dn      = (zeros(n_0,1)|ones(n-n_0,1));
+d       = dt*dn';
+do while i <= n;  
+
+e_y     = filter(rndns(t,1,seed),0.5);
+e_x     = filter(rndns(t,1,seed),0.5);
+x[.,i]  = d[.,i]*(d_0x+het*rndns(1,1,seed))*d_0x + f*l_y[i] + e_x;
+y[.,i]  = d[.,i]*(d_0y+het*rndns(1,1,seed)) + x[.,i]*(b_0+het*rndns(1,1,seed)) + f*(l_y[i]+part*dn[i]) + e_y;
+
+i = i + 1;
+endo;
+
+{d_1,se_1}  = cce(y,x,t_0,n_0);
+{d_2,se_2}  = xu(y,x,1,t_0,n_0);
+{d_3,se_3}  = ols(y,x,t_0,n_0);
+{d_4,se_4}  = pcdid(y,x,1,t_0,n_0);
+
+bias1[.,is] = (d_1-dt*d_0);
+bias2[.,is] = (d_2-dt*d_0);
+bias3[is]   = (d_3-d_0);
+bias4[is]   = (d_4-d_0);
+rmse1[.,is] = (d_1-dt*d_0).^2;
+rmse2[.,is] = (d_2-dt*d_0).^2;
+rmse3[is]   = (d_3-d_0).^2;
+rmse4[is]   = (d_4-d_0).^2;
+tsta1[.,is] = sqrt(n-n_0)*abs(d_1-dt*d_0)./se_1;
+tsta2[.,is] = sqrt(n-n_0)*abs(d_2-dt*d_0)./se_2;
+tsta3[is]   = sqrt(n)*abs(d_3-d_0)./se_3;
+tsta4[is]   = sqrt(n-n_0)*abs(d_4-d_0)./se_4;
+
+i = 1;
+do while i <= t;  
+
+if 2*cdfnc(tsta1[i,is]) lt 0.05; rej1[i] = rej1[i]+1; endif; 
+if 2*cdfnc(tsta2[i,is]) lt 0.05; rej2[i] = rej2[i]+1; endif; 
+
+i = i + 1;
+endo;
+
+if 2*cdfnc(tsta3[is]) lt 0.05; rej3 = rej3+1; endif; 
+if 2*cdfnc(tsta4[is]) lt 0.05; rej4 = rej4+1; endif; 
+
+is = is + 1;
+endo;
+
+
+
+/* printing options */
+format/m1/rd 8,0;
+
+n;; t;; d_0x;; part;; fact;;
+
+format/m1/rd 8,3;
+
+//100*meanc(bias1')'~100*meanc(bias2')'~100*sqrt(meanc(rmse1'))'~100*sqrt(meanc(rmse2'))';;
+//meanc(bias1[1,.]')~meanc(bias2[1,.]')~sqrt(meanc(rmse1[1,.]'))~sqrt(meanc(rmse2[1,.]'));;
+//meanc(bias1[t_0+1:t,.]')~meanc(bias2[t_0+1:t,.]')~sqrt(meanc(rmse1[t_0+1:t,.]'))~sqrt(meanc(rmse2[t_0+1:t,.]'))~100*(rej1[t_0+1:t]'/nsim)~100*(rej2[t_0+1:t]'/nsim);
+
+meanc(bias1[t_0+1,.]')~meanc(bias2[t_0+1,.]')~meanc(bias3')~meanc(bias4')~sqrt(meanc(rmse1[t_0+1,.]'))~sqrt(meanc(rmse2[t_0+1,.]'))~sqrt(meanc(rmse3'))~sqrt(meanc(rmse4')); 
+
+//format/m1/rd 8,1;
+
+//100*(rej1[t_0+1]'/nsim);; 100*(rej2[t_0+1]'/nsim);; 100*(rej3'/nsim);; 100*(rej4'/nsim);
+
+it = it + 1;
+endo;
+
+
+/* procs */
+
+
+proc(1) = boot(y,x,t_0,n_0,nb,b_0);
+local n,t,res,y_b,x_b,z_b,j,f,f_b,e_b,b_b,se_b,b,se,i_b,pval;
+
+n       = cols(y);
+t       = rows(y);
+f       = bar(y,n,n_0)~bar(x,n,n_0);
+{b,se}  = cce_ffix(y,x,f,t_0,n_0);
+//{b,se}  = cce(y,x,t_0,n_0);
+
+pval = zeros(t,1);
+res  = zeros(nb,t);
+for j(1,nb,1);
+
+y_b = {};
+x_b = {};
+for i(1,n_0,1);
+i_b = int(rndu(1,1)*n_0); 
+if i_b eq 0;     i_b = 1; endif;
+if i_b eq n_0+1; i_b = n_0; endif; 
+y_b = y_b~y[.,i_b]; 
+x_b = x_b~x[.,i_b]; 
+endfor;
+
+for i(n_0+1,n,1);
+i_b = n_0+int(rndu(1,1)*(n-n_0)); 
+if i_b eq n_0;    i_b = n_0+1; endif;
+if i_b eq n+1;    i_b = n; endif; 
+y_b = y_b~y[.,i_b]; 
+x_b = x_b~x[.,i_b]; 
+endfor;
+
+{b_b,se_b} = cce_ffix(y_b,x_b,f,t_0,n_0);
+//{b_b,se_b} = cce(y_b,x_b,t_0,n_0);
+res[j,.]   = abs(sqrt(n-n_0)*(b_b-b)');
+endfor;
+
+for i(1,t,1);
+pval[i] = counted(sortc(res[.,i],1),abs(sqrt(n-n_0)*(b[i]-b_0[i])))/nb;
+endfor;
+
+retp(pval);
+endp;
+
+
+
+proc (2) = cce_ffix(y,x,f,t_0,n_0);
+local t,n,i,k,f_0,ai,yh,yhi,di,d,s2;
+
+t    = rows(y);
+n    = cols(y);
+k    = cols(x)/n;
+f_0  = f[1:t_0,.];
+
+i    = n_0+1;
+yh   = {};
+do while i <= n;
+ai   = inv(f_0'f_0)*f_0'y[1:t_0,i];
+yhi  = f*ai;
+yh   = yh~yhi;
+i    = i+1;
+endo;
+
+di   = y[.,n_0+1:n]-yh;
+d    = meanc(di');
+s2   = (di-d)*(di-d)'/(n-n_0);
+
+retp(d,sqrt(diag(s2)));
+endp;
+
+
+
+proc (2) = cce(y,x,t_0,n_0);
+local t,n,i,k,f,f_0,ai,yh,yhi,di,d,s2;
+
+t    = rows(y);
+n    = cols(y);
+k    = cols(x)/n;
+f    = bar(y,n,n_0)~bar(x,n,n_0);
+f_0  = f[1:t_0,.];
+
+i    = n_0+1;
+yh   = {};
+do while i <= n;
+ai   = inv(f_0'f_0)*f_0'y[1:t_0,i];
+yhi  = f*ai;
+yh   = yh~yhi;
+i    = i+1;
+endo;
+
+di   = y[.,n_0+1:n]-yh;
+d    = meanc(di');
+s2   = (di-d)*(di-d)'/(n-n_0);
+
+retp(d,sqrt(diag(s2)));
+endp;
+
+
+
+
+proc (1) = counted(x,k);
+local t,d,m,i,minx;
+
+t = rows(x);
+
+if (k < x[1] and x[t]-x[1] > 0) or (k > x[1] and x[t]-x[1] < 0); m = 0; goto out; endif;
+if (k < x[t] and x[t]-x[1] < 0) or (k > x[t] and x[t]-x[1] > 0); m = t; goto out; endif;
+
+i = 1;
+m = 1;
+do while i <= t-1;
+if (x[i] lt k and x[i+1] gt k) or (x[i] gt k and x[i+1] lt k);  d = x[i];  endif;
+i = i+1;
+endo;
+
+i = 1;
+do while i <= t;
+if d == x[i]; m = i; goto out; endif;
+i = i + 1;
+endo;
+  
+out:
+
+retp(m);
+endp;
+
+
+
+
+proc (1) = bar(x,n,n_0);
+local t,k,f,i; 	
+	
+k    = cols(x)/n;
+t    = rows(x);
+
+i = 1;
+f = zeros(t,k);
+do while i <= n_0;
+f = f + x[.,1+(i-1)*k:i*k]/n_0;
+i = i+1;
+endo;
+
+retp(f);
+endp;
+
+
+proc (1) = filter(x,rho);
+local t,n,y,i;
+
+t = rows(x);
+n = cols(x);
+
+i = 2;
+y = zeros(t+1,n);
+do while i <= t+1;
+y[i,.] = y[i-1,.]*rho + x[i-1,.];
+i = i+1;
+endo;
+
+retp(y[2:rows(y),.]);
+endp;
+
+
+
+
+proc (2) = xu(y,x,r,t_0,n_0);
+local t,n,i,k,f,f_0,b,ai,yi,xi,yh,yhi,di,d,s2;
+
+t     = rows(y);
+n     = cols(y);
+k     = cols(x)/n;
+{b,f} = bai(y[.,1:n_0],x[.,1:n_0],r);
+
+f_0  = f[1:t_0,.];
+i    = n_0+1;
+yh   = {};
+do while i <= n;
+ai   = inv(f_0'f_0)*f_0'(y[1:t_0,i]-x[1:t_0,1+(i-1)*k:i*k]*b);
+yhi  = x[.,1+(i-1)*k:i*k]*b+f*ai;
+yh   = yh~yhi;
+i    = i+1;
+endo;
+
+di   = y[.,n_0+1:n]-yh;
+d    = meanc(di');
+s2   = (di-d)*(di-d)'/(n-n_0);
+
+retp(d,sqrt(diag(s2)));
+endp;
+
+
+
+
+proc (2) = bai(y,x,r);
+local t,n,vy,vx,f,f0,f1,v,l,inv_xx,b_0,b,w,j;
+
+t           = rows(y);
+n           = cols(y);
+
+vy          = vec(y);
+vx          = vec(x);
+inv_xx      = inv(vx'vx);
+b_0         = inv_xx*(vx'vy);
+w           = reshape(vy-vx*b_0,n,t)';
+{f0,v,f1}   = svd1(w*w');
+f           = f0[.,1:r]*sqrt(t);
+l           = (w'f)/t;
+b           = inv_xx*(vx'(vy-vec(f*l')));
+j           = 1;
+do until (maxc(abs(b-b_0)) lt 1/(10^3)) or (j gt 1000);
+b_0         = b; 
+w           = reshape(vy-vx*b_0,n,t)';
+{f0,v,f1}   = svd1(w*w');
+f           = f0[.,1:r]*sqrt(t);
+l           = (w'f)/t;
+b           = inv_xx*(vx'(vy-vec(f*l')));
+j  = j+1;
+endo;
+
+retp(b,f);
+endp;
+
+
+
+proc (2) = ols(y,x,t_0,n_0);
+local t,n,i,dn,d,md,dt,my,mx,m,b,e,s2,di;
+
+t    = rows(y);
+n    = cols(y);
+
+i    = 1;
+d    = ones(t,1);
+m    = eye(t)-d*inv(d'd)*d';
+dn   = (zeros(n_0,1)|ones(n-n_0,1));
+dt   = (zeros(t_0,1)|ones(t-t_0,1));
+d    = dt*dn';
+md   = vec(m*d-meanc((m*d)')); 
+my   = vec(m*y-meanc((m*y)'));
+mx   = vec(m*x-meanc((m*x)'));
+m    = eye(n*t)-mx*inv(mx'mx)*mx';
+md   = m*md; 
+my   = m*my;
+b    = inv(md'md)*(md'my);
+e    = reshape(my-md*b,n,t)';
+
+i    = 1;
+s2   = 0;
+do while i <= n;
+di   = md[1+(i-1)*t:i*t];
+s2   = s2 + di'e[.,i]*e[.,i]'*di/n;
+i    = i+1;
+endo;
+
+//s2 = sumc(diag(e'e))/n;
+//retp(b,sqrt(diag(s2*inv(mx'mx/n))));
+
+retp(b,sqrt(diag(inv(md'md/n)*s2*inv(md'md/n))));
+endp;
+
+
+
+proc (2) = pcdid(y,x,r,t_0,n_0);
+local t,n,u,f,d,dn,dt,i,dmg,di,s2;
+
+t   = rows(y);
+n   = cols(y);
+
+i   = n_0+1;
+u   = res(y[.,1:n_0],x[.,1:n_0]);
+f   = pca(u,r);
+d   = (zeros(t_0,1)|ones(t-t_0,1));
+di  = {};
+do while i <= n;
+di  = di|est(y[.,i],d,x[.,i],f); 
+i   = i+1;
+endo;
+
+dmg = meanc(di);
+s2  = (di-dmg)*(di-dmg)'/(n-n_0);
+
+retp(dmg,sqrt(sumc(diag(s2))));
+endp;
+
+
+
+proc (1) = res(y,x);
+local t,n,i,m,my,w;
+
+t = rows(y);
+n = cols(y);
+
+i  = 1;
+my = zeros(t,n);
+do while i <= n;
+w       = (x[.,i]~ones(t,1));
+//w       = x[.,i];
+m       = eye(t)-w*inv(w'w)*w';
+my[.,i] = m*y[.,i];
+i = i+1;
+endo;
+
+retp(my);
+endp;
+
+
+proc (1) = pca(x,r);
+local w0,v,w,f;
+
+{w0,v,w}  = svd1(x'x/rows(x));
+w         = w0[.,1:r];
+f         = x*w/cols(x);
+
+retp(f);
+endp;
+
+
+proc (1) = est(y,d,x,f);
+local t,w,m,b;
+
+t = rows(y);
+w = (x~f~ones(t,1));
+m = eye(t)-w*inv(w'w)*w'; 
+b = inv(d'm*d)*(d'm*y);
+
+retp(b);
+endp;
+
+
+
+
+
+
+
+/*
+
+proc (2) = ols(y,x,t_0,n_0);
+local t,n,i,dn,d,md,dt,my,mx,m,b,e,s2,xi;
+
+t    = rows(y);
+n    = cols(y);
+
+i    = 1;
+dn   = (zeros(n_0,1)|ones(n-n_0,1));
+d    = ones(t,1);
+m    = eye(t)-d*inv(d'd)*d';
+md   = {};
+do while i <= t;
+dt    = zeros(t,1);
+dt[i] = 1;
+md    = md~vec(m*dt*dn'-meanc((m*dt*dn')')); 
+i     = i+1;
+endo;
+
+my   = vec(m*y-meanc((m*y)'));
+mx   = vec(m*x-meanc((m*x)'));
+m    = eye(n*t)-mx*inv(mx'mx)*mx';
+b    = inv(md'm*md)*(md'm*my);
+e    = reshape(m*(my-md*b),n,t)';
+
+i    = 1;
+s2   = zeros(t,t);
+do while i <= n;
+xi   = mx[1+(i-1)*t:i*t];
+s2   = s2 + xi'e[.,i]*e[.,i]'*xi/n;
+i    = i+1;
+endo;
+
+retp(b,sqrt(diag(inv(mx'mx/n)*s2*inv(mx'mx/n))));
+endp;
+
+*/
+
+
+

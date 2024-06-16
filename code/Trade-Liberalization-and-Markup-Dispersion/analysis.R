@@ -1,75 +1,77 @@
+#' ---
+#' title: "Main analysis"
+#' ---
+
+# %%
+#| warning: false
 library(data.table)
+library(tidyverse)
 library(here)
 library(did2s)
 library(ggplot2)
-library(tikzDevice)
+library(kfbmisc)
+library(fixest)
+library(stringmagic)
+setFixest_etable(markdown = TRUE)
 
-source(here("figures/convert_tex_to_pdf.R"))
+# https://stats.stackexchange.com/questions/118033/best-series-of-colors-to-use-for-differentiating-series-in-publication-quality
+colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#CC6677", "#882255", "#AA4499")
+
+# N bootstraps
+R <- 499
 
 # Load and clean data ----------------------------------------------------------
-
+# %%
 df <- haven::read_dta(here("code/Trade-Liberalization-and-Markup-Dispersion/data/AEJ_ind_DID_3-digit.dta"))
-setDT(df)
 
 # construct key variables
-df[year == 2001, a01 := avgtariff_ind3 / 100]
-df[, tariff01 := mean(a01[year == 2001]), by = "sic3"]
-df[, post02 := (year > 2001)]
-df[, t01post02 := tariff01 * post02]
+df <- df |>
+  mutate(
+    tariff01 = ifelse(
+      any(year == 2001),
+      avgtariff_ind3[year == 2001] / 100, NA_real_
+    ),
+    .by = "sic3"
+  ) |>
+  mutate(
+    hightariff = tariff01 > median(tariff01, na.rm = TRUE),
+    g = ifelse(hightariff == TRUE, 2002, Inf),
+    hightariff_post02 = hightariff & year > 2001,
+    rel_year = if_else(hightariff, year - 2002, -Inf),
+    pre_post = case_when(
+      rel_year > -Inf & rel_year < 0 ~ "pre",
+      rel_year >= 0 ~ "post",
+      .default = "control"
+    )
+  ) |>
+  filter(!is.na(tariff01))
 
-median_tariff01 <- df[
-  year == 2001, 
-  quantile(tariff01, probs = 0.5, na.rm = TRUE)
-]
-df[,
-  hightariff := (tariff01[year == 2001] >= median_tariff01),
-  by = "sic3"
-]
-df[, hightariff_post02 := hightariff & post02]
-df[, rel_year := ifelse(hightariff, year - 2002, -Inf)]
-df[, rel_year_post := ifelse(rel_year >= 1, 1, rel_year)]
-
-df[, ln_gini := log(gini)]
-df[, ln_theil := log(theil)]
-df[, ln_cv := log(cv)]
-df[, ln_mld := log(mld)]
-df[, ln_rmd := log(rmd)]
-
-df[, lnn := log(n)]
-df[, lnasset := log(assets)]
-df[, lnexports := log(exports)]
-df[, lnfdi := log(foreign)]
-df[, lnit := log(input_tariff)]
-df[, tariff := avgtariff_ind3 / 100]
-
-df <- df[!is.na(hightariff), ]
-
-df[, pre_post := fcase(
-  rel_year > -Inf & rel_year < 0, "pre",
-  rel_year >= 0, "post",
-  default = "control"
-)]
-
-
-# N = 164
-# df$sic3 |> unique() |> length()
-# T = 9
-# df$year |> unique() |> length()
-# 2001 Tariff summary
-# df[year == 2001, ][order(tariff), summary(tariff)]
+df <- df |>
+  mutate(
+    ln_gini = log(gini),
+    ln_theil = log(theil),
+    ln_cv = log(cv),
+    ln_mld = log(mld),
+    ln_rmd = log(rmd),
+    lnn = log(n),
+    lnasset = log(assets),
+    lnexports = log(exports),
+    lnfdi = log(foreign),
+    lnit = log(input_tariff),
+    tariff = avgtariff_ind3 / 100
+  )
 
 # Figure 4 ---------------------------------------------------------------------
-
-# feols(
-#   theil ~ 0 + i(year, ref = 1998) | sic3,
-#   df,
-#   split = ~hightariff
-# ) |>
-#   iplot()
-
+# %%
+feols(
+  theil ~ 0 + i(year, ref = 1998) | sic3,
+  df,
+  split = ~hightariff
+) |>
+  iplot()
 
 # TWFE -------------------------------------------------------------------------
-
+# %%
 est_ln_theil_twfe <- feols(
   ln_theil ~ i(rel_year, ref = c(-1, -Inf)) | sic3 + year,
   df,
@@ -83,12 +85,8 @@ est_ln_theil_twfe_cov <- feols(
   cluster = ~sic3
 )
 
-# iplot(
-#   list(est_ln_theil_twfe, est_ln_theil_twfe_cov)
-# )
-
 # did2s ------------------------------------------------------------------------
-
+# %%
 est_ln_theil_did2s <- did2s:::did2s(
   df,
   yname = "ln_theil",
@@ -108,7 +106,7 @@ est_ln_theil_did2s_cov <- did2s:::did2s(
   cluster_var = "sic3"
 )
 
-# coefplot(list(est_ln_theil_did2s, est_ln_theil_did2s_cov))
+# %%
 est_ln_theil_did2s_pre_post <- did2s:::did2s(
   df,
   yname = "ln_theil",
@@ -120,261 +118,232 @@ est_ln_theil_did2s_pre_post <- did2s:::did2s(
 
 
 # CCE DID ----------------------------------------------------------------------
+# %%
+df <- df |>
+  arrange(sic3, year) |>
+  mutate(y = ln_theil, x1 = ln_theil_tfp) |>
+  filter(!is.na(y), !is.na(x1)) |>
+  # Balanced panel
+  filter(n() == 8, .by = "sic3")
 
-setorder(df, sic3, year)
-setDT(df)
-
-df$y <- df$ln_theil
-df$x1 <- df$ln_theil_tfp
-
-
-xvars <- c("x1")
-df <- df[!(is.na(y) | is.na(x1)), ]
-
-# df$x2 <- df$lnn_surv
-# xvars <- c("x1", "x2")
-# df <- df[!(is.na(y) | is.na(x1) | is.na(x2)), ]
-
-df[, n := .N, by = "sic3"]
-df <- df[n == 8, ]
 T0 <- 2001
-df[, g := ifelse(hightariff == TRUE, 2002, Inf)]
+xvars <- c("x1")
 
-(collapse = df[, 
-  .(
-    mean_ln_theil_tfp = mean(ln_theil_tfp, na.rm = TRUE), 
-    sd_ln_theil_tfp = sd(ln_theil_tfp, na.rm = TRUE)
-  ), 
-  by = year
-])
-
-## CCE pooled estimate of \beta hat --------------------------------------------
-
-# CSAs of y and Xs
-Fhat <- df |>
-  DT(
-    g == Inf,
-    lapply(.SD, \(x) mean(x)),
-    by = year,
-    .SDcols = c("y", xvars)
-  ) |>
-  DT(,
-    as.matrix(.SD),
-    .SDcols = c("y", xvars)
+# %%
+collapse <- df |>
+  summarize(
+    mean_ln_theil_tfp = mean(ln_theil_tfp, na.rm = TRUE),
+    sd_ln_theil_tfp = sd(ln_theil_tfp, na.rm = TRUE),
+    .by = year
   )
 
-# Add constant to Fhat
-Fhat = cbind(Fhat, rep(1, nrow(Fhat)))
+plot_ln_theil_tfp <- ggplot() +
+  geom_point(
+    aes(x = year, y = ln_theil_tfp),
+    data = df,
+    size = 1.1
+  ) +
+  geom_point(
+    aes(x = year, y = mean_ln_theil_tfp),
+    data = collapse,
+    color = "blue", size = 3, shape = 16
+  ) +
+  labs(x = NULL, y = r'($\ln($Theil TFP$)$)') +
+  kfbmisc::theme_kyle(base_size = 10)
+
+
+## CCE pooled estimate of \beta hat --------------------------------------------
+# %%
+# CSAs of y and Xs
+Fhat <- df |>
+  filter(g == Inf) |>
+  summarize(
+    across(c(y, all_of(xvars)), ~ mean(.x, na.rm = TRUE)),
+    .by = "year"
+  ) |>
+  select(-year) |>
+  as.matrix() |>
+  # Add constant to Fhat (unit fixed-effects)
+  cbind(1)
+
+stringmagic::cat_magic("The estimated column rank is {qr(Fhat)$rank} out of {ncol(Fhat)} columns")
 
 # CCEP estimator for \hat{\beta} using pre-treatment X's for all groups
 N_pre_T0 <- (T0 - min(df$year) + 1)
 Fpre <- Fhat[1:N_pre_T0, ]
-M_Fpre <- diag(N_pre_T0) - Fpre %*% solve(t(Fpre) %*% Fpre) %*% t(Fpre)
+M_Fpre <- diag(N_pre_T0) - Fpre %*% solve(crossprod(Fpre, Fpre), t(Fpre))
 
 B <- matrix(0, nrow = length(xvars), ncol = length(xvars))
 A <- matrix(0, nrow = length(xvars), ncol = 1)
-
-for (id in unique(df[, sic3])) {
-  Xi_pre <- df |>
-    DT(
-      sic3 == id & year <= T0,
-      as.matrix(.SD),
-      .SDcols = xvars
-    )
-
-  yi_pre <- df[
-    sic3 == id & year <= T0,
-    y
-  ]
+for (id in unique(df$sic3)) {
+  idx <- (df$sic3 == id) & (df$year <= T0)
+  Xi_pre <- as.matrix(df[idx, xvars])
+  yi_pre <- df[idx, ]$y
 
   B <- B + t(Xi_pre) %*% M_Fpre %*% Xi_pre
   A <- A + t(Xi_pre) %*% M_Fpre %*% yi_pre
 }
+bhat <- solve(B, A)
 
-bhat <- solve(B) %*% A
-
-
-## Imputation of covariates and outcome ----------------------------------------
-
-for (sic3_id in unique(df[g < Inf, sic3])) {
-
-  idx = df$sic3 == sic3_id
-
+# %%
+impute_id <- function(sub) {
   # impute factor loadings
-  Xi_pre <- df[idx, ] |>
-    DT(
-      year <= T0,
-      as.matrix(.SD),
-      .SDcols = xvars
-    )
+  Xi_pre <- sub |>
+    filter(year <= T0) |>
+    select(all_of(xvars)) |>
+    as.matrix()
 
-  yi_pre <- df[idx, ][year <= T0, y]
+  Xi <- sub |>
+    select(all_of(xvars)) |>
+    as.matrix()
 
-  ghats <- solve(t(Fpre) %*% Fpre) %*% t(Fpre) %*% (yi_pre - Xi_pre %*% bhat)
+  yi_pre <- sub |>
+    filter(year <= T0) |>
+    select(y) |>
+    as.matrix()
+
+  # For total effect, do not need to impute X
+  ghats_ignore_X <- solve(crossprod(Fpre), crossprod(Fpre, yi_pre))
+  y_0hat_ignore_X <- (Fhat %*% ghats_ignore_X)
+
+  # Estimate factor-loadings
+  ghats <- solve(crossprod(Fpre), crossprod(Fpre, yi_pre - Xi_pre %*% bhat))
 
   # impute X(0)
-  X_0hat <- Fhat %*% solve(t(Fpre) %*% Fpre) %*% t(Fpre) %*% Xi_pre
-
-  for (i in 1:length(xvars)) {
-    var_name <- paste0(xvars[i], "_0hat")
-    df[idx, var_name] = X_0hat[, i]
-  }
+  X_0hat <- Fhat %*% solve(crossprod(Fpre), crossprod(Fpre, Xi_pre))
+  colnames(X_0hat) <- paste0(xvars, "_0hat")
 
   # impute y(0) using X(0)
   y_0hat <- (X_0hat %*% bhat) + (Fhat %*% ghats)
 
-  df[idx, "y_0hat"] = y_0hat
-
   # impute y(0) using observed X
-  Xi <- df[idx, as.matrix(.SD), .SDcols = xvars]
-
   y_0hat_obs_x <- (Xi %*% bhat) + (Fhat %*% ghats)
 
-  df[idx, "y_0hat_obs_x"] = y_0hat_obs_x
+  imputed <- tibble(
+    y_0hat_ignore_X = as.numeric(y_0hat_ignore_X),
+    x1_0hat = as.numeric(X_0hat),
+    y_0hat = as.numeric(y_0hat),
+    y_0hat_obs_x = as.numeric(y_0hat_obs_x)
+  )
+  return(imputed)
 }
 
-# Difference variables: Z_{it} - \hat{Z}_{it}(0)
-df$y_diff <- df$y - df$y_0hat
-df$y_diff_obs_x <- df$y - df$y_0hat_obs_x
-df$x1_diff <- (df$x1 - df$x1_0hat)
-df$mediated1_diff <- df$x1_diff * bhat[1]
-df$x2_diff <- (df$x2 - df$x2_0hat)
-df$mediated2_diff <- df$x2_diff * bhat[2]
+df <- df |>
+  mutate(
+    impute_id(pick(everything())),
+    .by = "sic3"
+  )
 
-# Data Check:
-# ggplot() + 
-#   geom_point(
-#     aes(x = 2002 + rel_year - 0.1, y = y),
-#     data = df[rel_year != -Inf, ], 
-#     color = "blue"
-#   ) + 
-#   geom_point(
-#     aes(x = 2002 + rel_year + 0.1, y = y_0hat),
-#     data = df[rel_year != -Inf, ], 
-#     color = "red"
-#   )
+df <- df |>
+  mutate(
+    y_diff = y - y_0hat,
+    y_diff_ignore_X = y - y_0hat_ignore_X,
+    y_diff_obs_x = y - y_0hat_obs_x,
+    x1_diff = (x1 - x1_0hat),
+    mediated1_diff = x1_diff * bhat[1]
+  )
 
 ## Estimate Effects ------------------------------------------------------------
 
+# %%
+# Showing equivalence
+etable(feols(
+  c(y_diff, y_diff_ignore_X) ~ 0 + i(rel_year),
+  df |> filter(g != Inf),
+  vcov = "hc1"
+))
+
+# %%
 # Log(theil)
 est_ln_theil_cce <- feols(
   y_diff ~ 0 + i(rel_year),
-  df[g < Inf, ],
+  df |> filter(g != Inf),
   vcov = "hc1"
 )
-
-est_ln_theil_pre_post <- feols(
-  y_diff ~ 0 + i(pre_post),
-  df[g < Inf, ],
-  vcov = "hc1"
+res_bootstrap <- boot::boot(
+  df |> filter(g != Inf),
+  function(data, indices) {
+    coef(feols(
+      y_diff ~ 0 + i(rel_year),
+      data[indices, ]
+    ))
+  },
+  R = R,
+  strata = df |> filter(g != Inf) |> pull(sic3)
 )
+est_ln_theil_cce <- summary(est_ln_theil_cce, cov(res_bootstrap$t))
 
-est_ln_theil_cce_obs_x <- feols(
-  y_diff_obs_x ~ 0 + i(rel_year),
-  df[g < Inf, ],
-  vcov = "hc1"
-)
-
+# %%
 # [X_{1it} - X_{1it}(0)] * \beta_1
 est_x1_cce <- feols(
   mediated1_diff ~ 0 + i(rel_year),
-  df[g < Inf, ],
+  df |> filter(g != Inf),
   vcov = "hc1"
 )
+res_bootstrap <- boot::boot(
+  df |> filter(g != Inf),
+  function(data, indices) {
+    coef(feols(
+      mediated1_diff ~ 0 + i(rel_year),
+      data[indices, ]
+    ))
+  },
+  R = R,
+  strata = df |> filter(g != Inf) |> pull(sic3)
+)
+est_x1_cce <- summary(est_x1_cce, cov(res_bootstrap$t))
 
+# %%
+est_ln_theil_cce_obs_x <- feols(
+  y_diff_obs_x ~ 0 + i(rel_year),
+  df |> filter(g != Inf),
+  vcov = "hc1"
+)
+res_bootstrap <- boot::boot(
+  df |> filter(g != Inf),
+  function(data, indices) {
+    coef(feols(
+      y_diff_obs_x ~ 0 + i(rel_year),
+      data[indices, ]
+    ))
+  },
+  R = R,
+  strata = df |> filter(g != Inf) |> pull(sic3)
+)
+est_ln_theil_cce_obs_x <- summary(est_ln_theil_cce_obs_x, cov(res_bootstrap$t))
+
+# %%
+est_ln_theil_pre_post <- feols(
+  y_diff ~ 0 + i(pre_post),
+  df |> filter(g != Inf),
+  vcov = "hc1"
+)
 est_x1_pre_post <- feols(
   mediated1_diff ~ 0 + i(pre_post),
-  df[g < Inf, ],
+  df |> filter(g != Inf),
   vcov = "hc1"
 )
-
-# [X_{2it} - X_{2it}(0)] * \beta_2
-# est_x2_cce <- feols(
-#   mediated2_diff ~ 0 + i(rel_year),
-#   df[g < Inf, ]
-# )
-
-
-
-(manual = df[
-  g < Inf, 
-][, 
-  .(
-    te_hat = mean(y_diff), 
-    se_hat = sd(y_diff) / sqrt(length(y_diff))
-  ), 
-  by = "rel_year"
-])
-
-feols(
-  y_diff ~ 0 + i(rel_year), 
-  df[g < Inf, ],
-  vcov = "hc1"
-) |>
-  summary()
-
-feols(
-  y_diff ~ 0 + i(rel_year), 
-  df[g < Inf, ]
-) |>
-  summary()
-
-est_y_post <- feols(
-  y_diff ~ 0 + i(rel_year), 
-  df[g < Inf, ],
-  vcov = "hc1"
-) 
-est_x1_post <- feols(
-  mediated1_diff ~ 0 + i(rel_year), 
-  df[g < Inf, ], 
-  vcov = "hc1"
-) 
-esttable(list(est_y_post, est_x1_post))
-coefplot(list(est_y_post, est_x1_post))
-esttable(list(est_ln_theil_cce, est_x1_cce))
-
 
 # Plot Results ----------------------------------------------------------------
-
-coefplot(
-  list(est_ln_theil_did2s, est_ln_theil_cce, est_x1_cce),
-  keep = "rel_year"
-)
-
-# coefplot(
-#   list(est_ln_theil_did2s, est_ln_theil_cce, est_x1_cce, est_x2_cce),
-#   keep = "rel_year"
-# )
-# coefplot(est_x1_cce)
-# coefplot(est_x2_cce)
-
 ## Graph: CCEDID ---------------------------------------------------------------
+# %%
+ests <- broom::tidy(est_ln_theil_cce) |>
+  mutate(
+    rel_year = as.numeric(str_replace(term, "rel_year::", ""))
+  )
 
-ests <- broom::tidy(est_ln_theil_cce)
-setDT(ests)
-ests$rel_year <- stringr::str_replace(ests$term, "rel_year::", "") |>
-  as.numeric()
+ests_pre_post <- broom::tidy(est_ln_theil_pre_post) |>
+  mutate(pre_post = str_replace(term, "pre_post::", ""))
 
-ests_pre_post <- broom::tidy(est_ln_theil_pre_post)
-setDT(ests_pre_post)
-ests_pre_post[, 
-  pre_post := stringr::str_replace(term, "pre_post::", "")
-]
+ests_pre_post <- bind_rows(
+  ests_pre_post |> filter(pre_post == "pre"),
+  ests_pre_post |> filter(pre_post == "pre"),
+  ests_pre_post |> filter(pre_post == "post"),
+  ests_pre_post |> filter(pre_post == "post")
+)
+ests_pre_post$x <- c(-4, -1, 0, 3)
 
-ests_pre_post = rbindlist(list(
-  ests_pre_post[pre_post == "pre", ],
-  ests_pre_post[pre_post == "pre", ],
-  ests_pre_post[pre_post == "post", ],
-  ests_pre_post[pre_post == "post", ]
-))
-
-ests_pre_post$x = c(-4, -1, 0, 3)
-
-
-
-# https://stats.stackexchange.com/questions/118033/best-series-of-colors-to-use-for-differentiating-series-in-publication-quality
-colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#CC6677", "#882255", "#AA4499")
-
+# %%
 (p <- ggplot() +
   geom_hline(yintercept = 0, linetype = "dashed") +
   geom_vline(xintercept = 2002, linetype = "dashed") +
@@ -399,22 +368,22 @@ colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#
     aes(
       x = rel_year + 2002, y = estimate
     ),
-    size = 1, 
+    size = 1,
     color = colors[1], shape = 15
   ) +
   geom_ribbon(
     data = ests_pre_post,
     aes(
       x = x + 2002,
-      ymin = estimate - 1.96 * std.error, 
-      ymax = estimate + 1.96 * std.error, 
+      ymin = estimate - 1.96 * std.error,
+      ymax = estimate + 1.96 * std.error,
       group = pre_post
     ),
     fill = colors[1],
     alpha = 0.1,
     color = colors[1],
     linetype = "dotted",
-  ) + 
+  ) +
   geom_line(
     data = ests_pre_post,
     aes(
@@ -425,11 +394,11 @@ colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#
     color = colors[1],
     linewidth = 1,
     linetype = "dotted"
-  ) + 
-  scale_y_continuous(limits = c(-0.5, 0.15)) + 
+  ) +
+  scale_y_continuous(limits = c(-0.5, 0.15)) +
   scale_x_continuous(breaks = 2002 + -4:3) +
   labs(x = NULL, y = r'(Estimated Effect on $\log($Theil$)$)') +
-  kfbmisc::theme_kyle(base_size = 7) +
+  kfbmisc::theme_kyle(base_size = 10) +
   theme(
     panel.border = element_blank(),
     axis.line = element_line(),
@@ -443,47 +412,32 @@ colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#
     axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))
   ))
 
-
-# ggsave(here("figures/trade-est.pdf"), p, width = 10 * 6.9/10, height = 5 * 6.9/10, bg = "white")
-
-tikzDevice::tikz(
-  here("figures/trade-cce_est.tex"), 
-  width = 10 * 6.9 / 10, height = 3.5 * 6.9 / 10,
-  standAlone = FALSE
+# %%
+kfbmisc::tikzsave(
+  here("out/figures/trade-cce_est.pdf"),
+  p,
+  width = 7, height = 3.5
 )
-plot(p)
-dev.off()
-compile_tikz(here("figures/trade-cce_est.tex"))
-
-
 
 ## Graph: X1 Mediated ----------------------------------------------------------
+# %%
+ests <- broom::tidy(est_x1_cce) |>
+  mutate(
+    rel_year = as.numeric(str_replace(term, "rel_year::", ""))
+  )
 
-ests <- broom::tidy(est_x1_cce)
-setDT(ests)
-ests$rel_year <- stringr::str_replace(ests$term, "rel_year::", "") |>
-  as.numeric()
+ests_pre_post <- broom::tidy(est_x1_pre_post) |>
+  mutate(pre_post = str_replace(term, "pre_post::", ""))
 
-ests_pre_post <- broom::tidy(est_x1_pre_post)
-setDT(ests_pre_post)
-ests_pre_post[, 
-  pre_post := stringr::str_replace(term, "pre_post::", "")
-]
+ests_pre_post <- bind_rows(
+  ests_pre_post |> filter(pre_post == "pre"),
+  ests_pre_post |> filter(pre_post == "pre"),
+  ests_pre_post |> filter(pre_post == "post"),
+  ests_pre_post |> filter(pre_post == "post")
+)
+ests_pre_post$x <- c(-4, -1, 0, 3)
 
-ests_pre_post = rbindlist(list(
-  ests_pre_post[pre_post == "pre", ],
-  ests_pre_post[pre_post == "pre", ],
-  ests_pre_post[pre_post == "post", ],
-  ests_pre_post[pre_post == "post", ]
-))
-
-ests_pre_post$x = c(-4, -1, 0, 3)
-
-
-
-# https://stats.stackexchange.com/questions/118033/best-series-of-colors-to-use-for-differentiating-series-in-publication-quality
-colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#CC6677", "#882255", "#AA4499")
-
+# %%
 (p <- ggplot() +
   geom_hline(yintercept = 0, linetype = "dashed") +
   geom_vline(xintercept = 2002, linetype = "dashed") +
@@ -493,13 +447,13 @@ colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#
     label = r'($\leftarrow$ China joins WTO)', size = 3
   ) +
   annotate(
-    geom = "label", x = 1998, y = -0.07, 
+    geom = "label", x = 1998, y = -0.07,
     label = r'($\hat{\beta} = 0.238$)',
     bg = "white", hjust = 0,
     label.padding = unit(0.5, "lines"),
     label.r = unit(0, "lines"),
     label.size = 0
-  ) + 
+  ) +
   geom_errorbar(
     data = ests,
     aes(
@@ -516,22 +470,22 @@ colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#
     aes(
       x = rel_year + 2002, y = estimate
     ),
-    size = 1, 
+    size = 1,
     color = colors[7], shape = 15
   ) +
   geom_ribbon(
     data = ests_pre_post,
     aes(
       x = x + 2002,
-      ymin = estimate - 1.96 * std.error, 
-      ymax = estimate + 1.96 * std.error, 
+      ymin = estimate - 1.96 * std.error,
+      ymax = estimate + 1.96 * std.error,
       group = pre_post
     ),
     fill = colors[7],
     alpha = 0.1,
     color = colors[7],
     linetype = "dotted",
-  ) + 
+  ) +
   geom_line(
     data = ests_pre_post,
     aes(
@@ -542,11 +496,11 @@ colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#
     color = colors[7],
     linewidth = 1,
     linetype = "dotted"
-  ) + 
-  scale_y_continuous(limits = c(-0.1, 0.15)) + 
+  ) +
+  scale_y_continuous(limits = c(-0.1, 0.15)) +
   scale_x_continuous(breaks = 2002 + -4:3) +
   labs(x = NULL, y = r'(Estimated Effect on $\log($Theil$)$)') +
-  kfbmisc::theme_kyle(base_size = 7) +
+  kfbmisc::theme_kyle(base_size = 10) +
   theme(
     panel.border = element_blank(),
     axis.line = element_line(),
@@ -560,22 +514,15 @@ colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#
     axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))
   ))
 
-
-# ggsave(here("figures/trade-est.pdf"), p, width = 10 * 6.9/10, height = 5 * 6.9/10, bg = "white")
-
-tikzDevice::tikz(
-  here("figures/trade-cce_mediated_est.tex"), 
-  width = 10 * 6.9 / 10, height = 3.5 * 6.9 / 10,
-  standAlone = FALSE
+# %%
+kfbmisc::tikzsave(
+  here("out/figures/trade-cce_mediated_est.pdf"),
+  p,
+  width = 7, height = 3.5
 )
-plot(p)
-dev.off()
-compile_tikz(here("figures/trade-cce_mediated_est.tex"))
-
-
 
 ## Graph: Using observed X vs. X(0) --------------------------------------------
-
+# %%
 est1 <- broom::tidy(est_ln_theil_cce)
 est1$estimator <- r'(CCEDID using $\hat{X}_{it}(0)$)'
 est1$estimator_num <- 1
@@ -583,20 +530,18 @@ est2 <- broom::tidy(est_ln_theil_cce_obs_x)
 est2$estimator <- r'(CCEDID using $X_{it}$)'
 est2$estimator_num <- 2
 
-ests <- rbindlist(list(est1, est2))
-ests$rel_year <- stringr::str_replace(ests$term, "rel_year::", "") |>
-  as.numeric()
+ests <- bind_rows(est1, est2) |>
+  mutate(
+    rel_year = str_replace(term, "rel_year::", ""),
+    rel_year = as.numeric(rel_year),
+    rel_year = case_when(
+      estimator_num == 1 ~ rel_year - 0.075,
+      estimator_num == 2 ~ rel_year + 0.075
+    ),
+    estimator = as_factor(estimator)
+  )
 
-ests[, rel_year := data.table::fcase(
-  estimator_num == 1, rel_year - 0.075,
-  estimator_num == 2, rel_year + 0.075
-)]
-
-ests$estimator <- forcats::as_factor(ests$estimator)
-
-# https://stats.stackexchange.com/questions/118033/best-series-of-colors-to-use-for-differentiating-series-in-publication-quality
-colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#CC6677", "#882255", "#AA4499")
-
+# %%
 (p <- ggplot() +
   geom_hline(yintercept = 0, linetype = "dashed") +
   geom_vline(xintercept = 2002, linetype = "dashed") +
@@ -632,7 +577,7 @@ colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#
     # label.position = "bottom",
     override.aes = list(linetype = 0)
   )) +
-  theme_bw(base_size = 9) +
+  theme_bw(base_size = 10) +
   theme(
     panel.border = element_blank(),
     axis.line = element_line(),
@@ -646,38 +591,34 @@ colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#
     axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))
   ))
 
-tikzDevice::tikz(here("figures/trade-x0-vs-obs-x.tex"), width = 10 * 6.9 / 10, height = 3.5 * 6.9 / 10, bg = "white", standAlone = FALSE)
-plot(p)
-dev.off()
-compile_tikz(here("figures/trade-x0-vs-obs-x.tex"))
-
+# %%
+kfbmisc::tikzsave(
+  here("out/figures/trade-x0-vs-obs-x.pdf"),
+  p,
+  width = 7, height = 3.5
+)
 
 ## Graph: TWFE Imputation vs. CCEDID -------------------------------------------
-
+# %%
 est1 <- broom::tidy(est_ln_theil_did2s)
 est1$estimator <- "TWFE Imputation"
 est1$estimator_num <- 1
 est2 <- broom::tidy(est_ln_theil_cce)
 est2$estimator <- "CCEDID"
 est2$estimator_num <- 2
-# est3 <- broom::tidy(est_x2_cce)
-# est3$estimator <- "CCEDID Mechanism"
-# est3$estimator_num <- 3
 
-ests <- rbindlist(list(est1, est2))
-ests$rel_year <- stringr::str_replace(ests$term, "rel_year::", "") |>
-  as.numeric()
+ests <- bind_rows(est1, est2) |>
+  mutate(
+    rel_year = str_replace(term, "rel_year::", ""),
+    rel_year = as.numeric(rel_year),
+    rel_year = case_when(
+      estimator_num == 1 ~ rel_year - 0.075,
+      estimator_num == 2 ~ rel_year + 0.075
+    ),
+    estimator = as_factor(estimator)
+  )
 
-ests[, rel_year := data.table::fcase(
-  estimator_num == 1, rel_year - 0.1,
-  estimator_num == 2, rel_year + 0.1
-)]
-
-ests$estimator <- forcats::as_factor(ests$estimator)
-
-# https://stats.stackexchange.com/questions/118033/best-series-of-colors-to-use-for-differentiating-series-in-publication-quality
-colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#CC6677", "#882255", "#AA4499")
-
+# %%
 (p <- ggplot() +
   geom_hline(yintercept = 0, linetype = "dashed") +
   geom_vline(xintercept = 2002, linetype = "dashed") +
@@ -713,7 +654,7 @@ colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#
     # label.position = "bottom",
     override.aes = list(linetype = 0)
   )) +
-  theme_bw(base_size = 9) +
+  theme_bw(base_size = 10) +
   theme(
     panel.border = element_blank(),
     axis.line = element_line(),
@@ -727,20 +668,15 @@ colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#
     axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))
   ))
 
-
-# ggsave(here("figures/trade-est.pdf"), p, width = 10 * 6.9/10, height = 5 * 6.9/10, bg = "white")
-
-tikzDevice::tikz(
-  here("figures/trade-est.tex"), 
-  width = 10 * 6.9 / 10, height = 5 * 6.9 / 10,
-  standAlone = FALSE
+# %%
+kfbmisc::tikzsave(
+  here("out/figures/trade-est.pdf"),
+  p,
+  width = 7, height = 3.5
 )
-plot(p)
-dev.off()
-compile_tikz(here("figures/trade-est.tex"))
 
 ## Graph: Decomposition of Effects ---------------------------------------------
-
+# %%
 est1 <- broom::tidy(est_ln_theil_cce)
 est1$estimator <- r'(Total effect: $\Delta_t + \gamma_{1t}$)'
 est1$estimator_num <- 1
@@ -753,29 +689,20 @@ est3 <- broom::tidy(est_x1_cce)
 est3$estimator <- r'(Indirect effect: $\gamma_{1t}$)'
 est3$estimator_num <- 3
 
-# est4 <- broom::tidy(est_x2_cce)
-# est4$estimator <- r'(Indirect effect: $\gamma_{2t}$)'
-# est4$estimator_num <- 4
+ests <- bind_rows(est1, est2, est3) |>
+  mutate(
+    rel_year = str_replace(term, "rel_year::", ""),
+    rel_year = as.numeric(rel_year),
+    rel_year = case_when(
+      estimator_num == 1 ~ rel_year - 0.15,
+      estimator_num == 2 ~ rel_year + 0.1,
+      estimator_num == 3 ~ rel_year + 0.2,
+      estimator_num == 4 ~ rel_year + 0.3
+    ),
+    estimator = as_factor(estimator)
+  )
 
-ests <- rbindlist(list(est1, est2, est3))
-# ests <- rbindlist(list(est1, est2, est3, est4))
-ests$rel_year <- stringr::str_replace(ests$term, "rel_year::", "") |>
-  as.numeric()
-
-ests[, rel_year := data.table::fcase(
-  estimator_num == 1, rel_year - 0.15,
-  estimator_num == 2, rel_year + 0.1,
-  estimator_num == 3, rel_year + 0.2,
-  estimator_num == 4, rel_year + 0.3
-)]
-
-ests$estimator <- forcats::as_factor(ests$estimator)
-
-# https://stats.stackexchange.com/questions/118033/best-series-of-colors-to-use-for-differentiating-series-in-publication-quality
-colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#CC6677", "#882255", "#AA4499")
-
-
-
+# %%
 (p <- ggplot() +
   geom_hline(yintercept = 0, linetype = "dashed") +
   geom_vline(xintercept = 2002, linetype = "dashed") +
@@ -813,7 +740,7 @@ colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#
     # label.position = "bottom",
     override.aes = list(linetype = 0, alpha = 1)
   )) +
-  theme_bw(base_size = 9) +
+  theme_bw(base_size = 10) +
   theme(
     panel.border = element_blank(),
     axis.line = element_line(),
@@ -827,12 +754,62 @@ colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#
     axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))
   ))
 
-# ggsave(here("figures/trade-est.pdf"), p, width = 10 * 6.9/10, height = 5 * 6.9/10, bg = "white")
+# %%
+kfbmisc::tikzsave(
+  here("out/figures/trade-decomposition.pdf"),
+  p,
+  width = 7, height = 3.5
+)
 
-tikzDevice::tikz(here("figures/trade-decomposition.tex"), width = 10 * 6.9 / 10, height = 5 * 6.9 / 10, bg = "white", standAlone = FALSE)
-plot(p)
-dev.off()
-compile_tikz(here("figures/trade-decomposition.tex"))
+
+# Cross-correlation tests ------------------------------------------------------
+# Pesaran - 2004 - General Diagnostic Tests for Cross Section Dependence in Panels
+source(here("code/Trade-Liberalization-and-Markup-Dispersion/utils.R"))
+
+# "Defactorized"
+eps <- df |>
+  # filter(g != Inf) |>
+  # identical with `y_diff`
+  with(make_mat(year, sic3, y_diff_ignore_X, names = TRUE))
+
+pesaran_test(eps)
+
+# Manual: note this is not working well b/c eps is not mean zero (by column)
+# eq (9)
+# xi_it = e_{it} / || e_i ||_2
+xi <- apply(eps, 2, \(x) x / norm(x, "2"))
+
+# eq (8)
+# rho_ij = \sum_t xi_it xi_jt
+rho <- crossprod(xi)
+
+# eq (7)
+N <- ncol(xi)
+T <- nrow(xi)
+CD <- sqrt((2 * T) / (N * (N - 1))) * sum(rho[lower.tri(rho)])
+p.value <- 2 * (1 - pnorm(abs(CD)))
 
 
+# Testing rank condition (Da Vos et. al., 2014) --------------------------------
+# %%
+# Create Z
+source(here("code/Trade-Liberalization-and-Markup-Dispersion/utils.R"))
+temp <- df |> 
+  arrange(sic3, year) |> 
+  filter(hightariff == 0, year <= 2001)
+vars <- c("y", "x1")
+Z <- lapply(unique(temp$sic3), function(s) {
+  as.matrix(temp[temp$sic3 == s, c("y", "x1")])
+})
+
+# Number of factors in CSAs
+m_hat <- DVES_m(Z)
+m_hat_y <- DVES_m(lapply(Z, function(Zi) Zi[, 1, drop = FALSE]))
+
+# Rank of cross-sectional averages
+rho_hat <- DVES_rho(Z)
+cat_magic(
+  "Estimated number of factors (m): {m_hat}\n", 
+  "Estimated rank of CCE matrix (rho): {rho_hat}\n"
+)
 

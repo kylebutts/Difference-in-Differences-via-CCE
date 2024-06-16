@@ -2,6 +2,10 @@
 
 submissions/**/*
 
+# logbook
+logbook/_site/*
+logbook/.quarto/
+
 # Latex Files
 *.aux
 *.lof

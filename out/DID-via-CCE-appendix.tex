@@ -1,0 +1,876 @@
+\documentclass[12pt,fleqn]{article}
+\usepackage{paper}
+
+\title{\textsc{Online Appendix to ``Simple Treatment Effect Estimation in Fixed-$T$ Panels with Interactive Fixed Effects''}}
+\author{
+  \and Nicholas Brown\\
+  {\small Queen's University} \and Kyle Butts\\
+  {\small University of Arkansas} \and Joakim Westerlund\thanks{Corresponding author: Department of Economics, Lund University, Box 7082, 220 07 Lund, Sweden. Telephone: +46 46 222 8997. Fax: +46 46 222 4613. E-mail address: \texttt{joakim.westerlund@nek.lu.se}.}\\
+  {\small Lund University}\\
+  {\small and}\\
+  {\small Deakin University}
+}
+\date{June 15, 2024}
+
+\begin{document}
+\maketitle
+%\doublespacing
+
+\begin{abstract}
+\setlength{\baselineskip}{0.83cm}
+This appendix provides (1) the proofs of Theorems 1--3 reported in the main paper, (2) a detailed account of the presence of covariates without common factor representation, and (3) the details of the bootstrap approach mentioned in the main paper.
+\end{abstract}
+
+\setlength{\baselineskip}{0.83cm}
+
+\section{Proofs}
+\renewcommand{\theequation}{A.\arabic{equation}}
+
+\noindent\textbf{Proof of Theorem 1.}
+
+\bigskip
+
+\noindent We begin by considering the step-1 estimator of $\*f_t$. In so doing, it is useful to let $N_g := |\mathcal{I}_{g}|$ for $g\in \{0,...,G\}$, just as in the main paper, and to denote by $\overline{\*a}_t := N_0^{-1}\sum_{i \in \mathcal{I}_0} \*a_{i,t}$ the cross-sectional average of any vector $\*a_{i,t}$ for the group of untreated units ($g= 0$). In this notation, $\widehat{\*{f}}_t = \overline {\*z}_t$. By combining the models for $y_{i,t}$ and $\*x_{i,t}$ for untreated units, we arrive at the following static factor model for $\*z_{i,t}$:
+\begin{align}
+\*z_{i,t} = \+\Lambda_i'\*f_t + \*e_{i,t},
+\end{align}
+where $\+\Lambda_i := [\+\alpha_i +\+\lambda_i\+\beta_i, \+\lambda_i]$ is $r\times (m+1)$ and $\*e_{i,t} := [\varepsilon_{i,t} + \+\beta_i'\*v_{i,t}, \*v_{i,t}']'$ is $(m+1)\times 1$. This expression for $\*z_{i,t}$ implies that $\widehat{\*f}_t$ can be written in the following way:
+\begin{equation}\label{fhat1}
+\widehat{\*{f}}_t = \overline {\*{z}}_t = \overline{\+\Lambda}'\*{f}_t + \overline {\*e}_{t}.
+\end{equation}
+Here, $\overline{\+\Lambda}$ and $\overline {\*e}_{t}$ are the cross-sectional averages of $\+\Lambda_i$ and $\*e_{i,t}$, respectively. For later use it is convenient to partition the first matrix as $\+\Lambda_i = [\+\alpha_i +\+\lambda_i\+\beta_i, \+\lambda_i] =: [\+\Lambda_{y,i}, \+\Lambda_{x,i}]$ with obvious definitions of $\+\Lambda_{y,i}$ and $\+\Lambda_{x,i}$. If $m+1=r$, then the $r\times (m+1)$ matrix $\overline{\+\Lambda}$ is square and invertible, which means that \eqref{fhat1} can be rewritten as
+\begin{equation}\label{redefined}
+    \overline{\+\Lambda}^{-1\prime}\widehat{\*{f}}_t=\*{f}_t+\overline{\+\Lambda}^{-1\prime}\overline{\*e}_t .
+\end{equation}
+Hence, because $\|\overline{\*e}_t\|=O_p(N_0^{-1/2})$ under Assumption 6, we have
+\begin{equation}\label{redefined2}
+\overline{\+\Lambda}^{-1\prime}\widehat{\*{f}}_t = \*{f}_t + O_p(N_0^{-1/2})
+\end{equation}
+and hence $\overline{\+\Lambda}^{-1\prime} \widehat{\*{f}}_t$ is consistent for $\*{f}_t$. In practice, we never observe $\overline{\+\Lambda}$. However, since $\+{\alpha}_i'\*{f}_t = \+{\alpha}_i' \overline{\+\Lambda}^{-1\prime}\widehat{\*{f}}_t + O_p(N_0^{-1/2})$, it is enough if we know $\widehat{\*{f}}_t$, because $\overline{\+\Lambda}^{-1}$ is subsumed in the estimation of the coefficient of $\widehat{\*{f}}_t$, which is $\*a_i$ in our notation.
+
+The above analysis is not possible when $m +1> r$ since $\overline{\+{\Lambda}}$ is no longer invertible. However, we still need something similar to (\ref{redefined}), because it determines the object that is being estimated. The way we approach this issue is the same as in \citet{westerlund2019cce}, and others. In particular, we begin by partitioning $\overline{\+{\Lambda}}$ as $\overline{\+{\Lambda}}=:[\overline{\+{\Lambda}}_r, \overline{\+{\Lambda}}_{-r}]$, where $\overline{\+{\Lambda}}_{-r}$ is $r\times (m+1-r)$ and $\overline{\+{\Lambda}}_r$ is $r \times r$ and full rank. Note that this partition is without loss of generality under Assumption 7. We then introduce the following $(m+1)\times (m+1)$ rotation matrix, which is chosen such that $\overline{\+{\Lambda}}\overline{\*{H}}= [\*{I}_r, \*{0}_{r\times (m+1-r)}]$ and that is going to play the same role as $\overline{\+{\Lambda}}^{-1}$ under $m+1=r$:
+\begin{equation}
+    \overline{\*{H}} :=\left[\begin{array}{cc}\overline{\+{\Lambda}}_r^{-1} & -\overline{\+{\Lambda}}_r^{-1}\overline{\+{\Lambda}}_{-r}\\
+    \*{0}_{(m+1-r)\times r} & \*{I}_{m+1-r}\end{array}\right]=[\overline{\*{H}}_r,\, \overline{\*{H}}_{-r}],
+\end{equation}
+where $\overline{\*{H}}_r:=[\overline{\+{\Lambda}}_r^{-1\prime}, \*{0}_{r\times (m+1-r)} ]'$ is $(m+1)\times r$, while $\overline{\*{H}}_{-r}:=[ -\overline{\+{\Lambda}}_{-r}'\overline{\+{\Lambda}}_r^{-1\prime}, \*{I}_{m+1-r}]'$ is $(m+1)\times (m+1-r)$. If $m+1=r$, we define $\overline{\*{H}}:=\overline{\*{H}}_r=\overline{\+{\Lambda}}_r^{-1}=\overline{\+{\Lambda}}^{-1}$. We further introduce the $(m+1)\times (m+1)$ matrix $\*{D}_{N_0}:= \mathrm{diag}(\*{I}_r , \sqrt{N_0}\*{I}_{m+1-r})$ with $\*{D}_{N_0}:=\*{I}_{m+1}$ if $m+1=r$. By pre-multiplying $\widehat{\*{f}}_t$ by $\*{D}_{N_0}\overline{\*{H}}'$, we obtain
+\begin{equation}\label{fhat0}
+    \*{D}_{N_0}\overline{\*{H}}'\widehat{\*{f}}_t=\widehat{\*{f}}^0_t= \*{D}_{N_0}\overline{\*{H}}'\overline{\+{\Lambda}}'\*{f}_t+ \*{D}_{N_0}\overline{\*{H}}'\overline{\*e}_t=\*{f}^0_t+\overline{\*e}^0_t,
+\end{equation}
+where $\*{f}^0_t:=[\*{f}'_t, \*{0}_{(m+1-r)\times 1}']'$ and $\overline{\*e}^0_t:=[\overline{\*e}_{t}'\overline{\*H}_r, \sqrt{N_0}\overline{\*{e}}_{t}'\overline{\*H}_{-r}]'=:
+[\overline{\*{e}}^{0\prime}_{r,t}, \overline{\*{e}}^{0\prime}_{-r,t}]'$ are both $(m+1)\times 1$ with $\overline{\*{e}}_{r,t}^0$ and $\overline{\*{e}}_{-r,t}^0$ being $r\times 1$ and $(m+1-r)\times 1$, respectively. Hence, since $\|\overline{\*{e}}_{r,t}^0\| =O_p(N_0^{-1/2})$ and $\|\overline{\*{e}}_{-r,t}^0\| =O_p(1)$, when $m + 1> r$ we are no longer estimating $\*{f}_t$ but rather $\*f_t^+ := [\*{f}_t', \overline{\*{e}}_{-r,t}^{0\prime}]'$;
+\begin{align}
+\widehat{\*{f}}_t^0 = \*f_t^{0} + \overline{\*e}_t^{0} = \left[\begin{array}{c} \*f_t \\
+    \*{0}_{(m+1-r)\times 1} \end{array}\right] + \left[\begin{array}{c} \overline{\*e}_{r,t}^{0} \\
+    \overline{\*e}_{-r,t}^{0} \end{array}\right] = \*f_t^+ +  O_p(N_0^{-1/2}).
+\end{align}
+The fact that $\*{f}_t$ is included in $\*f_t^+$ suggests that asymptotically TECCE should be able to account for the unknown factors even if $m + 1> r$. By ensuring the existence of $\overline{\*{H}}$, Assumption 7 makes this possible. However, we also note that because of the presence of $\overline{\*{e}}_{-r,t}^0$, the asymptotic distribution theory will in general depend on whether $m+1=r$ or $m +1> r$.
+
+It is useful to be able to use the above notation not only when $m+1> r$ but also when $m+1=r$. We therefore define $\widehat{\*{f}}^0_t:=\overline{\+{\Lambda}}^{-1\prime}\widehat{\*{f}}_t$, $\*{f}^0_t := \*{f}_t$ and $\overline{\*{e}}^0_t := \overline{\+{\Lambda}}^{-1\prime}\overline{\*{e}}_t$ if $m+1=r$, so that we are back in (\ref{redefined}).
+
+Let us now consider $\widehat \Delta_{i,t}$, which, unlike $\widehat{\*f}_t$, is computed based on treated units in post-treatment periods ($i\in \mathcal{I}_0^c$ and $t > T_0$). We do our analysis for a given group $g$. Note first that because we are considering treated units in post-treatment periods, $y_{i,t}(g) = y_{i,t}$ and $\*x_{i,t}(g) = \*x_{i,t}$. Further use of the definitions of $\Delta_{i,t}$, $y_{i,t}(0)$ and $\+\tau_{i,t}$ leads to the following model for $y_{i,t}$:
+\begin{align}
+y_{i,t} &= \Delta_{i,t} + y_{i,t}(0) \notag\\
+& = \Delta_{i,t} + \+\beta_i'\*x_{i,t}(0) +  \+\alpha_i'\*f_t + \varepsilon_{i,t}\notag\\
+& = \Delta_{i,t} + \+\beta_i'(\*x_{i,t}-\+\tau_{i,t}) +  \+\alpha_i'\*f_t + \varepsilon_{i,t} \notag\\
+& = (\Delta_{i,t} - \+\beta_i'\+\tau_{i,t}) + \+\beta_i'\*x_{i,t} + \+\alpha_i'\*f_t + \varepsilon_{i,t} \notag\\
+&  = \eta_{i,t} + \+\beta_i'\*x_{i,t} + \+\alpha_i'\*f_t + \varepsilon_{i,t}.
+\end{align}
+It follows that
+\begin{align}
+\widehat \Delta_{i,t} & = y_{i,t} - \widehat y_{i,t}(0)  \notag\\
+& = \eta_{i,t} + \+\beta_i'\*x_{i,t} + \+\alpha_i'\*f_t + \varepsilon_{i,t} -  \widehat{\*a}_i'\widehat{\*f}_t   \notag\\
+& = \eta_{i,t} + \+\beta_i'\*x_{i,t} - (\widehat{\*a}_i'\widehat{\*f}_t - \+\alpha_i'\*f_t)  + \varepsilon_{i,t} .
+\end{align}
+Consider $\widehat{\*a}_i'\widehat{\*f}_t - \+\alpha_i'\*f_t$. While the $(m+1)\times r$ matrix $\*{D}_{N_0}\overline{\mathbf{H}}'\overline{\boldsymbol{\Lambda}}'$ is not necessarily square under Assumption 7, it has full column rank. This means that we can compute its Moore--Penrose inverse, which is given by $(\*{D}_{N_0}\overline{\mathbf{H}}'\overline{\boldsymbol{\Lambda}}')^+ = (\*{D}_{N_0}\overline{\mathbf{H}}'\overline{\boldsymbol{\Lambda}}')' = [ \mathbf{I}_r, \mathbf{0}_{r\times (m+1-r)} ]$, such that $(\*{D}_{N_0}\overline{\mathbf{H}}'\overline{\boldsymbol{\Lambda}}')^+ \*{D}_{N_0}\overline{\mathbf{H}}'\overline{\boldsymbol{\Lambda}}' = \mathbf{I}_r$. Hence, $\*{D}_{N_0}\overline{\mathbf{H}}'\overline{\boldsymbol{\Lambda}}'\*f_t = [\*f_t', \mathbf{0}_{(m+1-r)\times 1}']' = \*f_t^0$ and we also have $\*{D}_{N_0}\overline{\*{H}}'\widehat{\*{f}}_t=\widehat{\*{f}}^0_t$. Making use of this, and letting $\widehat{\*a}_i^0 := (\*{D}_{N_0}\overline{\*{H}}')^{-1\prime}\widehat{\*a}_i= (\overline{\*{H}}\*{D}_{N_0})^{-1}\widehat{\*a}_i$ and $\+\alpha_i^0 := (\*{D}_{N_0}\overline{\mathbf{H}}'\overline{\boldsymbol{\Lambda}}')^{+\prime} \+\alpha_i= \*{D}_{N_0}\overline{\mathbf{H}}'\overline{\boldsymbol{\Lambda}}'\+\alpha_i = [ \+\alpha_i ', \mathbf{0}_{1\times (m+1-r)} ]'$, we obtain
+\begin{align}
+\widehat{\*a}_i'\widehat{\*f}_t - \+\alpha_i'\*f_t &= \widehat{\*a}_i'(\*{D}_{N_0}\overline{\*{H}}')^{-1}\*{D}_{N_0}\overline{\*{H}}'\widehat{\*f}_t - \+\alpha_i'(\*{D}_{N_0}\overline{\mathbf{H}}'\overline{\boldsymbol{\Lambda}}')^+\*{D}_{N_0}\overline{\mathbf{H}}'\overline{\boldsymbol{\Lambda}}'\*f_t \notag\\
+& = \widehat{\*a}_i^{0\prime}\widehat{\*f}_t^0 - \+\alpha_i^{0\prime}\*f_t^0 \notag\\
+& = \+\alpha_i^{0\prime}(\widehat{\*f}_t^0-\*f_t^0) + (\widehat{\*a}_i^{0} - \+\alpha_i^0)'\widehat{\*f}_t^0,
+\end{align}
+from which it follows that
+\begin{align}
+\widehat \Delta_{i,t}  = \eta_{i,t} + \+\beta_i'\*x_{i,t}  - \+\alpha_i^{0\prime}(\widehat{\*f}_t^0-\*f_t^0) - (\widehat{\*a}_i^{0} - \+\alpha_i^0)'\widehat{\*f}_t^0 + \varepsilon_{i,t}.
+\end{align}
+Amongst the terms appearing on the right-hand side of this last equation, the one involving $\widehat{\*a}_i^0 - \+\alpha_i^0$ requires most work. We therefore start with this. Note first that since $\widehat{\*a}_i$ is estimated based on the pre-treatment period only, we have $y_{i,t} = y_{i,t}(0) = \+\beta_i'\*x_{i,t}(0) +  \+\alpha_i'\*f_t + \varepsilon_{i,t}$ or, in terms of the stacked vector notation introduced in Section 3 of of the main paper, $\*y_{i}= \*x_{i}\+\beta_i + \*f\+\alpha_i+  \+\varepsilon_{i}$, where $\*y_{i}$, $\*x_{i}$, $\*f$ and $\+\varepsilon_{i}$ are all $T_0$-rowed. By using this and $\overline{\+\Lambda}\overline{\*H}_{r} = \*I_{r}$, we get
+\begin{eqnarray}
+\*y_{i}= \*x_{i}\+\beta_i + \widehat{\*f}\overline{\*H}_{r}\+\alpha_i - (\widehat{\*f} - \*f\overline{\+\Lambda})\overline{\*H}_{r}\+\alpha_i+  \+\varepsilon_{i}  = \*x_{i}\+\beta_i + \widehat{\*f} \overline{\*H}_{r}\+\alpha_i - \overline{\*e}_{r}^0\+\alpha_i +  \+\varepsilon_{i}. \label{ystack}
+\end{eqnarray}
+We also note that $\*a_i$ in step 2 can be expressed in terms of $\overline{\*H}_{r}$ and $\+\alpha_i$ as $\*a_i := \overline{\*H}_{r}\+\alpha_i$. By inserting this and \eqref{ystack} into the expression given for $\widehat{\*a}_i$ in step 2,
+\begin{align}
+\widehat{\*a}_i &= (\widehat{\*f}'\widehat{\*f})^{-1}\widehat{\*f}'\*y_{i} \notag\\
+& = (\widehat{\*f}'\widehat{\*f})^{-1}\widehat{\*f}'(\*x_{i}\+\beta_i + \widehat{\*f} \*a_i - \overline{\*e}_{r}^0\+\alpha_i +  \+\varepsilon_{i}) \notag\\
+& =  \*a_i + (\widehat{\*f}'\widehat{\*f})^{-1}\widehat{\*f}'(\*x_{i}\+\beta_i  - \overline{\*e}_{r}^0\+\alpha_i +  \+\varepsilon_{i} ),
+\end{align}
+implying
+\begin{align}
+\widehat{\*a}_i^0 & = (\overline{\*{H}}\*{D}_{N_0})^{-1}\widehat{\*a}_i \notag\\
+& = (\overline{\*{H}}\*{D}_{N_0})^{-1}\*a_i + (\overline{\*{H}}\*{D}_{N_0})^{-1}(\widehat{\*f}'\widehat{\*f})^{-1}\widehat{\*f}'(\*x_{i}\+\beta_i - \overline{\*e}_{r}^0\+\alpha_i +  \+\varepsilon_{i} )\notag\\
+& = (\overline{\*{H}}\*{D}_{N_0})^{-1}\*a_i +  (
+\*{D}_{N_0}\overline{\*{H}}'\widehat{\*f}'\widehat{\*f}\overline{\*{H}}\*{D}_{N_0})^{-1}\*{D}_{N_0}\overline{\*{H}}'\widehat{\*f}' ( \*x_{i}\+\beta_i  - \overline{\*e}_{r}^0\+\alpha_i +  \+\varepsilon_{i})
+\notag\\
+& = (\overline{\*{H}}\*{D}_{N_0})^{-1}\*a_i + (\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}^{0\prime}( \*x_{i}\+\beta_i - \overline{\*e}_{r}^0\+\alpha_i +  \+\varepsilon_{i} )
+\end{align}
+where $\widehat{\*f}^0 = [\widehat{\*f}_1^0,...,\widehat{\*f}_{T_0}^0]':= \widehat{\*f}\overline{\*{H}}\*{D}_{N_0}$ is $T_0\times (m+1)$. Consider the first term on the right-hand side. A direct calculation using the rules for the inverse of a partitioned matrix (see, for example, \citealp{abadir2005matrix}, Exercise 5.16) reveals that
+\begin{equation}
+    (\*{D}_{N_0}\overline{\*{H}})^{-1} =\left[\begin{array}{cc}\overline{\+{\Lambda}}_r & \overline{\+{\Lambda}}_{-r}\\
+    \*{0}_{(m+1-r)\times r} & N_0^{-1/2}\*{I}_{m+1-r}\end{array}\right],
+\end{equation}
+so that
+\begin{align}
+(\overline{\*{H}}\*{D}_{N_0})^{-1}\overline{\*H}_{r} &= \left[\begin{array}{cc}\overline{\+{\Lambda}}_r & \overline{\+{\Lambda}}_{-r}\\
+    \*{0}_{(m+1-r)\times r} & N_0^{-1/2}\*{I}_{m+1-r}\end{array}\right]\left[\begin{array}{c}\overline{\+{\Lambda}}_r^{-1} \\
+    \*{0}_{(m+1-r)\times r} \end{array}\right] \notag\\
+    & = \left[\begin{array}{c} \*I_r \\
+    \*{0}_{(m+1-r)\times r} \end{array}\right].
+\end{align}
+This implies
+\begin{align}
+(\overline{\*{H}}\*{D}_{N_0})^{-1}\*a_i = \left[\begin{array}{c} \+\alpha_i \\
+    \*{0}_{(m+1-r)\times 1} \end{array}\right] = \+\alpha_i^0,
+\end{align}
+leading to the following expression for $\widehat{\*a}_i^0-\+\alpha_i^0$:
+\begin{align}
+\widehat{\*a}_i^0 - \+\alpha_i^0 & = (\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}^{0\prime}(\*x_{i}\+\beta_i - \overline{\*e}_{r}^0\+\alpha_i +  \+\varepsilon_{i} ).
+\end{align}
+By inserting the above expressions into the one given earlier for $\widehat \Delta_{i,t}$, we get
+\begin{align}
+\widehat \Delta_{i,t} & = \eta_{i,t} + \+\beta_i'\*x_{i,t} - \+\alpha_i^{0\prime}(\widehat{\*f}_t^0-\*f_t^0) - (\widehat{\*a}_i^{0} - \+\alpha_i^0)'\widehat{\*f}_t^0  + \varepsilon_{i,t}\notag\\
+& = \eta_{i,t} + \+\beta_i'\*x_{i,t} - \+\alpha_i'\overline{\*e}_{r,t}^0 + \varepsilon_{i,t} - ( \*x_{i}\+\beta_i  - \overline{\*e}_{r}^0\+\alpha_i +  \+\varepsilon_{i} )' \widehat{\*f}^{0} (\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}_t^0  .
+\end{align}
+Further use of $\widehat{\*f} = \widehat{\*f}^0\*{D}_{N_0}^{-1}\overline{\*H}^{-1}$ gives
+\begin{eqnarray}
+\*x_i = \*f\+\lambda_i + \*v_i = \widehat{\*f}\overline{\*H}_{r}\+\lambda_i -  (\widehat{\*f} - \*f\overline{\+\Lambda})\overline{\*H}_{r}\+\lambda_i  + \*v_i =  \widehat{\*f}^0\*{D}_{N_0}^{-1}\overline{\*H}^{-1}\overline{\*H}_{r}\+\lambda_i  - \overline{\*e}_{r}^0\+\lambda_i  + \*v_i ,
+\end{eqnarray}
+for pretreatment periods ($t \leq T_0$). If, on the other hand, $t > T_0$, then
+\begin{eqnarray}
+\*x_{i,t} = \+\tau_{i,t} + \+\lambda_i'\*f_t + \*v_{i,t} =  \+\tau_{i,t} + \+\lambda_i' \overline{\*H}_{r}'\overline{\*H}^{-1\prime}\*{D}_{N_0}^{-1}\widehat{\*f}_t^0  - \+\lambda_i'\overline{\*e}_{r,t}^0  + \*v_{i,t}.
+\end{eqnarray}
+These two last results imply
+\begin{align}
+& \*x_{i,t} -  \*x_{i}' \widehat{\*f}^{0}(\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}_t^0 \notag\\
+& = \+\tau_{i,t} + \+\lambda_i' \overline{\*H}_{r}'\overline{\*H}^{-1\prime}\*{D}_{N_0}^{-1}\widehat{\*f}_t^0  - \+\lambda_i'\overline{\*e}_{r,t}^0  + \*v_{i,t} -  (\widehat{\*f}^0\*{D}_{N_0}^{-1}\overline{\*H}^{-1}\overline{\*H}_{r}\+\lambda_i  - \overline{\*e}_{r}^0\+\lambda_i  + \*v_i)' \widehat{\*f}^{0}(\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}_t^0\notag\\
+& = \+\tau_{i,t}  - \+\lambda_i'\overline{\*e}_{r,t}^0  + \*v_{i,t} -  ( - \overline{\*e}_{r}^0\+\lambda_i  + \*v_i)' \widehat{\*f}^{0}(\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}_t^0,
+\end{align}
+and so we arrive at the following expression for $\widehat \Delta_{i,t}$:
+\begin{align}
+\widehat \Delta_{i,t} & = \eta_{i,t} + \+\beta_i'(\+\tau_{i,t}  - \+\lambda_i'\overline{\*e}_{r,t}^0  + \*v_{i,t}) - \+\alpha_i'\overline{\*e}_{r,t}^0 + \varepsilon_{i,t}\notag\\
+& - [ (- \overline{\*e}_{r}^0\+\lambda_i  + \*v_i)\+\beta_i  - \overline{\*e}_{r}^0\+\alpha_i +  \+\varepsilon_{i} ]' \widehat{\*f}^{0} (\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}_t^0 \notag\\
+& = \Delta_{i,t} - \+\Lambda_{y,i}'\overline{\*e}_{r,t}^0 + \+\beta_i'\*v_{i,t} + \varepsilon_{i,t}  - ( - \overline{\*e}_{r}^0\+\Lambda_{y,i} + \*v_i\+\beta_i+  \+\varepsilon_{i} )' \widehat{\*f}^{0} (\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}_t^0  .
+\end{align}
+where we recall that $\+\Lambda_{y,i} :=  \+\lambda_i\+\beta_i + \+\alpha_i$ and $\Delta_{i,t} = \eta_{i,t} + \+\beta_i'\+\tau_{i,t}$ as in the main paper.
+
+The above expression for $\widehat \Delta_{i,t}$ is the cleanest possible without exploiting the fact that $N$ is large. Hence, in what remains we are going to let $N\to\infty$. We begin by considering $\widehat{\*f}^{0} (\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}_t^0$. Recall that $\*f^+ = [\*f_1^+,..., \*f_{T_0}^+]' := [\*f, \overline{\*e}_{-r}^{0}]$, a $T_0\times (m+1)$ matrix. We have already shown that $\widehat{\*{f}}^0 = \*f^+ +  O_p(N_0^{-1/2})$. By using this and the results provided in the proof of Lemma A.1 in \citet{westerlund2019cce}, we obtain $\|\widehat{\*f}^{0\prime}\widehat{\*f}^0 - \*f^{+\prime}\*f^+\|= O_p(N_0^{-1/2})$ and, more importantly,
+\begin{align}
+\|(\widehat{\*f}^{0\prime}\widehat{\*f}^0 )^{-1} - (\*f^{+\prime}\*f^+)^{-1}\| = O_p(N_0^{-1/2}),
+\end{align}
+where
+\begin{align}
+\*f^{+\prime}\*f^+ &= \left[\begin{array}{cc} \*f'\*f & \*f'\overline{\*e}_{-r}^0 \\ \overline{\*e}_{-r}^{0\prime}\*f  & \overline{\*e}_{-r}^{0\prime}\overline{\*e}_{-r}^0 \end{array}\right] ,\\
+(\*f^{+\prime}\*f^+)^{-1} &= \left[\begin{array}{c} (\*f'\*f)^{-1} + (\*f'\*f)^{-1}\*f'\overline{\*e}_{-r}^0(\overline{\*e}_{-r}^{0\prime}\*M_{\*f}\overline{\*e}_{-r}^0)^{-1}\overline{\*e}_{-r}^{0\prime} \*f(\*f'\*f)^{-1}  \\
+-(\overline{\*e}_{-r}^{0\prime}\*M_{\*f}\overline{\*e}_{-r}^0)^{-1}\overline{\*e}_{-r}^{0\prime}\*f (\*f'\*f)^{-1} \end{array}\right. \notag\\
+& \left. \begin{array}{c}  -(\*f'\*f)^{-1}\*f'\overline{\*e}_{-r}^0(\overline{\*e}_{-r}^{0\prime}\*M_{\*f}\overline{\*e}_{-r}^0)^{-1} \\
+ (\overline{\*e}_{-r}^{0\prime}\*M_{\*f}\overline{\*e}_{-r}^0)^{-1} \end{array}\right].
+\end{align}
+The expression for $(\*f^{+\prime}\*f^+)^{-1}$ is again obtained by using the rules for the inverse of a partitioned matrix. Combining $\|(\widehat{\*f}^{0\prime}\widehat{\*f}^0 )^{-1} - (\*f^{+\prime}\*f^+)^{-1}\| = O_p(N_0^{-1/2})$ with $\widehat{\*{f}}^0 = \*f^+ +  O_p(N_0^{-1/2})$, we obtain
+\begin{align}
+\widehat{\*f}_t^{0\prime}(\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}^{0\prime} & =  \widehat{\*f}_t^{0\prime}[(\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1} - (\*f^{+\prime}\*f^+)^{-1} ]\widehat{\*f}^{0\prime} + \widehat{\*f}_t^{0\prime}(\*f^{+\prime}\*f^+)^{-1}\widehat{\*f}^{0\prime} \notag\\
+& = \widehat{\*f}_t^{0\prime}(\*f^{+\prime}\*f^+)^{-1}\widehat{\*f}^{0\prime} + O_p(N_0^{-1/2})\notag\\
+& = \*f_t^{+\prime}(\*f^{+\prime}\*f^+)^{-1}\*f^{+\prime} + O_p(N_0^{-1/2}).
+\end{align}
+where, defining $\*M_{\*f}$ analogously to $\*M_{\widehat{\*f}}$,
+\begin{align}
+& \*f_t^{+\prime}(\*f^{+\prime}\*f^+)^{-1}\*f^{+\prime} \notag\\
+& = [\*f_t', \overline{\*e}_{-r,t}^{0\prime}]\left[\begin{array}{c} (\*f'\*f)^{-1} + (\*f'\*f)^{-1}\*f'\overline{\*e}_{-r}^0(\overline{\*e}_{-r}^{0\prime}\*M_{\*f}\overline{\*e}_{-r}^0)^{-1}\overline{\*e}_{-r}^{0\prime} \*f(\*f'\*f)^{-1}  \\
+-(\overline{\*e}_{-r}^{0\prime}\*M_{\*f}\overline{\*e}_{-r}^0)^{-1}\overline{\*e}_{-r}^{0\prime}\*f (\*f'\*f)^{-1} \end{array}\right. \notag\\
+& \left. \begin{array}{c}  -(\*f'\*f)^{-1}\*f'\overline{\*e}_{-r}^0(\overline{\*e}_{-r}^{0\prime}\*M_{\*f}\overline{\*e}_{-r}^0)^{-1} \\
+ (\overline{\*e}_{-r}^{0\prime}\*M_{\*f}\overline{\*e}_{-r}^0)^{-1} \end{array}\right]\left[\begin{array}{c} \*f' \\
+    \overline{\*e}_{-r}^{0\prime} \end{array}\right]  \notag\\
+& = \*f_t'(\*f'\*f)^{-1}\*f'[\*I_{T_0} -  \overline{\*e}_{-r}^{0}(\overline{\*e}_{-r}^{0\prime}\*M_{\*f}\overline{\*e}_{-r}^0)^{-1} \overline{\*e}_{-r}^{0\prime}\*M_{\*f}] + \overline{\*e}_{-r,t}^{0\prime}(\overline{\*e}_{-r}^{0\prime}\*M_{\*f}\overline{\*e}_{-r}^0)^{-1}\overline{\*e}_{-r}^{0\prime}\*M_{\*f}.
+\end{align}
+Note that this last equation reduces to $\*f_t^{+\prime}(\*f^{+\prime}\*f^+)^{-1}\*f^{+\prime} = \*f_t'(\*f'\*f)^{-1}\*f'$ if $m+1=r$. Hence, as mentioned earlier, the asymptotic distribution theory depends on whether $m+1=r$ or $m+1> r$.
+
+Use of $\|\widehat{\*f}_t^{0\prime}(\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}^{0\prime} - \*f_t^{+\prime}(\*f^{+\prime}\*f^+)^{-1}\*f^{+\prime}\| = O_p(N_0^{-1/2})$ leads to the following for $\widehat \Delta_{i,t}$:
+\begin{align}
+\widehat \Delta_{i,t} & = \Delta_{i,t} - \+\Lambda_{y,i}'\overline{\*e}_{r,t}^0 + \+\beta_i'\*v_{i,t} + \varepsilon_{i,t}  - ( - \overline{\*e}_{r}^0\+\Lambda_{y,i} + \*v_i\+\beta_i+  \+\varepsilon_{i} )'  \*f^{+} (\*f^{+\prime}\*f^+)^{-1}\*f_t^+ + O_p(N_0^{-1/2})\notag\\
+& = \Delta_{i,t} - \+\Lambda_{y,i}'\overline{\*e}_{r,t}^{0d} + \+\beta_i'\*v_{i,t}^d + \varepsilon_{i,t}^d  + O_p(N_0^{-1/2}),
+\end{align}
+where
+\begin{align}
+\*a_{i,t}^d = \*a_{i,t} - \*a_i' \*f^{+} (\*f^{+\prime}\*f^+)^{-1}\*f_t^+ = \*a_{i,t} - \sum_{s=1}^{T_0} \*a_{i,s}\*f_s^{+\prime} (\*f^{+\prime}\*f^+)^{-1}\*f_t^+
+\end{align}
+for any vector $\*a_{i,t}$ with $T_0$-rowed stack $\*a_i = [\*a_{i,1},...,\*a_{i,T_0}]'$. In words, $\*a_{i,t}^d$ is the limiting ``defactored'' version of $\*a_{i,t}$. It is important to note that the defactoring leaves properties of $\overline{\*e}_{r,t}^{0}$, $\*v_{i,t}$ and $\varepsilon_{i,t}$ basically unaffected. This is so because $\{ (\overline{\*e}_{r,t}^{0}, \*v_{i,t}, \varepsilon_{i,t}) \}_{i\in \mathcal{I}_0^c}$ and the sequence $\{\*e_{j,t}^{d}\}_{j\in \mathcal{I}_0}$ sitting in $\*f^+$ are from non-overlapping subsamples. In fact, the only difference is the variance (conditional on $\*f^+$). As an example, consider $ \varepsilon_{i,t}^d$. Denoting by $\mathcal{C}$ the sigma-field generated by $\*f^+$, we have
+\begin{align}
+\mathbb{E} (\varepsilon_{i,t}^{d2}|\mathcal{C}) & = \mathbb{E} [(\varepsilon_{i,t}  - \+\varepsilon_i' \*f^{+} (\*f^{+\prime}\*f^+)^{-1}\*f_t^+)^2 |\mathcal{C}] \notag\\
+& = \mathbb{E} (\varepsilon_{i,t}^2 |\mathcal{C} ) - 2\mathbb{E} (\varepsilon_{i,t} \+\varepsilon_i'|\mathcal{C}) \*f^{+} (\*f^{+\prime}\*f^+)^{-1}\*f_t^+ \notag\\
+&  + \*f_t^{+\prime} (\*f^{+\prime}\*f^+)^{-1}\*f^{+\prime}   \mathbb{E}(\+\varepsilon_i \+\varepsilon_i'|\mathcal{C}) \*f^{+} (\*f^{+\prime}\*f^+)^{-1}\*f_t^+ \notag\\
+& = \sigma_{\varepsilon,i,t}^2 - 2 \mathds{1}_t'\+\Sigma_{\+\varepsilon,i} \*f^{+} (\*f^{+\prime}\*f^+)^{-1}\*f_t^+ + \*f_t^{+\prime} (\*f^{+\prime}\*f^+)^{-1}\*f^{+\prime}   \+\Sigma_{\+\varepsilon,i} \*f^{+} (\*f^{+\prime}\*f^+)^{-1}\*f_t^+,
+\end{align}
+where $\sigma^2_{\varepsilon,i,t}  = \mathbb{E}  (\varepsilon_{i,t}^{2} )$, $\+\Sigma_{\+\varepsilon,i}  = \mathbb{E}  (\+\varepsilon_{i}\+\varepsilon_{i}' )$ and $\mathds{1}_t$ is a $T_0 \times 1$ vector of zeros except for a one in row $t$.
+
+We now make use of the above expression for $\widehat \Delta_{i,t}$ to evaluate $\widehat{\mathrm{ATT}}_{g,t}$. In so doing, it is important to note that the order of the reminder incurred when replacing $\widehat{\*f}_t^{0\prime}(\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}^{0\prime}$ with $\*f_t^{+\prime}(\*f^{+\prime}\*f^+)^{-1}\*f^{+\prime}$ is the same even after averaging over group $g$ and multiplying by $\sqrt{N_g}$. In order to appreciate this, we make use of the fact that $\|\sqrt{N_g}\overline{\*e}_{r}^0\|= O_p(\sqrt{N_g/N_0}) = O_p(1)$ under $N_g/N_0 \to \tau < \infty$, and since $\*v_{i}$ and $\+\beta_i$ are independent with $\*v_i$ mean zero and independent also across $i$, we also have $\|N_g^{-1/2}\sum_{i\in \mathcal{I}_g} \*v_{i}\+\beta_i\| = O_p(1)$. It follows that
+\begin{align}
+& \left\|\frac{1}{\sqrt{N_g}}\sum_{i\in \mathcal{I}_g} (- \overline{\*e}_{r}^0\+\Lambda_{y,i} + \*v_i\+\beta_i+  \+\varepsilon_{i} ) \right\|\notag\\
+& \leq \|\sqrt{N_g}\overline{\*e}_{r}^0\|\left\|\frac{1}{N_g} \sum_{i \in \mathcal{I}_g} \+\Lambda_{y,i} \right\| + \left\| \frac{1}{\sqrt{N_g}} \sum_{i\in \mathcal{I}_g} \*v_{i}\+\beta_i \right\| +  \left\|\frac{1}{\sqrt{N_g}} \sum_{i \in \mathcal{I}_g} \+\varepsilon_{i}\right\|\notag\\
+& =O_p(1).
+\end{align}
+We can therefore show that
+\begin{align}
+& \left\|\frac{1}{\sqrt{N_g}}\sum_{i \in \mathcal{I}_g} ( - \overline{\*e}_{r}^0\+\Lambda_{y,i} + \*v_i\+\beta_i+  \+\varepsilon_{i} )'[\*f^{+} (\*f^{+\prime}\*f^+)^{-1}\*f_t^+ - \widehat{\*f}^{0} (\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}_t^0] \right\| \notag\\
+& \leq
+\left\| \frac{1}{\sqrt{N_g}}\sum_{i \in \mathcal{I}_g}[ - \overline{\*e}_{r}^0\+\Lambda_{y,i} + \*v_i\+\beta_i+  \+\varepsilon_{i} ]\right\| \|\*f^{+} (\*f^{+\prime}\*f^+)^{-1}\*f_t^+ - \widehat{\*f}^{0} (\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}_t^0\|\notag\\
+& = O_p(N_0^{-1/2}),
+\end{align}
+which means that the reminder incurred when replacing $\widehat{\*f}_t^{0\prime}(\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}^{0\prime}$ with $\*f_t^{+\prime}(\*f^{+\prime}\*f^+)^{-1}\*f^{+\prime}$ is $O_p(N_0^{-1/2})$ after averaging over group $g$ and multiplying by $\sqrt{N_g}$.
+
+For $\Delta_{i,t}$, we make use of the fact that $\Delta_{i,t}= \mathrm{ATT}_{g,t} + \upsilon_{i,t}$ for $i\in \mathcal{I}_g$ by Assumption 1, giving
+\begin{align}
+ \sqrt{N_g}(\widehat{\mathrm{ATT}}_{g,t} - \mathrm{ATT}_{g,t}) & = \frac{1}{\sqrt{N_g}} \sum_{i\in \mathcal{I}_g} (\widehat \Delta_{i,t} - \mathrm{ATT}_{g,t}) \notag\\
+& = \frac{1}{\sqrt{N_g}} \sum_{i\in \mathcal{I}_g} (\widehat \Delta_{i,t} - \Delta_{i,t} + \upsilon_{i,t}) \notag\\
+& = \frac{1}{\sqrt{N_g}} \sum_{i\in \mathcal{I}_g} (\upsilon_{i,t} - \+\Lambda_{y,i}'\overline{\*e}_{r,t}^{0d} + \+\beta_i'\*v_{i,t}^d + \varepsilon_{i,t}^d ) + O_p(N_0^{-1/2}) .
+\end{align}
+Hence, if we in addition define $\+\Lambda_y := \mathrm{plim}_{N_g\to\infty} N_g^{-1} \sum_{i\in \mathcal{I}_g}\+\Lambda_{y,i}$, the above expression for $\sqrt{N_g}(\widehat{\mathrm{ATT}}_{g,t} - \mathrm{ATT}_{g,t})$ becomes
+\begin{align}
+& \sqrt{N_g}(\widehat{\mathrm{ATT}}_{g,t} - \mathrm{ATT}_{g,t}) \notag\\
+&= \frac{1}{\sqrt{N_g}}\sum_{i\in \mathcal{I}_g}(\upsilon_{i,t}  + \+\beta_i'\*v_{i,t}^d + \varepsilon_{i,t}^d) - \sqrt{\frac{N_g}{N_0}} \frac{1}{N_g}\sum_{i\in \mathcal{I}_g} \+\Lambda_{y,i}'\sqrt{N_0}\overline{\*e}_{r,t}^{0d} + O_p(N_0^{-1/2}) \notag\\
+&= \frac{1}{\sqrt{N_g}}\sum_{i\in \mathcal{I}_g} (\upsilon_{i,t}  + \+\beta_i'\*v_{i,t}^d + \varepsilon_{i,t}^d ) - \sqrt{\tau}\+\Lambda_y'\sqrt{N_0}\overline{\*e}_{r,t}^{0d} + o_p(1).
+\end{align}
+All the terms on the right-hand side of the above equation are mean zero and independent across $i$ (conditionally on $\mathcal{C}$). They are therefore asymptotically normal by a central limit law for independent variables. Let us therefore define $\mathrm{var}(\widehat{\mathrm{ATT}}_{g,t}) = \mathrm{var}[\sqrt{N_g}(\widehat{\mathrm{ATT}}_{g,t} - \mathrm{ATT}_{g,t})  |\mathcal{C}]$. The asymptotic distribution of $\sqrt{N_g}(\widehat{\mathrm{ATT}}_{g,t} - \mathrm{ATT}_{g,t})$ as $N_g,\,N_0\to\infty$ with $N_g/N_0 \to \tau < \infty$ can now be stated in the following way:
+\begin{align}
+\sqrt{N_g}(\widehat{\mathrm{ATT}}_{g,t} - \mathrm{ATT}_{g,t}) \to_d MN(0, \mathrm{var}(\widehat{\mathrm{ATT}}_{g,t}) ),
+\end{align}
+where $MN(\cdot,\cdot)$ signifies a mixed normal distribution that is normal conditionally on $\mathcal{C}$. This means that the conditional distribution of $\sqrt{N_g}(\widehat{\mathrm{ATT}}_{g,t} - \mathrm{ATT}_{g,t})/\sqrt{\mathrm{var}(\widehat{\mathrm{ATT}}_{g,t})}$ is also the unconditional distribution. Hence,
+\begin{align}
+\frac{\sqrt{N_g}(\widehat{\mathrm{ATT}}_{g,t} - \mathrm{ATT}_{g,t})}{\mathrm{var}(\widehat{\mathrm{ATT}}_{g,t})} \to_d N(0, 1),
+\end{align}
+which is what we wanted to show.
+
+In what remains of this proof we evaluate (the limit of) $\mathrm{var}(\widehat{\mathrm{ATT}}_{g,t})$. From before,
+\begin{align}
+& \lim_{N_g,N_0\to\infty} \mathrm{var}(\widehat{\mathrm{ATT}}_{g,t}) \notag\\
+&= \lim_{N_g,N_0\to\infty} \mathbb{E} \left[\left(\frac{1}{\sqrt{N_g}}\sum_{i\in \mathcal{I}_g} (\upsilon_{i,t}  + \+\beta_i'\*v_{i,t}^d + \varepsilon_{i,t}^d ) - \sqrt{\tau}\+\Lambda_y'\sqrt{N_0}\overline{\*e}_{r,t}^{0d} \right)^2 |\mathcal{C}\right] ,
+\end{align}
+where
+\begin{align}
+& \mathbb{E} \left[\left(\frac{1}{\sqrt{N_g}}\sum_{i\in \mathcal{I}_g} (\upsilon_{i,t}  + \+\beta_i'\*v_{i,t}^d + \varepsilon_{i,t}^d ) - \sqrt{\tau}\+\Lambda_y'\sqrt{N_0}\overline{\*e}_{r,t}^{0d} \right)^2 |\mathcal{C}\right] \notag\\
+&= \mathbb{E} \left[\left(\frac{1}{\sqrt{N_g}}\sum_{i\in \mathcal{I}_g} (\upsilon_{i,t}  + \+\beta_i'\*v_{i,t}^d + \varepsilon_{i,t}^d )  \right)^2 |\mathcal{C}\right]  + \mathbb{E} [(\sqrt{\tau}\+\Lambda_y'\sqrt{N_0}\overline{\*e}_{r,t}^{0d} )^2 |\mathcal{C}] \notag\\
+& - 2\mathbb{E} \left(\frac{1}{\sqrt{N_g}}\sum_{i\in \mathcal{I}_g} (\upsilon_{i,t}  + \+\beta_i'\*v_{i,t}^d + \varepsilon_{i,t}^d ) \sqrt{\tau}\+\Lambda_y'\sqrt{N_0}\overline{\*e}_{r,t}^{0d} |\mathcal{C}\right)\notag\\
+&= \frac{1}{N_g}\sum_{i\in \mathcal{I}_g}\sum_{j\in \mathcal{I}_g}\mathbb{E} [ (\upsilon_{i,t}  + \+\beta_i'\*v_{i,t}^d + \varepsilon_{i,t}^d )(\upsilon_{j,t}  + \+\beta_j'\*v_{j,t}^d + \varepsilon_{j,t}^d )  |\mathcal{C} ]  + \tau \+\Lambda_y' N_0\mathbb{E}(\overline{\*e}_{r,t}^{0d}\overline{\*e}_{r,t}^{0d\prime} |\mathcal{C}) \+\Lambda_y\notag\\
+& - 2\sqrt{\tau}\+\Lambda_y'\sqrt{\frac{N_0}{N_g}}\sum_{i\in \mathcal{I}_g}\mathbb{E} [ (\upsilon_{i,t}  + \+\beta_i'\*v_{i,t}^d + \varepsilon_{i,t}^d ) \overline{\*e}_{r,t}^{0d} |\mathcal{C}]. \label{var}
+\end{align}
+We now consider each of the three terms on the right, starting with the first. Conditionally on $\mathcal{C}$, $\upsilon_{i,t}$, $\+\beta_i$  $\*v_{i,t}^d$ and $\varepsilon_{i,t}^d$ are independent not only across $i$ but also of one another. One implication of this is that
+\begin{align}
+ \frac{1}{N_g}\sum_{i\in \mathcal{I}_g} \mathbb{E}  (\+\beta_i'\*v_{i,t}^d\*v_{i,t}^{d\prime}\+\beta_i |\mathcal{C} ) & =  \mathrm{tr}\left(\frac{1}{N_g}\sum_{i\in \mathcal{I}_g} \mathbb{E}  (\+\beta_i\+\beta_i')\mathbb{E}  (\*v_{i,t}^d\*v_{i,t}^{d\prime} |\mathcal{C} ) \right) \notag\\
+ & =  \mathrm{tr}\,(\+\Sigma_{\+\beta} \+\Sigma_{\*v^d,t}) + o(1) ,
+\end{align}
+where $\+\Sigma_{\*v^d,t} := \lim_{N_g\to\infty}N_g^{-1}\sum_{i\in \mathcal{I}_g}\mathbb{E}  (\*v_{i,t}^d\*v_{i,t}^{d\prime} |\mathcal{C} )$ and $\+\Sigma_{\+\beta} := \mathbb{E} ( \+\beta_i\+\beta_i' )$. Note that $\mathbb{E}  (\*v_{i,t}^d\*v_{i,t}^{d\prime} |\mathcal{C} )$ has the same basic structure as $\mathbb{E}  (\varepsilon_{i,t}^{d2} |\mathcal{C} )$ earlier. Another implication of the above mentioned conditional independence is that
+\begin{align}
+& \frac{1}{N_g}\sum_{i\in \mathcal{I}_g}\sum_{j\in \mathcal{I}_g}\mathbb{E} [ (\upsilon_{i,t}  + \+\beta_i'\*v_{i,t}^d + \varepsilon_{i,t}^d )(\upsilon_{j,t}  + \+\beta_j'\*v_{j,t}^d + \varepsilon_{j,t}^d )  |\mathcal{C} ]  \notag\\
+&= \frac{1}{N_g}\sum_{i\in \mathcal{I}_g} \mathbb{E} [ (\upsilon_{i,t}  + \+\beta_i'\*v_{i,t}^d + \varepsilon_{i,t}^d )^2  |\mathcal{C} ]  \notag\\
+&=  \sigma^2_{\upsilon,t}  + \mathrm{tr}\,(\+\Sigma_{\+\beta} \+\Sigma_{\*v^d,t}) + \sigma^2_{\varepsilon^d,t} + o(1),
+\end{align}
+where $\sigma^2_{\upsilon,t} :=  \lim_{N_g\to\infty}N_g^{-1}\sum_{i\in \mathcal{I}_g} \mathbb{E}  (\upsilon_{i,t}^2 )$ and $\sigma^2_{\varepsilon^d,t} : = \lim_{N_g\to\infty}N_g^{-1}\sum_{i\in \mathcal{I}_g} \mathbb{E}  (\varepsilon_{i,t}^{d2} |\mathcal{C} )$. Similarly, because $\*e_{i,t}^{d}$ is conditionally independent across $i$, defining $\+\Sigma_{\*e^d,t}$ analogously to $\+\Sigma_{\*v^d,t}$, we have
+\begin{align}
+\mathbb{E}(\overline{\*e}_{r,t}^{0d}\overline{\*e}_{r,t}^{0d\prime} |\mathcal{C}) & = \overline{\*H}_r'\mathbb{E}(\overline{\*e}_{t}^{d}\overline{\*e}_{t}^{d\prime} |\mathcal{C})\overline{\*H}_r \notag\\
+& = \overline{\*H}_r'\frac{1}{N_0^2}\sum_{i\in \mathcal{I}_0}\sum_{j\in \mathcal{I}_0} \mathbb{E}(\*e_{i,t}^{d}\*e_{j,t}^{d\prime} |\mathcal{C})\overline{\*H}_r \notag\\
+& = \overline{\*H}_r'\frac{1}{N_0^2}\sum_{i\in \mathcal{I}_0} \mathbb{E}(\*e_{i,t}^{d}\*e_{i,t}^{d\prime} |\mathcal{C})\overline{\*H}_r \notag\\
+& = N_0^{-1} \overline{\*H}_r'  \+\Sigma_{\*e^d,t} \overline{\*H}_r + o(1).
+\end{align}
+Hence, letting $\*H_r = \lim_{N_0\to\infty} \overline{\*H}_r$, the second term on the right-hand side of \eqref{var} reduces to
+\begin{align}
+\tau \+\Lambda_y' N_0\mathbb{E}(\overline{\*e}_{r,t}^{0d}\overline{\*e}_{r,t}^{0d\prime} |\mathcal{C}) \+\Lambda_y &= \tau \+\Lambda_y' \overline{\*H}_r'  \+\Sigma_{\*e^d,t} \overline{\*H}_r \+\Lambda_y + o(1)  = \tau  \+\Lambda_y' \*H_r'  \+\Sigma_{\*e^d,t} \*H_r \+\Lambda_y + o(1).
+\end{align}
+The third and last term is zero. This is because $\{ (\upsilon_{i,t}  + \+\beta_i'\*v_{i,t}^d + \varepsilon_{i,t}^d ) \}_{i\in \mathcal{I}_g}$ and $\{\*e_{j,t}^{d}\}_{j\in \mathcal{I}_0}$ are mean zero and from non-overlapping subsamples, giving
+\begin{align}
+& \sum_{i\in \mathcal{I}_g}\mathbb{E} [ (\upsilon_{i,t}  + \+\beta_i'\*v_{i,t}^d + \varepsilon_{i,t}^d ) \overline{\*e}_{r,t}^{0d} |\mathcal{C}] \notag\\
+& = \overline{\*H}_r'\frac{1}{N_0}\sum_{i\in \mathcal{I}_g}\sum_{j\in \mathcal{I}_0} \mathbb{E} [ (\upsilon_{i,t}  + \+\beta_i'\*v_{i,t}^d + \varepsilon_{i,t}^d ) \*e_{j,t}^{d} |\mathcal{C}] = 0,
+\end{align}
+which in turn implies
+\begin{align}
+& \lim_{N_g,N_0\to\infty} \mathrm{var}(\widehat{\mathrm{ATT}}_{g,t}) \notag\\
+&= \lim_{N_g,N_0\to\infty} \mathbb{E} \left[\left(\frac{1}{\sqrt{N_g}}\sum_{i\in \mathcal{I}_g} (\upsilon_{i,t}  + \+\beta_i'\*v_{i,t}^d + \varepsilon_{i,t}^d ) - \sqrt{\tau}\+\Lambda_y'\sqrt{N_0}\overline{\*e}_{r,t}^{0d} \right)^2 |\mathcal{C}\right] \notag\\
+&= \sigma^2_{\upsilon,t}  + \mathrm{tr}\,(\+\Sigma_{\+\beta} \+\Sigma_{\*v^d,t}) + \sigma^2_{\varepsilon^d,t}  + \tau  \+\Lambda_y' \*H_r'  \+\Sigma_{\*e^d,t} \*H_r \+\Lambda_y .
+\end{align}
+This completes the evaluation of $\mathrm{var}(\widehat{\mathrm{ATT}}_{g,t})$. The proof is therefore complete. \hfill{$\blacksquare$}
+
+\bigskip
+
+\noindent\textbf{Proof of Theorem 2.}
+
+\bigskip
+
+\noindent From the proof of Theorem 1, again with $\+\Lambda_{y,i} :=  \+\lambda_i\+\beta_i + \+\alpha_i$,
+\begin{align}
+\widehat \Delta_{i,t} & = \mathrm{ATT}_{g,t} + \upsilon_{i,t}  + \+\beta_i'\*v_{i,t}^d + \varepsilon_{i,t}^d - \+\Lambda_{y,i}'\overline{\*e}_{r,t}^{0d} + O_p(N_0^{-1/2}), \\
+\frac{1}{N_g}\sum_{i\in \mathcal{I}_g} \widehat \Delta_{i,t} & = \mathrm{ATT}_{g,t}+ \frac{1}{N_g}\sum_{i\in \mathcal{I}_g} [\upsilon_{i,t}  + \+\beta_i'\*v_{i,t}^d + \varepsilon_{i,t}^d- \+\Lambda_{y,i}'\overline{\*e}_{r,t}^{0d}] + O_p(N_0^{-1/2}).
+\end{align}
+Hence, letting $z_{i,t} := \upsilon_{i,t}  + \+\beta_i'\*v_{i,t}^d + \varepsilon_{i,t}^d- \+\Lambda_{y,i}'\overline{\*e}_{r,t}^{0d}$, we obtain
+\begin{align}
+\widehat \Delta_{i,t}  - \frac{1}{N_g}\sum_{j \in \mathcal{I}_g} \widehat \Delta_{j,t} & = z_{i,t}  - \frac{1}{N_g}\sum_{j\in \mathcal{I}_g} z_{j,t} + O_p(N_0^{-1/2}) \notag\\
+& = z_{i,t}  + O_p(\min\{N_0,N_g\}^{-1/2}),
+\end{align}
+where the last equality holds because
+\begin{align}
+\frac{1}{N_g}\sum_{j\in \mathcal{I}_g} z_{j,t} & = \frac{1}{N_g} \sum_{j \in \mathcal{I}_g} (\upsilon_{j,t}  + \+\beta_j'\*v_{j,t}^d + \varepsilon_{j,t}^d- \+\Lambda_{y,j}'\overline{\*e}_{r,t}^{0d}) =  O_p(\min\{N_0,N_g\}^{-1/2}).
+\end{align}
+It follows that
+\begin{align}
+\widehat{\mathrm{var}}(\widehat{\mathrm{ATT}}_{g,t})& = \frac{1}{N_g-1}\sum_{i\in \mathcal{I}_g}\left(\widehat \Delta_{i,t}  - \frac{1}{N_g}\sum_{j\in \mathcal{I}_g} \widehat \Delta_{j,t}\right)^2 \notag\\
+& = \frac{1}{N_g-1} \sum_{i\in \mathcal{I}_g} z_{i,t}^2 + O_p(\min\{N_0,N_g\}^{-1/2}) .
+\end{align}
+As for the remaining term, since again $\upsilon_{i,t}$, $\+\beta_i'\*v_{i,t}^d$ and $\varepsilon_{i,t}^d$ are mean zero, and conditionally independent of each other as well as across $i$, their cross-products in $(N_g-1)^{-1} \sum_{i\in \mathcal{I}_g} z_{i,t}^2$ are $O_p(N_g^{-1/2})$. All cross-products involving $\+\Lambda_{y,i}'\overline{\*e}_{r,t}^{0d}$ are $O_p((N_gN_0)^{-1/2})$, as is clear from the following example:
+\begin{align}
+\left\|\frac{1}{N_g-1} \sum_{i \in \mathcal{I}_g} \upsilon_{i,t} \+\Lambda_{y,i}'\overline{\*e}_{r,t}^{0d}\right\|  \leq \left\|\frac{1}{N_g-1} \sum_{i \in \mathcal{I}_g} \upsilon_{i,t} \+\Lambda_{y,i}\right\| \|\overline{\*e}_{r,t}^{0d}\|= O_p((N_gN_0)^{-1/2}).
+\end{align}
+Making use of this and
+\begin{align}
+\frac{1}{N_g-1} \sum_{i \in \mathcal{I}_g} \+\Lambda_{y,i}'\overline{\*e}_{r,t}^{0d}\overline{\*e}_{r,t}^{0d\prime} \+\Lambda_{y,i} \leq  \frac{1}{N_g-1} \sum_{i \in \mathcal{I}_g}\|\+\Lambda_{y,i}\|^2 \|\overline{\*e}_{t}^{0d}\|^2  = O_p(N_0^{-1}),
+\end{align}
+we obtain
+\begin{align}
+\widehat{\mathrm{var}}(\widehat{\mathrm{ATT}}_{g,t}) & = \frac{1}{N_g-1} \sum_{i \in \mathcal{I}_g} (\upsilon_{i,t}  + \+\beta_i'\*v_{i,t}^d + \varepsilon_{i,t}^d - \+\Lambda_{y,i}'\overline{\*e}_{r,t}^{0d})^2 + o_p(1) \notag\\
+& = \frac{1}{N_g-1} \sum_{i \in \mathcal{I}_g} (\upsilon_{i,t}^2  + \+\beta_i'\*v_{i,t}^d\*v_{i,t}^{d\prime}\+\beta_i + \varepsilon_{i,t}^{d2}+ \+\Lambda_{y,i}'\overline{\*e}_{r,t}^{0d}\overline{\*e}_{r,t}^{0d\prime} \+\Lambda_{y,i})  + o_p(1) \notag\\
+& = \frac{1}{N_g-1} \sum_{i \in \mathcal{I}_g} (\upsilon_{i,t}^2  + \+\beta_i'\*v_{i,t}^d\*v_{i,t}^{d\prime}\+\beta_i + \varepsilon_{i,t}^{d2})  + o_p(1) \notag\\
+& = \sigma^2_{\upsilon,t}  + \mathrm{tr}\,(\+\Sigma_{\+\beta} \+\Sigma_{\*v^d,t}) + \sigma^2_{\varepsilon^d,t} + o_p(1).
+\end{align}
+From Proof of Theorem 1, we have that
+\begin{align}
+\mathrm{var}(\widehat{\mathrm{ATT}}_{g,t}) \to \sigma^2_{\upsilon,t}  + \mathrm{tr}\,(\+\Sigma_{\+\beta} \+\Sigma_{\*v^d,t}) + \sigma^2_{\varepsilon^d,t}  + \tau  \+\Lambda_y' \*H_r'  \+\Sigma_{\*e^d,t} \*H_r \+\Lambda_y
+\end{align}
+as $N_g,N_0\to\infty$ with $N_g/N_0\to\tau < \infty$. It follows that under the additional assumption that $\tau = 0$, we have
+\begin{align}
+\widehat{\mathrm{var}}(\widehat{\mathrm{ATT}}_{g,t}) \to_p \mathrm{var}(\widehat{\mathrm{ATT}}_{g,t}),
+\end{align}
+as required for the proof. \hfill{$\blacksquare$}
+
+\bigskip
+
+\noindent\textbf{Proof of Theorem 3.}
+
+\bigskip
+
+\noindent The proof of this theorem follows from simple manipulations of that of Theorem 1. We therefore only consider the main differences.
+
+Let us start with the estimator of the DATT, $\widehat{\mathrm{DATT}}_{g,t}$. We begin by writing $\widehat \eta_{i,t}$ in terms of $\eta_{i,t}$ and the primitives of the model. Unlike in Proof of Theorem 1, now $\widehat y_{i,t}(0) = \widehat{\+\beta}'\*x_{i,t} + \widehat{\*a}_i'\widehat{\*f}_t$. By using this and the same steps used to evaluate $\widehat \Delta_{i,t}$ in Proof of Theorem 1, we obtain
+\begin{align}
+\widehat \eta_{i,t} & = y_{i,t} - \widehat y_{i,t}(0)  \notag\\
+& = \eta_{i,t} + \+\beta_i'\*x_{i,t} + \+\alpha_i'\*f_t + \varepsilon_{i,t} -  (\widehat{\+\beta}'\*x_{i,t} +  \widehat{\*a}_i'\widehat{\*f}_t )  \notag\\
+& = \eta_{i,t} - (\widehat{\+\beta}-\+\beta_i)'\*x_{i,t} - (\widehat{\*a}_i'\widehat{\*f}_t - \+\alpha_i'\*f_t)  + \varepsilon_{i,t} \notag\\
+& = \eta_{i,t} - (\widehat{\+\beta}-\+\beta_i)'\*x_{i,t} - \+\alpha_i^{0\prime}(\widehat{\*f}_t^0-\*f_t^0) - (\widehat{\*a}_i^{0} - \+\alpha_i^0)'\widehat{\*f}_t^0 + \varepsilon_{i,t}.
+\end{align}
+Here
+\begin{align}
+\widehat{\*a}_i &= (\widehat{\*f}'\widehat{\*f})^{-1}\widehat{\*f}'(\*y_{i} - \*x_{i}\widehat{\+\beta}) \notag\\
+& = (\widehat{\*f}'\widehat{\*f})^{-1}\widehat{\*f}'[- \*x_{i}(\widehat{\+\beta}-\+\beta_i) + \widehat{\*f} \*a_i - \overline{\*e}_{r}^0\+\alpha_i +  \+\varepsilon_{i}] \notag\\
+& =  \*a_i + (\widehat{\*f}'\widehat{\*f})^{-1}\widehat{\*f}'[-\*x_{i}(\widehat{\+\beta}-\+\beta_i) - \overline{\*e}_{r}^0\+\alpha_i +  \+\varepsilon_{i} ],
+\end{align}
+and so
+\begin{align}
+\widehat{\*a}_i^0 - \+\alpha_i^0 & = (\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}^{0\prime}[-\*x_{i}(\widehat{\+\beta}-\+\beta_i) - \overline{\*e}_{r}^0\+\alpha_i +  \+\varepsilon_{i} ].
+\end{align}
+From Proof of Theorem 1, we also have
+\begin{align}
+\*x_{i,t} -  \*x_{i}' \widehat{\*f}^{0}(\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}_t^0  = \+\tau_{i,t}  - \+\lambda_i'\overline{\*e}_{r,t}^0  + \*v_{i,t} -  ( - \overline{\*e}_{r}^0\+\lambda_i  + \*v_i)' \widehat{\*f}^{0}(\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}_t^0.
+\end{align}
+By inserting the above expressions into the one given for $\widehat \eta_{i,t}$, we get
+\begin{align}
+\widehat \eta_{i,t} & = \eta_{i,t} - (\widehat{\+\beta}-\+\beta_i)'\*x_{i,t} - \+\alpha_i^{0\prime}(\widehat{\*f}_t^0-\*f_t^0) - (\widehat{\*a}_i^{0} - \+\alpha_i^0)'\widehat{\*f}_t^0  + \varepsilon_{i,t}\notag\\
+& = \eta_{i,t} - (\widehat{\+\beta}-\+\beta_i)'\*x_{i,t} - \+\alpha_i'\overline{\*e}_{r,t}^0 + \varepsilon_{i,t} \notag\\
+& - [ -\*x_{i}(\widehat{\+\beta}-\+\beta_i)  - \overline{\*e}_{r}^0\+\alpha_i +  \+\varepsilon_{i} ]' \widehat{\*f}^{0} (\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}_t^0  \notag\\
+& = \eta_{i,t} -(\widehat{\+\beta}-\+\beta_i)'(\+\tau_{i,t}  - \+\lambda_i'\overline{\*e}_{r,t}^0  + \*v_{i,t}) - \+\alpha_i'\overline{\*e}_{r,t}^0 + \varepsilon_{i,t}\notag\\
+& - [ -(- \overline{\*e}_{r}^0\+\lambda_i  + \*v_i)(\widehat{\+\beta}-\+\beta_i) - \overline{\*e}_{r}^0\+\alpha_i +  \+\varepsilon_{i} ]' \widehat{\*f}^{0} (\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}_t^0 \notag\\
+& = \eta_{i,t} -(\widehat{\+\beta}-\+\beta_i)'\+\tau_{i,t} - \tilde{\+\Lambda}_{y,i}'\overline{\*e}_{r,t}^0 - (\widehat{\+\beta}-\+\beta_i)'\*v_{i,t} + \varepsilon_{i,t}  \notag\\
+& - [ - \overline{\*e}_{r}^0\tilde{\+\Lambda}_{y,i} - \*v_i(\widehat{\+\beta}-\+\beta_i)+  \+\varepsilon_{i} ]' \widehat{\*f}^{0} (\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}_t^0 \notag\\
+& = \eta_{i,t} -(\widehat{\+\beta}-\+\beta_i)'\+\tau_{i,t} - \tilde{\+\Lambda}_{y,i}'\overline{\*e}_{r,t}^0 - (\widehat{\+\beta}-\+\beta_i)'\*v_{i,t} + \varepsilon_{i,t}  \notag\\
+& - [ - \overline{\*e}_{r}^0\tilde{\+\Lambda}_{y,i} - \*v_i(\widehat{\+\beta}-\+\beta_i)+  \+\varepsilon_{i} ]' \*f^{+} (\*f^{+\prime}\*f^+)^{-1}\*f_t^+ + O_p(N_0^{-1/2})\notag\\
+& = \eta_{i,t} -(\widehat{\+\beta}-\+\beta_i)'\+\tau_{i,t} - \tilde{\+\Lambda}_{y,i}'\overline{\*e}_{r,t}^{0d} - (\widehat{\+\beta}-\+\beta_i)'\*v_{i,t}^d + \varepsilon_{i,t}^d + O_p(N_0^{-1/2}),
+\end{align}
+where $\tilde{\+\Lambda}_{y,i} :=  -\+\lambda_i(\widehat{\+\beta}-\+\beta_i) + \+\alpha_i$.
+
+Let us now consider $\eta_{i,t}$. We have assumed that $\Delta_{i,t} = \mathrm{ATT}_{g,t} + \upsilon_{i,t}$, $\+\tau_{i,t}= \+\tau_{g,t} + \+\zeta_{i,t}$ and $\+\beta_{i} = \+\beta + \+\nu_i$. This implies
+\begin{align}
+\eta_{i,t} & =  \Delta_{i,t} - \+\tau_{i,t}'\+\beta_i \notag\\
+& = \mathrm{ATT}_{g,t} + \upsilon_{i,t} - (\+\tau_{g,t} + \+\zeta_{i,t})'(\+\beta + \+\nu_i) \notag\\
+& = \mathrm{ATT}_{g,t}  - \+\tau_{g,t}'\+\beta + \upsilon_{i,t} - \+\tau_{g,t}'\+\nu_i - \+\zeta_{i,t}'(\+\beta + \+\nu_i) \notag\\
+& =  \eta_{g,t} + \epsilon_{i,t},
+\end{align}
+where $\epsilon_{i,t} : = \upsilon_{i,t}- \+\tau_{g,t}'\+\nu_i - \+\zeta_{i,t}'\+\beta_i$ has the same basic properties as $\upsilon_{i,t}$. By using this, the above expression for $\widehat \eta_{i,t}$ and the arguments provided in Proof of Theorem 1 for why averaging and scaling by $\sqrt{N_g}$ does not affect the order of the reminder, we obtain
+\begin{align}
+& \sqrt{N_g}(\widehat{\mathrm{DATT}}_{g,t} - \mathrm{DATT}_{g,t})\notag\\
+& = \frac{1}{\sqrt{N_g}} \sum_{i\in \mathcal{I}_g} (\widehat \eta_{i,t} - \mathrm{DATT}_{g,t}) \notag\\
+& = \frac{1}{\sqrt{N_g}} \sum_{i\in \mathcal{I}_g} (\widehat \eta_{i,t} - \eta_{i,t} + \epsilon_{i,t}) \notag\\
+& = \frac{1}{\sqrt{N_g}} \sum_{i\in \mathcal{I}_g} [\epsilon_{i,t} -(\widehat{\+\beta}-\+\beta_i)'\+\tau_{i,t} - \tilde{\+\Lambda}_{y,i}'\overline{\*e}_{r,t}^{0d} - (\widehat{\+\beta}-\+\beta_i)'\*v_{i,t}^d + \varepsilon_{i,t}^d ] + O_p(N_0^{-1/2}) .
+\end{align}
+Consider the second term on the right. From $\+\beta_{i} = \+\beta + \+\nu_i$,
+\begin{align}
+\frac{1}{\sqrt{N_g}} \sum_{i\in \mathcal{I}_g} (\widehat{\+\beta}-\+\beta_i)'\+\tau_{i,t} = \sqrt{\frac{N_g}{N}}\sqrt{N}(\widehat{\+\beta}-\+\beta)'\frac{1}{N_g} \sum_{i\in \mathcal{I}_g}\+\tau_{i,t} - \frac{1}{\sqrt{N_g}} \sum_{i\in \mathcal{I}_g} \+\nu_i'\+\tau_{i,t}.
+\end{align}
+By using the same steps as in the proof of Theorem A.1 below, we can show that $\sqrt{N}(\widehat{\+\beta}-\+\beta) = O_p(1)$. Hence, if we in addition assume as in Theorem 2 that $N_g/N_0\to 0$, then we also have $N_g/N \to 0$, as $N > N_0$, which in turn implies
+\begin{align}
+\frac{1}{\sqrt{N_g}} \sum_{i\in \mathcal{I}_g} (\widehat{\+\beta}-\+\beta_i)'\+\tau_{i,t} = -\frac{1}{\sqrt{N_g}} \sum_{i\in \mathcal{I}_g} \+\nu_i'\+\tau_{i,t} + o_p(1).
+\end{align}
+We can similarly show that the error coming from the estimation of $\+\beta$ is negligible also in the term involving  $(\widehat{\+\beta}-\+\beta_i)'\*v_{i,t}^d$. The term that involves $\tilde{\+\Lambda}_{y,i}'\overline{\*e}_{r,t}^{0d}$ is negligible as a whole, as is apparent from
+\begin{align}
+\frac{1}{\sqrt{N_g}} \sum_{i\in \mathcal{I}_g} \tilde{\+\Lambda}_{y,i}'\overline{\*e}_{r,t}^{0d} = \sqrt{\frac{N_g}{N_0}}\frac{1}{N_g} \sum_{i\in \mathcal{I}_g} \tilde{\+\Lambda}_{y,i}'\sqrt{N_0}\overline{\*e}_{r,t}^{0d} = o_p(1),
+\end{align}
+which holds since again $N_g/N_0\to 0$. By adding these results, we arrive at the following limiting expression for $\sqrt{N_g}(\widehat{\mathrm{DATT}}_{g,t}- \mathrm{DATT}_{g,t})$:
+\begin{align}
+\sqrt{N_g}(\widehat{\mathrm{DATT}}_{g,t} - \mathrm{DATT}_{g,t}) & = \frac{1}{\sqrt{N_g}} \sum_{i\in \mathcal{I}_g} (\epsilon_{i,t} +\+\nu_i'\+\tau_{i,t} + \+\nu_i'\*v_{i,t}^d + \varepsilon_{i,t}^d ) + o_p(1) \notag\\
+& = \frac{1}{\sqrt{N_g}} \sum_{i\in \mathcal{I}_g} (\upsilon_{i,t} - \+\zeta_{i,t}'\+\beta + \+\nu_i'\*v_{i,t}^d + \varepsilon_{i,t}^d ) + o_p(1),
+\end{align}
+where the last equality holds, because $\epsilon_{i,t} +\+\nu_i'\+\tau_{i,t} = \upsilon_{i,t}- \+\tau_{g,t}'\+\nu_i - \+\zeta_{i,t}'\+\beta_i +\+\nu_i'\+\tau_{i,t} = \upsilon_{i,t} - \+\zeta_{i,t}'\+\beta$, and where the first term on the right-hand side of the same equality is asymptotically mixed normal by the same arguments used in Proof of Theorem 1.
+
+Let us now consider the estimator of the IATT, $\widehat{\mathrm{IATT}}_{g,t}: = \widehat{\mathrm{ATT}}_{g,t}-\widehat{\mathrm{DATT}}_{g,t}$. By the definition of $\mathrm{DATT}_{g,t}$, the above expression for $\sqrt{N_g}(\widehat{\mathrm{DATT}}_{g,t} - \mathrm{DATT}_{g,t})$ and the one given for $\sqrt{N_g}(\widehat{\mathrm{ATT}}_{g,t} - \mathrm{ATT}_{g,t})$ in Proof of Theorem 1,
+\begin{align}
+& \sqrt{N_g}(\widehat{\mathrm{IATT}}_{g,t} - \+\tau_{g,t}' \+\beta) \notag\\
+& = \sqrt{N_g}[\widehat{\mathrm{ATT}}_{g,t}-\widehat{\mathrm{DATT}}_{g,t} - (\mathrm{ATT}_{g,t} - \mathrm{DATT}_{g,t})] \notag\\
+& = \sqrt{N_g}[\widehat{\mathrm{ATT}}_{g,t} - \mathrm{ATT}_{g,t} -(\widehat{\mathrm{DATT}}_{g,t} - \mathrm{DATT}_{g,t})] \notag\\
+& = \frac{1}{\sqrt{N_g}} \sum_{i\in \mathcal{I}_g} [\upsilon_{i,t}  + \+\beta_i'\*v_{i,t}^d + \varepsilon_{i,t}^d  - (\upsilon_{i,t} - \+\zeta_{i,t}'\+\beta + \+\nu_i'\*v_{i,t}^d + \varepsilon_{i,t}^d )] + o_p(1) \notag\\
+& = \frac{1}{\sqrt{N_g}} \sum_{i\in \mathcal{I}_g} (\+\zeta_{i,t} + \*v_{i,t}^d)'\+\beta + o_p(1),
+\end{align}
+where the first term on the right is again asymptotically mixed normal.\hfill{$\blacksquare$}
+
+\section{Covariates without common factor representation}
+
+In the main paper, we assumed that all the regressors admitted to the common factor representation in Assumption 4, which rules out specifications featuring, for example, dummy variables, powers or products of the regressors. In the present section, we show that this assumption is not necessary, and that it can be relaxed provided that the estimation procedure outlined in the main paper are suitably modified.
+
+The model we have in mind for $y_{i,t}$ for the untreated units is now given by
+\begin{align}
+y_{i,t}(0) = \+\theta'\*w_{i,t} + \+\beta_i'\*x_{i,t}(0) + \+\alpha_i'\*f_t + \varepsilon_{i,t} ,
+\end{align}
+where $\*w_{i,t}$ is an $n\times 1$ vector of regressors that unlike $\*x_{i,t}(0)$ do not have a common factor representation. The new regressors can be correlated with $\*f_t$; however, we do require that they are independent of $\varepsilon_{i,t}$ and $\*v_{i,t}$. They are in this sense ``conditionally exogenous'' (given $\*f_t$).\footnote{Conditional exogeneity rules out predetermined covariates like lagged dependent variables. This can be relaxed but then $\varepsilon_{i,t}$ can no longer be serially correlated.} We assume that the coefficients of $\*w_{i,t}$ are equal across the cross-section. This is not necessary; however, it simplifies the derivations. At the end of this section, we explain how the equal slope condition can be relaxed and what the consequences are.
+
+The presence of $\*w_{i,t}$ requires two changes to the counterfactual estimation procedure outlined in the main paper;
+\begin{enumerate}
+  \item The step-1 estimate of the unknown factors is no longer given by $\widehat{\*{f}}_{t} = \overline{\*{z}}_t$ but is instead given by
+\begin{align}
+\widehat{\*{f}}_{t} = \left[ \begin{array}{c}
+                         \overline{\*{z}}_t \\
+                         \overline{\*{w}}_t
+                          \end{array}
+\right],
+\end{align}
+where $\overline{\*a}_t := N_0^{-1}\sum_{i \in \mathcal{I}_0} \*a_{i,t}$ is the cross-sectional average of any vector $\*a_{i,t}$ for the group of untreated units ($g= 0$), just as before.
+
+  \item The step-3 counterfactual estimator should be changed from $\widehat y_{i,t}(0) =  \widehat{\*a}_{i}'\widehat{\*f}_{t}$ to
+\begin{align}
+\widehat y_{i,t}(0) = \widehat{\+\theta}'\*w_{i,t} + \widehat{\*a}_{i}'\widehat{\*f}_{t},
+\end{align}
+where
+\begin{align}
+\widehat{\*a}_{i} & =  (\widehat{\*f}'\widehat{\*f})^{-1}\widehat{\*f}'(\*y_{i} - \*w_i\widehat{\+\theta}) , \\
+\widehat{\+\theta} &= \left(\sum_{i=1}^N  \*w_{i}'\*M_{\widehat{\*f}}\*w_{i}\right)^{-1}\sum_{i=1}^N \*w_{i}' \*M_{\widehat{\*f}}\*y_{i},
+\end{align}
+where $\*w_{i}$, $\widehat{\*f}$ and $\*y_{i}$ are $T_0$-rowed matrices of stacked observations on $\*w_{i,t}$, $\widehat{\*f}_{t}$ and $y_{i,t}$, respectively.
+\end{enumerate}
+
+With the above changes in place, the appropriate ATT estimator for group $g$ at time $t$ is given by
+\begin{align}
+\widehat{\mathrm{ATT}}_{g,t} = \frac{1}{N_g}\sum_{i \in \mathcal{I}_g} \widehat \Delta_{i,t}= \frac{1}{N_g}\sum_{i \in \mathcal{I}_g} [y_{i,t} - \widehat y_{i,t}(0)].
+\end{align}
+
+An important property of the counterfactual estimation procedure is that it is exactly invariant with respect to augmenting $\*w_{i,t}$ in step 2 by $\*x_{i,t}$. This is very important because it means that researchers do not have to know which regressors that admit to a common factor representation and which ones that do not; that is, researchers do not have to be able to distinguish between $\*x_{i,t}$ and $\*w_{i,t}$.
+
+Theorem A.1 provides the asymptotic distribution of the above version of $\widehat{\mathrm{ATT}}_{g,t}$. \citet{de2019cce} consider regular CCE estimation in the presence of regressors that do not load on the same set of factors as the dependent variable. However, they do not provide any formal analysis but just a heuristic discussion. As far as we are aware, Theorem A.1 is the first formal result that allow for conditionally exogenous regressors in the CCE context.
+
+
+\bigskip
+
+\noindent \textbf{Theorem A.1.} \emph{Suppose that Assumptions 1--10 and the above stated conditions are met. Then, as $N_g,\,N_0\to \infty$ with $N_g/N_0\to 0$,}
+\begin{itemize}
+  \item[(a) ] $\begin{aligned}[t]
+    \frac{\sqrt{N_g}(\widehat{\mathrm{ATT}}_{g,t} - \mathrm{ATT}_{g,t})}{\sqrt{\mathrm{var}(\widehat{\mathrm{ATT}}_{g,t})}} \to_d N(0, 1 ),
+    \end{aligned}$
+
+  \item[(b) ] $\begin{aligned}[t]
+    \widehat{\mathrm{var}}(\widehat{\mathrm{ATT}}_{g,t}) \to_p \mathrm{var}(\widehat{\mathrm{ATT}}_{g,t}),
+    \end{aligned}$
+\end{itemize}
+\emph{where $\mathrm{var}(\widehat{\mathrm{ATT}}_{g,t}) = \mathrm{var}[\sqrt{N_g}(\widehat{\mathrm{ATT}}_{g,t} - \mathrm{ATT}_{g,t})  |\mathcal{W}]$ and $\mathcal{W}$ is the sigma-field generated by $(\*f,\overline{\*{w}})$.}
+
+\bigskip
+
+\noindent\textbf{Proof:} We begin this proof by studying the effect of the new regressors on the estimated factors. Since $y_{i,t} = \+\theta'\*w_{i,t} + \+\beta_i'\*x_{i,t} + \+\alpha_i'\*f_t + \varepsilon_{i,t}$ for the group of untreated units ($i \in \mathcal{I}_0$), we have
+\begin{equation}
+\overline{\*{z}}_t = \overline{\+\Lambda}'\*{f}_t + \mathbb{1}_{1}\+\theta'\overline {\*w}_{t} + \overline {\*e}_{t},
+\end{equation}
+where $\mathbb{1}_1 := [1,0,...,0]'$ is a $(m+1)\times 1$ vector. This implies the following representation for $\widehat{\*{f}}_{t}$:
+\begin{align}
+\widehat{\*{f}}_{t} & = \left[ \begin{array}{c}
+                         \overline{\*{z}}_t \\
+                         \overline{\*{w}}_t
+                          \end{array}
+\right] \notag\\
+&= \left[ \begin{array}{c}
+                         \overline{\+\Lambda}'\*{f}_t + \mathbb{1}_{1}\+\theta'\overline {\*w}_{t} + \overline {\*e}_{t} \\
+                          \overline{\*{w}}_t
+                          \end{array}
+\right] \notag\\
+&= \left[ \begin{array}{cc}
+                          \overline{\+\Lambda}' & \mathbb{1}_{1}\+\theta' \\
+                          \*0_{n\times r} & \*I_{n}
+                          \end{array}
+\right]\left[ \begin{array}{c}
+                          \*{f}_t \\
+                          \overline{\*{w}}_t
+                          \end{array}
+\right] + \left[ \begin{array}{c}
+                          \overline{\*{e}}_t \\
+                          \*0_{n\times 1}
+                          \end{array}
+\right] \notag\\
+& = \overline{\+\Lambda}_*'\*{f}_{*,t} + \overline{\*{e}}_{*,t},
+\end{align}
+with obvious definitions of $\overline{\+\Lambda}_*$, $\*{f}_{*,t}$ and $\overline{\*{e}}_{*,t}$.
+Hence, defining
+\begin{equation}
+\overline{\*H}_* :=  \left[ \begin{array}{cc}
+                          \overline{\*H} & \*0_{(m+1)\times n}\\
+                          \*0_{(m+1)\times n}' & \*I_{n}
+                          \end{array}
+\right],
+\end{equation}
+an $(m+1+n)\times (m+1+n)$ matrix, we get
+\begin{align}
+\widehat{\*{f}}_{t}^0 = \overline{\*H}_*'\widehat{\*{f}}_{t}  = \overline{\*H}_*'\overline{\+\Lambda}_*'\*{f}_{*,t} + \overline{\*H}_*'\overline{\*{e}}_{*,t}  = \*{f}_{*,t}^0 + \overline{\*e}_{*,t}^0
+\end{align}
+with implicit definitions of $\*{f}_{*,t}^0$ and $\overline{\*e}_{*,t}^0$. Note how $\overline{\*e}_{*,t}^0 = [\overline{\*{e}}_t'\overline{\*H} , \*0_{n\times 1}']'$. Further use of $\overline{\*H}'\overline{\+\Lambda}' = [\*I_r,\*0_{(m+1-r)\times r}']'$ and $\overline{\*H} = [\overline{\*H}_r, \overline{\*H}_{-r}]$, reveals that $\*{f}_{*,t}^0$ has the following form:
+\begin{align}
+\*{f}_{*,t}^0 &= \overline{\*H}_*'\overline{\+\Lambda}_*'\*{f}_{*,t} \notag\\
+& = \left[ \begin{array}{cc}
+                          \overline{\*H}'\overline{\+\Lambda}' & \overline{\*H}'\mathbb{1}_{1}\+\theta' \\
+                          \*0_{n\times r} & \*I_{n}
+                          \end{array}
+\right] \*{f}_{*,t} \notag\\
+&  =  \left[ \begin{array}{c}
+                          \overline{\*H}'\overline{\+\Lambda}'\*{f}_t +  \overline{\*H}'\mathbb{1}_{1}\+\theta'\overline {\*w}_{t}   \\
+                          \overline{\*{w}}_t
+                          \end{array}
+\right] \notag\\
+& = \left[ \begin{array}{c}
+                          \*{f}_t +  \overline{\*H}_r'\mathbb{1}_{1}\+\theta'\overline {\*w}_{t}  \\
+                          \overline{\*H}_{-r}'\mathbb{1}_{1}\+\theta'\overline {\*w}_{t} \\
+                          \overline{\*{w}}_t
+                          \end{array}
+\right] \notag\\
+& =  \left[ \begin{array}{c}
+                          \*{f}_t   \\
+                          \*0_{(m+1+n-r)\times 1}
+                          \end{array}
+\right] + \left[ \begin{array}{c}
+                          \overline{\*H}'\mathbb{1}_{1}\+\theta'   \\
+                          \*I_n
+                          \end{array}
+\right]\overline {\*w}_{t}.
+\end{align}
+The rotated factors in $\*{f}_{*,t}^0$ are the objects that will be estimated. Suppose that the rows of $\overline {\*w}_{t}$ are all different from zero. Then the above equation reveals that, unlike $\*{f}_{t}^0$, all the rows of $\*{f}_{*,t}^0$ are nonzero. Hence, unlike in Proof of Theorem 1, here there is no need to rescale by $\*D_{N_0}$.
+
+We now turn our attention to $\widehat \Delta_{i,t}$. From $y_{i,t} = \eta_{i,t} + \+\theta'\*w_{i,t} + \+\beta_i'\*x_{i,t} + \+\alpha_i'\*f_t + \varepsilon_{i,t}$ and $\widehat y_{i,t}(0) = \widehat{\+\theta}'\*w_{i,t} + \widehat{\*a}_{i}'\widehat{\*f}_{t}$,
+\begin{align}
+\widehat \Delta_{i,t} & = y_{i,t} - \widehat y_{i,t}(0) \notag\\
+& = \eta_{i,t} + \+\theta'\*w_{i,t} + \+\beta_i'\*x_{i,t} + \+\alpha_i'\*f_t + \varepsilon_{i,t} - (\widehat{\+\theta}'\*w_{i,t} +  \widehat{\*a}_{i}'\widehat{\*f}_{t} )  \notag\\
+& = \eta_{i,t} - (\widehat{\+\theta} - \+\theta)'\*w_{i,t} + \+\beta_i'\*x_{i,t} - (\widehat{\*a}_{i}'\widehat{\*f}_{t} - \+\alpha_i'\*f_t)  + \varepsilon_{i,t}\notag\\
+& = \eta_{i,t} - (\widehat{\+\theta} - \+\theta)'\*w_{i,t}  + \+\beta_i'\*x_{i,t}  - \+\alpha_{i}^{0\prime}(\widehat{\*f}_{t}^0-\*f_{*,t}^0) - (\widehat{\*a}_{i}^{0} - \+\alpha_{*,i}^0)'\widehat{\*f}_{t}^0 + \varepsilon_{i,t}.
+\end{align}
+For the last equality we use the fact that the rank of the $(m+1+n)\times (r+n)$ matrix $\overline{\boldsymbol{\Lambda}}_*'$ is given by $\mathrm{rk}\,\overline{\+\Lambda}' + \mathrm{rk}\,\*I_{n} = r +n$ (see \citealp{abadir2005matrix}, Exercise 5.48). It therefore has full column rank, which in view of $\mathrm{rk}\,(\overline{\mathbf{H}}_*'\overline{\boldsymbol{\Lambda}}_*') = \mathrm{rk}\, \overline{\boldsymbol{\Lambda}}_*'$ (see \citealp{abadir2005matrix}, Exercise 4.24) in turn implies that $\overline{\mathbf{H}}_*'\overline{\boldsymbol{\Lambda}}_*'$ has full column rank, too. This means that its Moore--Penrose inverse is given by $(\overline{\mathbf{H}}_*'\overline{\boldsymbol{\Lambda}}_*')^+ = (\overline{\boldsymbol{\Lambda}}_*\overline{\mathbf{H}}_*\overline{\mathbf{H}}_*'\overline{\boldsymbol{\Lambda}}_*')^{-1} \overline{\boldsymbol{\Lambda}}_*\overline{\mathbf{H}}_*$ and hence that $(\overline{\mathbf{H}}_*'\overline{\boldsymbol{\Lambda}}_*')^+\overline{\mathbf{H}}_*'\overline{\boldsymbol{\Lambda}}_*' = \*I_{r+n}$. We also note that the $(m+1+n)\times (m+1+n)$ matrix $\overline{\*H}_*$ is block diagonal with positive definite blocks. It is therefore invertible. Hence, letting $\widehat{\*a}_{i}^0 := (\overline{\*{H}}_*')^{-1\prime}\widehat{\*a}_{i} = \overline{\*{H}}_*^{-1}\widehat{\*a}_{i}$ and $\+\alpha_{i}^0 := (\overline{\mathbf{H}}_*'\overline{\boldsymbol{\Lambda}}_*')^{+\prime} \+\alpha_{*,i}$, where $\+\alpha_{*,i} := [\+\alpha_i', \*0_{n\times 1}']'$, we obtain
+\begin{align}
+\widehat{\*a}_{i}'\widehat{\*f}_{t} - \+\alpha_i'\*f_t &= \widehat{\*a}_{i}'\widehat{\*f}_{t} - [\+\alpha_i', \*0_{n\times 1}']\left[ \begin{array}{c}
+                          \*f_t \\
+                          \overline{\*{w}}_t
+                          \end{array}
+\right] \notag\\
+& =  \widehat{\*a}_{i}'(\overline{\*{H}}_*')^{-1}\overline{\*{H}}_*'\widehat{\*f}_{t} - \+\alpha_{*,i}' (\overline{\mathbf{H}}_*'\overline{\boldsymbol{\Lambda}}_*')^+\overline{\mathbf{H}}_*'\overline{\boldsymbol{\Lambda}}_*'\*f_{*,t} \notag\\
+& = \widehat{\*a}_{i}^{0\prime}\widehat{\*f}_{t}^0 - \+\alpha_{*,i}^{0\prime}\*f_{*,t}^0 \notag\\
+& = \+\alpha_{*,i}^{0\prime}(\widehat{\*f}_{t}^0-\*f_{*,t}^0) + (\widehat{\*a}_{i}^{0} - \+\alpha_{*,i}^0)'\widehat{\*f}_{t}^0.
+\end{align}
+
+Consider $\widehat{\*a}_{i}^{0} - \+\alpha_{*,i}^0$. From $\overline{\boldsymbol{\Lambda}}_*\overline{\boldsymbol{\Lambda}}_*^+ = \*I_{r+n}$, letting $\*a_{*,i} := \overline{\boldsymbol{\Lambda}}_*^+\+\alpha_{*,i}$,
+\begin{align}
+\*y_{i} & = \*w_{i}\+\theta + \*x_{i}\+\beta_i + \*f\+\alpha_i+  \+\varepsilon_{i} \notag\\
+& = \*w_{i}\+\theta + \*x_{i}\+\beta_i + \*f_*\overline{\boldsymbol{\Lambda}}_*\overline{\boldsymbol{\Lambda}}_*^+\+\alpha_{*,i} +  \+\varepsilon_{i} \notag\\
+& = \*w_{i}\+\theta + \*x_{i}\+\beta_i + \widehat{\*f}\overline{\boldsymbol{\Lambda}}_*^+\+\alpha_{*,i} - ( \widehat{\*f} -  \*f_*\overline{\boldsymbol{\Lambda}}_*)\overline{\boldsymbol{\Lambda}}_*^+\+\alpha_{*,i}  +  \+\varepsilon_{i}\notag\\
+& = \*w_{i}\+\theta + \*x_{i}\+\beta_i + \widehat{\*f}\*a_{*,i} - \overline{\*e}_*\*a_{*,i} +  \+\varepsilon_{i}.
+\end{align}
+We can now use the same steps as in the proof of Theorem 1 to show that
+\begin{align}
+\widehat{\*a}_{i}^0 & = \overline{\*{H}}_*^{-1}\widehat{\*a}_{i} \notag\\
+& = \overline{\*{H}}_*^{-1} (\widehat{\*f}'\widehat{\*f})^{-1}\widehat{\*f}'(\*y_{i} - \*w_i\widehat{\+\theta}) \notag\\
+& = \overline{\*{H}}_*^{-1}\*a_{*,i} + \overline{\*{H}}_*^{-1}(\widehat{\*f}'\widehat{\*f})^{-1}\widehat{\*f}'[ -\*w_{i}(\widehat{\+\theta} - \+\theta) + \*x_{i}\+\beta_i  - \overline{\*e}_*\*a_{*,i} +  \+\varepsilon_{i} ]\notag\\
+& = \overline{\*{H}}_*^{-1}\*a_{*,i} +  (\overline{\*{H}}_*' \widehat{\*f}'\widehat{\*f} \overline{\*{H}}_*)^{-1}\overline{\*{H}}_*'\widehat{\*f}' [ -\*w_{i}(\widehat{\+\theta} - \+\theta) + \*x_{i}\+\beta_i  - \overline{\*e}_*\*a_{*,i} +  \+\varepsilon_{i} ]\notag\\
+& = \+\alpha_{*,i}^0 + (\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}^{0\prime}[ -\*w_{i}(\widehat{\+\theta} - \+\theta) + \*x_{i}\+\beta_i  - \overline{\*e}_*\*a_{*,i} +  \+\varepsilon_{i} ]
+\end{align}
+where the last equality holds because $\overline{\*{H}}_*^{-1}\*a_{*,i} =\overline{\*{H}}_*^{-1} \overline{\boldsymbol{\Lambda}}_*^+\+\alpha_{*,i}= ( \overline{\boldsymbol{\Lambda}}_* \overline{\*{H}}_*)^+\+\alpha_{*,i} = \+\alpha_{*,i}^0$. Note also how
+\begin{align}
+\+\alpha_{*,i}^{0\prime}(\widehat{\*f}_{t}^0-\*f_{*,t}^0) = \+\alpha_{*,i}^{0\prime}\overline{\*e}_{*,t}^0 = \+\alpha_{*,i}' (\overline{\mathbf{H}}_*'\overline{\boldsymbol{\Lambda}}_*')^{+}\overline{\*H}_*'\overline{\*{e}}_{*,t}= \+\alpha_{*,i}' \overline{\boldsymbol{\Lambda}}_*^{+\prime}\overline{\*{e}}_{*,t} = \*a_{*,i}'\overline{\*{e}}_{*,t}.
+\end{align}
+Direct insertion into the above expression for $\widehat \Delta_{i,t}$ yields
+\begin{align}
+\widehat \Delta_{i,t} & = \eta_{i,t} - (\widehat{\+\theta} - \+\theta)'\*w_{i,t}  + \+\beta_i'\*x_{i,t}  - \+\alpha_{*,i}^{0\prime}(\widehat{\*f}_{t}^0-\*f_{*,t}^0) - (\widehat{\*a}_{i}^{0} - \+\alpha_{*,i}^0)'\widehat{\*f}_{t}^0 + \varepsilon_{i,t} \notag\\
+& = \eta_{i,t} - (\widehat{\+\theta} - \+\theta)'\*w_{i,t}  + \+\beta_i'\*x_{i,t}  - \*a_{*,i}'\overline{\*{e}}_{*,t} + \varepsilon_{i,t} \notag\\
+& - [ -\*w_{i}(\widehat{\+\theta} - \+\theta) + \*x_{i}\+\beta_i  - \overline{\*e}_*\*a_{*,i} +  \+\varepsilon_{i} ] \widehat{\*f}^{0}(\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}_{t}^0 .
+\end{align}
+
+Let us define $\+\lambda_{*,i} := [\+\lambda_i', \*0_{n\times 1}']'$ analogously to $\+\alpha_{*,i}$ and $\*l_{*,i} := \overline{\boldsymbol{\Lambda}}_*^+\+\lambda_{*,i}$ analogously to $\*a_{*,i}$. Then, via $\overline{\boldsymbol{\Lambda}}_*\overline{\boldsymbol{\Lambda}}_*^+ = \*I_{r+n}$ and $\widehat{\*f} = \widehat{\*f}^0\overline{\*H}_*^{-1}$,
+\begin{align}
+\*x_i &= \*f\+\lambda_i + \*v_i \notag\\
+& = \*f_*\+\lambda_{*,i} + \*v_i  \notag\\
+& = \widehat{\*f}\overline{\boldsymbol{\Lambda}}_*^+\+\lambda_{*,i} -  (\widehat{\*f} - \*f_*\overline{\+\Lambda}_*)\overline{\boldsymbol{\Lambda}}_*^+\+\lambda_{*,i}  + \*v_i \notag\\
+& = \widehat{\*f}^0\overline{\*H}_*^{-1}\overline{\boldsymbol{\Lambda}}_*^+\+\lambda_{*,i}  - \overline{\*e}_{*}\overline{\boldsymbol{\Lambda}}_*^+\+\lambda_{*,i}  + \*v_i\notag\\
+& = \widehat{\*f}^0\overline{\*H}_*^{-1}\*l_{*,i}  - \overline{\*e}_{*}\*l_{*,i}  + \*v_i
+\end{align}
+if $t\leq T_0$, whereas if $t > T_0$, then
+\begin{eqnarray}
+\*x_{i,t} = \+\tau_{i,t} + \+\lambda_{*,i}'\*f_{*,t} + \*v_{i,t} =  \+\tau_{i,t} + \*l_{*,i}'\overline{\*H}_*^{-1\prime}\widehat{\*f}_t^0  - \*l_{*,i}'\overline{\*e}_{*,t}  + \*v_{i,t}.
+\end{eqnarray}
+Hence, similarly to Proof of Theorem 1,
+\begin{align}
+\widehat \Delta_{i,t} & = \Delta_{i,t} - (\widehat{\+\theta} - \+\theta)'\*w_{i,t}  + \+\beta_i'(- \*l_{*,i}'\overline{\*e}_{*,t}  + \*v_{i,t})  - \*a_{*,i}'\overline{\*{e}}_{*,t} + \varepsilon_{i,t} \notag\\
+& - [ -\*w_{i}(\widehat{\+\theta} - \+\theta) + ( - \overline{\*e}_{*}\*l_{*,i}  + \*v_i )\+\beta_i  - \overline{\*e}_*\*a_{*,i} +  \+\varepsilon_{i} ] \widehat{\*f}^{0}(\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}_{t}^0 \notag\\
+& = \Delta_{i,t} - (\widehat{\+\theta} - \+\theta)'\*w_{i,t} - \+\Lambda_{*,y,i}'\overline{\*e}_{*,t}  + \+\beta_i' \*v_{i,t} + \varepsilon_{i,t} \notag\\
+& - [ -\*w_{i}(\widehat{\+\theta} - \+\theta) - \overline{\*e}_{*}\+\Lambda_{*,y,i} + \*v_i\+\beta_i  + \+\varepsilon_{i} ] \widehat{\*f}^{0}(\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}_{t}^0 .
+\end{align}
+where we have defined $\+\Lambda_{*,y,i} :=  \*l_{*,i}\+\beta_i + \*a_{*,i}$ similarly to $\+\Lambda_{y,i}$
+
+The above expression is entirely analogous to the one derived in Proof of Theorem 1. The main difference is the terms involving $\widehat{\+\theta} - \+\theta$. Let us therefore now consider this quantity. From $\*y_{i}= \*w_{i}\+\theta + \*x_{i}\+\beta_i + \widehat{\*f}\*a_{*,i} - \overline{\*e}_*\*a_{*,i} +  \+\varepsilon_{i}$, $\*x_i = \widehat{\*f}^0\overline{\*H}_*^{-1}\*l_{*,i}  - \overline{\*e}_{*}\*l_{*,i}  + \*v_i$ and $\*M_{\widehat{\*f}} = \*M_{\widehat{\*f}^0}$,
+\begin{align}
+\widehat{\+\theta} - \+\theta &= \left(\sum_{i=1}^N  \*w_{i}'\*M_{\widehat{\*f}}\*w_{i}\right)^{-1}\sum_{i=1}^N \*w_{i}' \*M_{\widehat{\*f}}(\*x_{i}\+\beta_i - \overline{\*e}_*\*a_{*,i} +  \+\varepsilon_{i})\notag\\
+&= \left(\sum_{i=1}^N  \*w_{i}'\*M_{\widehat{\*f}^0}\*w_{i}\right)^{-1}\sum_{i=1}^N \*w_{i}' \*M_{\widehat{\*f}^0}(-\overline{\*e}_{*}\+\Lambda_{*,y,i}  + \*v_i\+\beta_i +  \+\varepsilon_{i}).
+\end{align}
+Consider the denominator. Making use of (A.12) in \citet{westerlund2019cce}, and the fact that $\|\overline{\*e}_*^0\|$ and $\|(\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{+} - (\*f_*^{0\prime}\*f_*^{0})^{+}\|$ are both $O_p(N_0^{-1/2})$ by the same arguments as in Proof of Theorem 1, we have
+\begin{align}\label{mdiff}
+& \|\*M_{\*f^0} - \*M_{\widehat{\*f_*}^0}\| \notag\\
+&= \|\overline{\*e}_*^0(\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{+}\overline{\*e}_*^{0\prime} + \overline{\*e}_*^0(\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{+} \*f^{0\prime} +  \*f^{0}(\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{+} \overline{\*e}_*^{0\prime} +  \*f_*^{0}[(\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{+} - (\*f_*^{0\prime}\*f_*^{0})^{+}] \*f_*^{0\prime}\| \notag\\
+&\leq \|\overline{\*e}_*^0\|^2 \|(\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{+}\| + 2 \|\overline{\*e}_*^0\|\|(\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{+}\| \*f_*^{0}\| + \|\*f_*^{0}\|^2 \|(\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{+} - (\*f_*^{0\prime}\*f_*^{0})^{+}\| \notag\\
+& = O_p(N_0^{-1/2})
+\end{align}
+which in turn implies
+\begin{align}
+\left\| \frac{1}{N}\sum_{i=1}^N  \*w_{i}'(\*M_{\*f_*^0} - \*M_{\widehat{\*f}^0})\*w_{i} \right\| \leq \frac{1}{N}\sum_{i=1}^N  \|\*w_{i}\|^2 \|\*M_{\*f_*^0} - \*M_{\widehat{\*f}^0}\| = O_p(N_0^{-1/2}).
+\end{align}
+It follows that
+\begin{align}
+\frac{1}{N}\sum_{i=1}^N  \*w_{i}'\*M_{\widehat{\*f}^0}\*w_{i} & = \frac{1}{N}\sum_{i=1}^N  \*w_{i}'\*M_{\*f_*^0}\*w_{i} - \frac{1}{N}\sum_{i=1}^N  \*w_{i}'(\*M_{\*f_*^0} - \*M_{\widehat{\*f}^0})\*w_{i} \notag\\
+& = \frac{1}{N}\sum_{i=1}^N  \*w_{i}'\*M_{\*f_*^0}\*w_{i} + O_p(N_0^{-1/2})\notag\\
+& = \+\Sigma_{\*w^d} + o_p(1),
+\end{align}
+where $\+\Sigma_{\*w^d} := \lim_{N\to\infty}N^{-1}\sum_{i=1}^N \mathbb{E}  (\*w_{i}'\*M_{\*f_*^0}\*w_{i} |\mathcal{W} ) = \lim_{N\to\infty}N^{-1}\sum_{i=1}^N \mathbb{E}  (\*w_{i}^{d\prime}\*w_{i}^d |\mathcal{W} )$ with $\*w_{i}^d = \*M_{\*f_*^0}\*w_{i}$ being the stacked, defactored $\*w_{i}$, similarly to Proof of Theorem 1. Also, $\mathcal{W}$ is the sigma-field generated by $\*f_*^0$. We assume that $\+\Sigma_{\*w^d}$ is positive definite.
+
+As for the numerator,
+\begin{align}
+& \left\|\frac{1}{\sqrt{N}}\sum_{i=1}^N \*w_{i}'(\*M_{\*f_*^0} - \*M_{\widehat{\*f}^0})\overline{\*e}_{*}^0\+\Lambda_{*,y,i}\right\|\notag\\
+ & \leq \frac{\sqrt{N}}{N_0}\frac{1}{N}\sum_{i=1}^N \| \*w_{i}\|\|\+\Lambda_{*,y,i}\|\sqrt{N_0}\|\*M_{\*f_*^0} - \*M_{\widehat{\*f}^0}\|\sqrt{N_0}\|\overline{\*e}_{*}^0\|  = O_p(\sqrt{N}N_0^{-1})
+\end{align}
+By Exercise 10.20 in Abadir and Magnus (2005), $\|\mathrm{vec}\, \*A\|^2 = (\mathrm{vec}\, \*A)'\mathrm{vec}\, \*A = \mathrm{tr}\, (\*A'\*A) = \|\*A\|^2$. By using this and $\mathrm{vec} \,(\*A\*B\*C) = (\*C' \otimes \*A)\mathrm{vec} \,\*B$ (see Abadir and Magnus, 2005, Exercise 10.18), we obtain
+\begin{align}
+\left\|\frac{1}{\sqrt{N}}\sum_{i=1}^N \*w_{i}'(\*M_{\*f_*^0} - \*M_{\widehat{\*f}^0})\+\varepsilon_{i}\right\| & = \left\|\mathrm{vec}\left( \frac{1}{\sqrt{N}}\sum_{i=1}^N \*w_{i}'(\*M_{\*f_*^0} - \*M_{\widehat{\*f}^0})\+\varepsilon_{i} \right) \right\| \notag\\
+& = \left\|\frac{1}{\sqrt{N}}\sum_{i=1}^N (\+\varepsilon_{i}'\otimes \*w_{i}') \mathrm{vec}\,(\*M_{\*f_*^0} - \*M_{\widehat{\*f}^0}) \right\| \notag\\
+& = \left\|\frac{1}{\sqrt{N}}\sum_{i=1}^N (\+\varepsilon_{i}\otimes \*w_{i})' \mathrm{vec}\,(\*M_{\*f_*^0} - \*M_{\widehat{\*f}^0})  \right\| \notag\\
+& \leq \left\|\frac{1}{\sqrt{N}}\sum_{i=1}^N (\+\varepsilon_{i}\otimes \*w_{i})\right\| \|\mathrm{vec}\,(\*M_{\*f_*^0} - \*M_{\widehat{\*f}^0})  \| \notag\\
+& = \left\|\frac{1}{\sqrt{N}}\sum_{i=1}^N (\+\varepsilon_{i}\otimes \*w_{i})\right\| \| \*M_{\*f_*^0} - \*M_{\widehat{\*f}^0} \| \notag\\
+& = O_p(N_0^{-1/2}),
+\end{align}
+where the last equality supposes that $\*w_{i}$ is independent of $\+\varepsilon_{i}$. The order of $N^{-1/2}\sum_{i=1}^N \*w_{i}'(\*M_{\*f_*^0} - \*M_{\widehat{\*f}^0})\*v_i\+\beta_i$ is the same, provided that $\*w_{i}$ is independent also of $\*v_i$. Hence, by adding the results,
+\begin{align}
+& \frac{1}{\sqrt{N}}\sum_{i=1}^N \*w_{i}' \*M_{\widehat{\*f}^0}(-\overline{\*e}_{*}\+\Lambda_{*,y,i}  + \*v_i\+\beta_i +  \+\varepsilon_{i}) \notag\\
+& = \frac{1}{\sqrt{N}}\sum_{i=1}^N \*w_{i}' \*M_{\*f_*^0}(-\overline{\*e}_{*}\+\Lambda_{*,y,i}  + \*v_i\+\beta_i +  \+\varepsilon_{i}) \notag\\
+& - \frac{1}{\sqrt{N}}\sum_{i=1}^N \*w_{i}'(\*M_{\*f_*^0}- \*M_{\widehat{\*f}_*^0})(-\overline{\*e}_{*}\+\Lambda_{*,y,i}  + \*v_i\+\beta_i +  \+\varepsilon_{i}) \notag\\
+& = \frac{1}{\sqrt{N}}\sum_{i=1}^N \*w_{i}' \*M_{\*f_*^0}(-\overline{\*e}_{*}\+\Lambda_{*,y,i}  + \*v_i\+\beta_i +  \+\varepsilon_{i}) +  O_p(N_0^{-1/2})\notag\\
+& = \frac{1}{\sqrt{N}}\sum_{i=1}^N \*w_{i}^{d\prime} (-\overline{\*e}_{*}^d\+\Lambda_{*,y,i}  + \*v_i^d\+\beta_i +  \+\varepsilon_{i}^d) +  O_p(N_0^{-1/2}),
+\end{align}
+and so
+\begin{align}
+\sqrt{N}(\widehat{\+\theta} - \+\theta) = \+\Sigma_{\*w^d}^{-1}\frac{1}{\sqrt{N}}\sum_{i=1}^N \*w_{i}^{d\prime} (-\overline{\*e}_{*}^d\+\Lambda_{*,y,i}  + \*v_i^d\+\beta_i +  \+\varepsilon_{i}^d) +  o_p(1).
+\end{align}
+
+Together with the fact that $\widehat{\*f}_{t}^0 = \*f_{*,t}^0 + O_p(N_0^{-1/2})$ by the arguments of Proof of Theorem 1, the above result implies
+\begin{align}
+\widehat \Delta_{i,t} & = \Delta_{i,t} - (\widehat{\+\theta} - \+\theta)'\*w_{i,t} - \+\Lambda_{*,y,i}'\overline{\*e}_{*,t}  + \+\beta_i' \*v_{i,t} + \varepsilon_{i,t} \notag\\
+& - [ -\*w_{i}(\widehat{\+\theta} - \+\theta) - \overline{\*e}_{*}\+\Lambda_{*,y,i} + \*v_i\+\beta_i  + \+\varepsilon_{i} ] \widehat{\*f}^{0}(\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}_{t}^0 \notag\\
+& = \Delta_{i,t} - (\widehat{\+\theta} - \+\theta)'\*w_{i,t} - \+\Lambda_{*,y,i}'\overline{\*e}_{*,t}  + \+\beta_i' \*v_{i,t} + \varepsilon_{i,t} \notag\\
+& - [ -\*w_{i}(\widehat{\+\theta} - \+\theta) - \overline{\*e}_{*}\+\Lambda_{*,y,i} + \*v_i\+\beta_i  + \+\varepsilon_{i} ] \*f_*^{0}(\*f_*^{0\prime}\*f_*^0)^{-1}\*f_{*,t}^0 +  O_p(N_0^{-1/2})\notag\\
+& = \Delta_{i,t} - (\widehat{\+\theta} - \+\theta)'\*w_{i,t}^d - \+\Lambda_{*,y,i}'\overline{\*e}_{*,t}^d  + \+\beta_i' \*v_{i,t}^d + \varepsilon_{i,t}^d  +  O_p(N_0^{-1/2}),
+\end{align}
+giving
+\begin{align}
+& \sqrt{N_g}(\widehat{\mathrm{ATT}}_{g,t} - \mathrm{ATT}_{g,t}) \notag\\
+& = \frac{1}{\sqrt{N_g}} \sum_{i\in \mathcal{I}_g} [\upsilon_{i,t} - (\widehat{\+\theta} - \+\theta)'\*w_{i,t}^d - \+\Lambda_{*,y,i}'\overline{\*e}_{*,t}^d  + \+\beta_i' \*v_{i,t}^d + \varepsilon_{i,t}^d ] + O_p(N_0^{-1/2})\notag\\
+&= \frac{1}{\sqrt{N_g}}\sum_{i\in \mathcal{I}_g}(\upsilon_{i,t}  + \+\beta_i'\*v_{i,t}^d + \varepsilon_{i,t}^d)  - \sqrt{\frac{N_g}{N}} \sqrt{N}(\widehat{\+\theta} - \+\theta)'\frac{1}{N_g}\sum_{i\in \mathcal{I}_g} \*w_{i,t}^{d} \notag\\
+& - \sqrt{\frac{N_g}{N_0}} \frac{1}{N_g}\sum_{i\in \mathcal{I}_g} \+\Lambda_{*,y,i}'\sqrt{N_0}\overline{\*e}_{*,t}^{d} + O_p(N_0^{-1/2}) ,
+\end{align}
+where the first and third terms are mean zero and asymptotically normal under the conditions of the main paper. The same is true for the second term, provided that $\*w_{i}$ is independent of $\*v_i$ and $\+\varepsilon_{i}$. Note in particular that if we assume as in Theorems 2 and 3 that $N_g/N_0\to 0$, then we also have $N_g/N \to 0$, as $N > N_0$. The second and third terms are therefore negligible, and hence
+\begin{align}
+\sqrt{N_g}(\widehat{\mathrm{ATT}}_{g,t} - \mathrm{ATT}_{g,t}) = \frac{1}{\sqrt{N_g}}\sum_{i\in \mathcal{I}_g}(\upsilon_{i,t}  + \+\beta_i'\*v_{i,t}^d + \varepsilon_{i,t}^d)  + o_p(1).
+\end{align}
+We can therefore show that, up to the difference of the definition of the factors used in the defactoring, the presence of conditionally exogenous regressors has no effect on the asymptotic properties of $\sqrt{N_g}(\widehat{\mathrm{ATT}}_{g,t} - \mathrm{ATT}_{g,t})$. The results in (a) and (b) are implied by this. \hfill{$\blacksquare$}
+
+\bigskip
+
+We end this section with a few remarks. We start with a discussion of how to relax the common slope condition. If the coefficient on $\*w_{i,t}$ is not $\+\theta$ but $\+\theta_i$,
+we redefine
+\begin{align}
+\widehat y_{i,t}(0) = \widehat{\+\theta}_i'\*w_{i,t} + \widehat{\*a}_{i}'\widehat{\*f}_{t},
+\end{align}
+where $\widehat{\+\theta}_i = (\*w_{i}'\*M_{\widehat{\*f}}\*w_{i})^{-1}\*w_{i}' \*M_{\widehat{\*f}}\*y_{i}$. The effect of this change is easily appreciated given the results provided earlier. Note in particular how
+\begin{align}
+(\widehat{\+\theta}_i - \+\theta_i)'\*w_{i,t}^{d} &=  (-\overline{\*e}_{w}^d\+\Lambda_{*,y,i}  + \*v_i^d\+\beta_i +  \+\varepsilon_{i}^d)'\*w_{i}^{d} (\*w_{i}^{d\prime}\*w_{i}^d)^{-1}\*w_{i,t}^{d} \notag\\
+&= ( \*v_i^d\+\beta_i +  \+\varepsilon_{i}^d)'\*w_{i}^{d} (\*w_{i}^{d\prime}\*w_{i}^d)^{-1}\*w_{i,t}^{d}  + \+\Lambda_{*,y,i}'\overline{\*e}_{w}^{d\prime}\*w_{i}^{d} (\*w_{i}^{d\prime}\*w_{i}^d)^{-1}\*w_{i,t}^{d} \notag\\
+&= ( \*v_i^d\+\beta_i +  \+\varepsilon_{i}^d)'\*w_{i}^{d} (\*w_{i}^{d\prime}\*w_{i}^d)^{-1}\*w_{i,t}^{d}  + \mathrm{tr}\,[\overline{\*e}_{*}^{d\prime}\*w_{i}^{d} (\*w_{i}^{d\prime}\*w_{i}^d)^{-1}\*w_{i,t}^{d} \+\Lambda_{*,y,i}'],
+\end{align}
+leading to the following limiting representation for $\sqrt{N_g}(\widehat{\mathrm{ATT}}_{g,t} - \mathrm{ATT}_{g,t})$:
+\begin{align}
+& \sqrt{N_g}(\widehat{\mathrm{ATT}}_{g,t} - \mathrm{ATT}_{g,t}) \notag\\
+&= \frac{1}{\sqrt{N_g}}\sum_{i\in \mathcal{I}_g}(\upsilon_{i,t}  + \+\beta_i'\*v_{i,t}^d + \varepsilon_{i,t}^d)  - \frac{1}{\sqrt{N_g}}\sum_{i\in \mathcal{I}_g} ( \*v_i^d\+\beta_i +  \+\varepsilon_{i}^d)'\*w_{i}^{d} (\*w_{i}^{d\prime}\*w_{i}^d)^{-1}\*w_{i,t}^{d} \notag\\
+& +  \sqrt{\frac{N_g}{N_0}} \mathrm{tr}\left(\sqrt{N_0}\overline{\*e}_{*}^{d\prime}\frac{1}{N_g}\sum_{i\in \mathcal{I}_g}\*w_{i}^{d} (\*w_{i}^{d\prime}\*w_{i}^d)^{-1}\*w_{i,t}^{d} \+\Lambda_{*,y,i}'\right) \notag\\
+& - \sqrt{\frac{N_g}{N_0}} \frac{1}{N_g}\sum_{i\in \mathcal{I}_g} \+\Lambda_{*,y,i}'\sqrt{N_0}\overline{\*e}_{*,t}^{d} + o_p(1),
+\end{align}
+where the third and fourth terms are negligible under $N_g/N_0\to 0$, but not the second (and the first). The asymptotic distribution is still normal but the variance increases because of non-negligible second term.
+
+The above modification of the counterfactual estimation procedure makes it possible to include regressors that do not admit to a common factor representation ($\*w_{i,t}$); however, it does not remove the need for regressors that do admit to such a representation ($\*x_{i,t}$), because we still require that $m+1 \geq r$. That is, as far as the number of factors that can possibly be accounted for by the procedure is concerned, it is only the latter type of regressors that matter.
+
+Interestingly, the factor-in-regressors condition can be dropped completely, but then at the cost of other conditions that may or may not be more restrictive. As a starting point, we take the study of \citet{Brown_Schmidt_Wooldridge_2021}, who consider the same CCE approach as in \citet{pesaran2006estimation} but under a different set of assumptions. In particular, instead of requiring that $\*x_{i,t}$ has factor structure, they assume that $\*f_t$ satisfies
+\begin{equation}\label{bsw}
+    \*f_t = \*B'\+\Psi_t
+\end{equation}
+where $\+\Psi_t = \mathbb{E}(\*z_{i,t})$ is constant in $i$ and $\*B$ is an arbitrary $(m+1)\times r$ matrix of constants. Unlike the factors-in-regressors condition, \eqref{bsw} is not testable. However, if it holds, $\widehat{\*f}_t = \overline{\*z}_t$ can be used to estimate an arbitrary number of factors. In order to illustrate this last point, note that if \eqref{bsw} holds, letting $\*a_i = \*B\+\alpha_i$, the interactive effects can be written as
+\begin{align}
+\+\alpha_i'\*f_t =  \*a_i'\+\Psi_t = \*a_i'\widehat{\*f}_t + \*a_i'(\+\Psi_t- \widehat{\*f}_t) ,
+\end{align}
+where $\+\Psi_t- \widehat{\*f}_t$ is negligible, as $\overline{\*z}_t \to_p \mathbb{E}(\*z_{i,t})$ as $N\to \infty$ under standard regulatory conditions.
+
+\section{Bootstrap}
+
+Bootstrap methods are often superior to asymptotic theory when it comes to approximating the exact distributions of estimators. And they are particularly convenient in situations when conventional ``plug-in'' standard errors and confidence intervals are not available. This last observation has led to a surge in the use of the bootstrap in the treatment effects literature (see, for example, \citealp{Callaway_Karami_2020}. \citealp{chan2022pcdid}, \citealp{Gobillon_Magnac_2016}, and \citealp{Xu_2017}). However, most studies do not establish the asymptotically validity of the particular bootstrap that they are using. In fact, the only exception known to is \citet{Callaway_SantAnna_2020}, who propose a multiplier-type bootstrap procedure. The problem with this procedure is that it is not suitable in the presence of interactive effects.
+
+In this section, we build on a recent strand of literature concerned with bootstrapping factor-augmented panel data regressions (see, for example,
+\citealp{de2024cross}, and \citealp{westerlund2019cce}) to develop an asymptotically valid bootstrap procedure for the proposed TECCE estimator. The algorithm that we consider is similar to the one employed by \citet{westerlund2019cce}, and proceeds as follows:
+\begin{enumerate}
+  \item The bootstrap sample $\{\*z_{i,1}^*,...,\*z_{i,T}^*\}_{i \in \mathcal{I}_0}$ is generated by drawing data for entire cross-sections $\*z_{i,1}^*,...,\*z_{i,T}^*$ with replacement from the original, treated sample.
+
+  \item Compute
+\begin{align}
+\widehat{\mathrm{ATT}}_{g,t}^* = \frac{1}{N_g}\sum_{i \in \mathcal{I}_g} \widehat \Delta_{i,t}^*= \frac{1}{N_g}\sum_{i \in \mathcal{I}_g} [y_{i,t}^* - \widehat y_{i,t}^*(0)],
+\end{align}
+  where $\widehat y_{i,t}^*(0) = \widehat{\*a}_i^{*\prime}\widehat{\*f}_t$ is $\widehat y_{i,t}(0)$ with $\widehat{\*f}_t$ held fixed and $\*z_{i,t}$ replaced by $\*z_{i,t}^* = [y_{i,t}^*,\*x_{i,t}^{*\prime}]'$.
+
+  \item Repeat steps 1 and 2 $B$ times.
+\end{enumerate}
+
+Theorem A.2 below shows that the asymptotic distribution of $\sqrt{N_g}(\widehat{\mathrm{ATT}}_{g,t}^* - \widehat{\mathrm{ATT}}_{g,t})$ is the same as that of $\sqrt{N_g}(\widehat{\mathrm{ATT}}_{g,t} - \mathrm{ATT}_{g,t})$, which means that the asymptotic distribution can be successfully replicated by the bootstrap.
+
+\bigskip
+
+\noindent \textbf{Theorem A.2.} \emph{Under Assumptions 1--10, as $N_g,\,N_0\to \infty$ with $N_g/N_0\to 0$,}
+\begin{eqnarray*}
+\sup_{x \in \mathbb{R}} \left|\mathbb{P}^*[\sqrt{N_g}(\widehat{\mathrm{ATT}}_{g,t}^* - \widehat{\mathrm{ATT}}_{g,t}) \leq x|\mathcal{C}] - \mathbb{P}[\sqrt{N_g}(\widehat{\mathrm{ATT}}_{g,t} - \mathrm{ATT}_{g,t})\leq x|\mathcal{C}]\right| \to_p 0,
+\end{eqnarray*}
+\emph{where the inequalities are interpreted element-wise, $\mathbb{P}^*$ signifies the probability measure induced by the bootstrap sampling conditional on the original sample, and $\mathcal{C}$ is the same sigma-field as in Proof of Theorem 1.}
+
+\bigskip
+
+\noindent\textbf{Proof:} In this proof it is convenient to assume without loss of generality that there is just one treated group and also that the cross-sectional units are ordered such that units $\mathcal{I}_0 = \{1,...,N_0\}$ are untreated, while units $\mathcal{I}_{1} = \{N_0+1,...,N\}$ are treated, so that $N_1 = N-N_0$. The bootstrap sampling can be stated in the following way:
+\begin{equation}\label{permi}
+\*z_{i,t}^* = \*z_{i^*,t},
+\end{equation}
+where $i^*$ is an index drawn with replacement from $\mathcal{I}_{1}$. The bootstrap permutations in \eqref{permi} are modeled using the $1 \times N_0$ selection vector $\*w_i = [0,...,0,1,0,...,0]$, where the one is sitting in position $i^*$. This vector is drawn from a multinomial distribution with one trial and $N_{1}$ events with probability $1/N_{1}$. Define the $N_{1}\times N_{1}$ matrix $\*w = [\*w_{N_0+1}',...,\*w_{N}']'$ and the $N_{1}\times 1$ vector $\*1_{N_{1}} = [1,...,1]'$. By construction, the $1\times N_{1}$ vector $\*1_{N_{1}}'\*w = \sum_{i=N_0+ 1}^{N} \*w_i = \*s = [s_{N_0+ 1},...,s_{N}]$ gives the number of times each cross-section unit in the original sample appears in the bootstrap sample; that is, $s_i$ counts the number of times unit $i$ appears in the bootstrap sample with $\sum_{i=N_0+1}^{N} s_i = N_1$. It follows that $s_i$ is multinomially distributed with $N_{1}$ trials and $N_{1}$ events with probability $1/N_{1}$ (see, for example,
+\citealp{de2024cross}, Supplement A). Let $\*z_{t} = [\*z_{N_0 +1,t},...,\*z_{N,t}]'$, a $N_{1}\times m$ vector. In this notation,
+\begin{equation}\label{perm}
+\*z_{t}^* = \left[ \begin{array}{c}
+                     \*z_{N_0 +1,t}^{*\prime} \\
+                     \vdots \\
+                     \*z_{N,t}^{*\prime}
+                   \end{array}
+\right] = \*w\*z_{t}.
+\end{equation}
+
+Let $O_{p^*} (\cdot )$ be $O_{p} (\cdot )$ under the bootstrap-induced probability measure $\mathbb{P}^*$. By Lemma 3 of \citet{cheng2010bootstrap}, and the independence of $s_i$ and $\*z_{i,t}$, we have that $O_{p^*} (\cdot )$ in probability is equivalent to $O_{p} (\cdot )$ unconditionally. In what follows, we will therefore treat both weights and sample as random in the derivations. All orders hold in probability.
+
+Analogously to Proof of Theorem 1, with $y_{i,t}^* = \eta_{i,t}^* + \+\beta_i^{*\prime}\*x_{i,t}^* + \+\alpha_i^{*\prime}\*f_t + \varepsilon_{i,t}^*$, $\widehat y_{i,t}^*(0) = \widehat{\*a}_i^{*\prime}\widehat{\*f}_t$, $\widehat{\*a}_i^{*0} = (\overline{\*{H}}\*{D}_{N_0})^{-1}\widehat{\*a}_i^*$ and $\+\alpha_i^{*0} = (\overline{\*{H}}\*{D}_{N_0})^{-1}\*a_i^* = [\+\alpha_i^{*\prime} ,\*{0}_{(m+1-r)\times 1}' ]'$,
+\begin{align}
+\widehat \Delta_{i,t}^{*} & = y_{i,t}^{*} - \widehat y_{i,t}^{*}(0) \notag\\
+& = \eta_{i,t}^{*} + \+\beta_i^{*\prime}\*x_{i,t}^{*} - (\widehat{\*a}_i^{*\prime}\widehat{\*f}_t - \+\alpha_i^{*\prime}\*f_t)  + \varepsilon_{i,t}^{*} \notag\\
+& = \eta_{i,t}^* + \+\beta_i^{*\prime}\*x_{i,t}^*  - \+\alpha_i^{*0\prime}(\widehat{\*f}_t^{0}-\*f_t^0) - (\widehat{\*a}_i^{*0} - \+\alpha_i^{*0})'\widehat{\*f}_t^{0} + \varepsilon_{i,t}^*.
+\end{align}
+In step 2 of the counterfactual estimation procedure, we have $i \in \mathcal{I}_{1}$ and $t \leq T_0$. This means that in the bootstrap world, $\*y_{i}^*= \*x_{i}^*\+\beta_i^* + \widehat{\*f} \overline{\*H}_{r}\+\alpha_i^* - \overline{\*e}_{r}^0\+\alpha_i^* +  \+\varepsilon_{i}^*$, which we can use to show that
+\begin{align}
+\widehat{\*a}_i^* &= (\widehat{\*f}'\widehat{\*f})^{-1}\widehat{\*f}'\*y_{i}^*  =  \*a_i^* + (\widehat{\*f}'\widehat{\*f})^{-1}\widehat{\*f}'( \*x_{i}^*\+\beta_i^* - \overline{\*e}_{r}^0\+\alpha_i^* +  \+\varepsilon_{i}^* ),
+\end{align}
+and so
+\begin{align}
+\widehat{\*a}_i^{*0} & = (\overline{\*{H}}\*{D}_{N_0})^{-1}\widehat{\*a}_i^* = \+\alpha_i^{*0} + (\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}^{0\prime}(\*x_{i}^*\+\beta_i^*  - \overline{\*e}_{r}^0\+\alpha_i^* +  \+\varepsilon_{i}^* ) .
+\end{align}
+Moreover, by steps analogous to those used in the proof of Theorem 1, we obtain $\*x_i^* =  \widehat{\*f}^0\*{D}_{N_0}^{-1}\overline{\*H}^{-1}\overline{\*H}_{r}\+\lambda_i^*  - \overline{\*e}_{r}^0\+\lambda_i^*  + \*v_i^*$ for $t\leq T_0$, and $\*x_{i,t}^* =  \+\tau_{i,t}^* + \+\lambda_i^{*\prime} \overline{\*H}_{r}'\overline{\*H}^{-1\prime}\*{D}_{N_0}^{-1}\widehat{\*f}_t^0  - \+\lambda_i^{*\prime}\overline{\*e}_{r,t}^0  + \*v_{i,t}^*$ for $t > T_0$. By inserting the above expressions into the one given earlier for $\widehat \Delta_{i,t}^*$ and then using $\widehat{\*{f}}^0 = \*f^+ +  O_p(N_0^{-1/2})$ as in Proof of Theorem 1, we get
+\begin{align}
+\widehat \Delta_{i,t}^* &  = \eta_{i,t}^* + \+\beta_i^{*\prime}\*x_{i,t}^* - \+\alpha_i^{*\prime}\overline{\*e}_{r,t}^0 + \varepsilon_{i,t}^{*} - ( \*x_{i}^*\+\beta_i^* - \overline{\*e}_{r}^0\+\alpha_i^* +  \+\varepsilon_{i}^* )' \widehat{\*f}^{0} (\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}_t^0 \notag\\
+& = \eta_{i,t}^* + \+\beta_i^{*\prime}(\+\tau_{i,t}^*  - \+\lambda_i^{*\prime}\overline{\*e}_{r,t}^0  + \*v_{i,t}^*) - \+\alpha_i^{*\prime}\overline{\*e}_{r,t}^0 + \varepsilon_{i,t}^*\notag\\
+& - [ (- \overline{\*e}_{r}^0\+\lambda_i^*  + \*v_i^*)\+\beta_i^*  - \overline{\*e}_{r}^0\+\alpha_i^* +  \+\varepsilon_{i}^* ]' \widehat{\*f}^{0} (\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}_t^0 \notag\\
+& = \Delta_{i,t}^* - \+\Lambda_{y,i}^{*\prime}\overline{\*e}_{r,t}^0 + \+\beta_i^{*\prime}\*v_{i,t}^* + \varepsilon_{i,t}^*  - ( - \overline{\*e}_{r}^0\+\Lambda_{y,i}^* + \*v_i^*\+\beta_i^* +  \+\varepsilon_{i}^* )' \widehat{\*f}^{0} (\widehat{\*f}^{0\prime}\widehat{\*f}^0)^{-1}\widehat{\*f}_t^0  \notag\\
+& = \Delta_{i,t}^* - \+\Lambda_{y,i}^{*\prime}\overline{\*e}_{r,t}^0 + \+\beta_i^{*\prime}\*v_{i,t}^* + \varepsilon_{i,t}^*  \notag\\
+& - ( - \overline{\*e}_{r}^0\+\Lambda_{y,i}^* + \*v_i^*\+\beta_i^* +  \+\varepsilon_{i}^*)' \*f^{+} (\*f^{+\prime}\*f^+)^{-1}\*f_t^+ + O_{p^*}(N_0^{-1/2})  \notag\\
+& = \Delta_{i,t}^* - \+\Lambda_{y,i}^{*\prime}\overline{\*e}_{r,t}^{0d} + \+\beta_i^{*\prime}\*v_{i,t}^{*d} + \varepsilon_{i,t}^{*d} + O_{p^*}(N_0^{-1/2}) ,
+\end{align}
+which in view of $\Delta_{i,t}^*= \mathrm{ATT}_{g,t} + \upsilon_{i,t}^*$ for $i\in \mathcal{I}_g$ gives
+\begin{align}
+& \sqrt{N_g}(\widehat{\mathrm{ATT}}_{g,t}^* - \mathrm{ATT}_{g,t}) \notag\\
+& = \frac{1}{\sqrt{N_g}} \sum_{i\in \mathcal{I}_g} (\widehat \Delta_{i,t}^* - \Delta_{i,t}^* + \upsilon_{i,t}^*) \notag\\
+& = \frac{1}{\sqrt{N_g}} \sum_{i\in \mathcal{I}_g} (\upsilon_{i,t}^* - \+\Lambda_{y,i}^{*\prime}\overline{\*e}_{r,t}^{0d} + \+\beta_i^{*\prime}\*v_{i,t}^{*d} + \varepsilon_{i,t}^{*d} ) + O_{p^*}(N_0^{-1/2})\notag\\
+&= \frac{1}{\sqrt{N_g}}\sum_{i\in \mathcal{I}_g}(\upsilon_{i,t}^*  + \+\beta_i^{*\prime}\*v_{i,t}^{*d} + \varepsilon_{i,t}^{*d}) - \sqrt{\frac{N_g}{N_0}} \frac{1}{N_g}\sum_{i\in \mathcal{I}_g} \+\Lambda_{y,i}^{*\prime}\sqrt{N_0}\overline{\*e}_{r,t}^{0d} + O_{p^*}(N_0^{-1/2}) \notag\\
+&= \frac{1}{\sqrt{N_g}}\sum_{i\in \mathcal{I}_g}(\upsilon_{i,t}^*  + \+\beta_i^{*\prime}\*v_{i,t}^{*d} + \varepsilon_{i,t}^{*d}) - \sqrt{\tau} \frac{1}{N_g}\sum_{i\in \mathcal{I}_g} \+\Lambda_{y,i}^{*\prime}\sqrt{N_0}\overline{\*e}_{r,t}^{0d} + o_{p^*}(1) ,
+\end{align}
+where the last equality holds provided that $N_g/N_0\to\tau < \infty$. Consider $N_g^{-1}\sum_{i\in \mathcal{I}_g} \+\Lambda_{y,i}^{*\prime}$. Note how, in terms of the notation introduced in the beginning of this proof,
+\begin{equation}
+\sum_{i = N_0+ 1}^{N} \*z_{i,t}^{*\prime} = \*1_{N_{1}}'\*z_{t}^* =\*1_{N_{1}}'\*w\*z_{t} = \*s \*z_{t} = \sum_{i=N_0 + 1}^{N} s_i\*z_{i,t}' .
+\end{equation}
+This holds for all sums over bootstrapped quantities, including $\+\Lambda_{y,i}^{*}$; that is, $\sum_{i\in \mathcal{I}_g} \+\Lambda_{y,i}^{*} = \sum_{i\in \mathcal{I}_g} s_i\+\Lambda_{y,i}$. Hence, since $\mathbb{E}(s_i) = 1$ by the properties of the multinomial distribution, we can show that
+\begin{equation}
+\frac{1}{N_g}\sum_{i\in \mathcal{I}_g} \+\Lambda_{y,i}^{*} = \frac{1}{N_g}\sum_{i\in \mathcal{I}_g} s_i\+\Lambda_{y,i} = \+\Lambda_{y} + o_{p^*}(1),
+\end{equation}
+where $\+\Lambda_{y}$ is as in Proof of Theorem 1. It follows that
+\begin{align}
+\sqrt{N_g}(\widehat{\mathrm{ATT}}_{g,t}^* - \mathrm{ATT}_{g,t}) &= \frac{1}{\sqrt{N_g}}\sum_{i\in \mathcal{I}_g} s_i(\upsilon_{i,t}  + \+\beta_i'\*v_{i,t}^{d} + \varepsilon_{i,t}^{d}) \notag\\
+& - \sqrt{\tau} \+\Lambda_{y}^{\prime}\sqrt{N_0}\overline{\*e}_{r,t}^{0d} + o_{p^*}(1) .
+\end{align}
+Hence, since
+\begin{align}
+\sqrt{N_g}(\widehat{\mathrm{ATT}}_{g,t} - \mathrm{ATT}_{g,t}) = \frac{1}{\sqrt{N_g}}\sum_{i\in \mathcal{I}_g} (\upsilon_{i,t}  + \+\beta_i'\*v_{i,t}^{d} + \varepsilon_{i,t}^{d}) - \sqrt{\tau} \+\Lambda_{y}^{\prime}\sqrt{N_0}\overline{\*e}_{r,t}^{0d} + o_{p}(1)
+\end{align}
+by Proof of Theorem 1, we have that
+\begin{align}
+\sqrt{N_g}(\widehat{\mathrm{ATT}}_{g,t}^* - \widehat{\mathrm{ATT}}_{g,t}) = \frac{1}{\sqrt{N_g}}\sum_{i\in \mathcal{I}_g} (s_i-1)(\upsilon_{i,t}  + \+\beta_i'\*v_{i,t}^{d} + \varepsilon_{i,t}^{d})  + o_{p^*}(1) .
+\end{align}
+The fact that $s_i$ is independent of the sample data with $\mathbb{E}(s_i) = 1$ implies that the first term on the right-hand side is zero in expectation (conditionally on $\mathcal{C}$). Moreover, by the cross-sectional independence of $\upsilon_{i,t}$, $\*v_{i,t}$ and $\varepsilon_{i,t}$,
+\begin{align}
+& \mathrm{var}\left(\frac{1}{\sqrt{N_g}}\sum_{i\in \mathcal{I}_g} (s_i-1)(\upsilon_{i,t}  + \+\beta_i'\*v_{i,t}^{d} + \varepsilon_{i,t}^{d})|\mathcal{C}\right) \notag\\
+& = \frac{1}{N_g}\sum_{i\in \mathcal{I}_g}\sum_{j\in \mathcal{I}_g}\mathbb{E}[ (s_i-1)(s_j-1)]\mathbb{E}[(\upsilon_{i,t}  + \+\beta_i'\*v_{i,t}^{d} + \varepsilon_{i,t}^{d})(\upsilon_{j,t}  + \+\beta_j'\*v_{j,t}^{d} + \varepsilon_{j,t}^{d})|\mathcal{C}] \notag\\
+& = \frac{1}{N_g}\sum_{i\in \mathcal{I}_g} \mathbb{E}[ (s_i-1)^2 ]\mathbb{E}[(\upsilon_{i,t}  + \+\beta_i'\*v_{i,t}^{d} + \varepsilon_{i,t}^{d})^2|\mathcal{C}]\notag\\
+& = \frac{1}{N_g}\sum_{i\in \mathcal{I}_g} \mathbb{E}[(\upsilon_{i,t}  + \+\beta_i'\*v_{i,t}^{d} + \varepsilon_{i,t}^{d})^2|\mathcal{C}] + O(N^{-1})
+\end{align}
+where we have used the fact that $\mathbb{E}[ (s_i-1)^2 ] = 1-N^{-1}$ by the properties of the multinomial distribution. Hence, by a central limit law for independent variables,
+\begin{align}
+\sqrt{N_g}(\widehat{\mathrm{ATT}}_{g,t}^* - \widehat{\mathrm{ATT}}_{g,t}) \to_d MN(0, \mathrm{var}(\widehat{\mathrm{ATT}}_{g,t}) )
+\end{align}
+as $N_g,\,N_0\to \infty$ with $\tau =  0$. From this result and Theorem 1 it follows that under the same conditions on $N_g$ and $N_0$ that
+\begin{eqnarray*}
+\sup_{x \in \mathbb{R}} \left|\mathbb{P}^*[\sqrt{N_g}(\widehat{\mathrm{ATT}}_{g,t}^* - \widehat{\mathrm{ATT}}_{g,t}) \leq x|\mathcal{C}] - \mathbb{P}[\sqrt{N_g}(\widehat{\mathrm{ATT}}_{g,t} - \mathrm{ATT}_{g,t})\leq x|\mathcal{C}]\right| \to_p 0,
+\end{eqnarray*}
+which is what we wanted to show. \hfill{$\blacksquare$}
+
+\bigskip
+
+Theorem A.2 justifies the construction of bootstrap percentile confidence intervals (CIs) for the ATT with asymptotically correct coverage probabilities. Specifically, using $q(\alpha)$ to denote the $100\cdot \alpha$\% quantile of the distribution of $\widehat{\mathrm{ATT}}_{g,t}^*$, the $100\cdot (1-\alpha)$\% percentile bootstrap CI for $\mathrm{ATT}_{g,t}$ is given by
+\begin{eqnarray}
+\text{CI}(\alpha) = [q(\alpha/2),q(1-\alpha/2)].
+\end{eqnarray}
+Theorem A.2 implies that $P[\mathrm{ATT}_{g,t} \in \text{CI}(\alpha)] \to 1-\alpha$ as $N_g,\,N_0\to \infty$ with $\tau =  0$.
+
+We can also bootstrap the statistics discussed in Section 4 of the main paper. For example, the bootstrap version of the $T_{g,t}$-statistic considered for testing $H_0: \mathrm{ATT}_{g,t} = 0$ is given by
+\begin{align}
+T_{g,t}^* : = \frac{\sqrt{N_g}(\widehat{\mathrm{ATT}}_{g,t}^*- \widehat{\mathrm{ATT}}_{g,t})}{\sqrt{\widehat{\mathrm{var}}(\widehat{\mathrm{ATT}}_{g,t}^*)}} ,
+\end{align}
+where $\widehat{\mathrm{var}}(\widehat{\mathrm{ATT}}_{g,t}^*)$ is $\widehat{\mathrm{var}}(\widehat{\mathrm{ATT}}_{g,t})$ with $\widehat{\mathrm{ATT}}_{g,t}$ and $\widehat \Delta_{i,t}$ replaced by $\widehat{\mathrm{ATT}}_{g,t}^*$ and $\widehat \Delta_{i,t}^*$, respectively. The validity of $T_{g,t}^*$ is a direct consequence of Theorem A.2. This means that we may use the distribution of $T_{g,t}^*$ to compute asymptotically valid $p$-values for $T_{g,t}$ when testing $H_0$. Let us therefore denote by $T_{g,t,b}^*$ the $b$-th bootstrap test statistic with $b=1,...,B$. The bootstrapped $p$-value is given by $B^{-1}\sum_{b=1}^B 1(T_{g,t,b}^* > T_{g,t})$, where $1(A)$ is the indicator function for the event $A$, just as in the main paper.
+
+
+\pagebreak
+
+\bibliography{references}
+
+\end{document}

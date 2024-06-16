@@ -1,14 +1,18 @@
-#' ---
-#' title: "Interpolating 2003 data"
-#' ---
-#' The data in 2003 is likely incorrect
-#' Chen, W. and Chen, X. and Hsieh, C.-T. and Song, Z.: 
-#' 'A forensic examination of China's national accounts'
-#' 
-#' So to help with this, we reanalyzed the data interpolating values for 2003
+---
+title: "Interpolating 2003 data"
+---
 
-# %%
-#| warning: false
+
+The data in 2003 is likely incorrect
+Chen, W. and Chen, X. and Hsieh, C.-T. and Song, Z.: 
+'A forensic examination of China's national accounts'
+
+So to help with this, we reanalyzed the data interpolating values for 2003
+
+
+::: {.cell}
+
+```{.r .cell-code}
 library(data.table)
 library(here)
 library(did2s)
@@ -19,10 +23,16 @@ setFixest_etable(markdown = TRUE)
 
 # https://stats.stackexchange.com/questions/118033/best-series-of-colors-to-use-for-differentiating-series-in-publication-quality
 colors <- c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#CC6677", "#882255", "#AA4499")
+```
+:::
 
 
-# Load and clean data ----------------------------------------------------------
-# %% 
+## Load and clean data 
+
+
+::: {.cell}
+
+```{.r .cell-code}
 df <- haven::read_dta(here("code/Trade-Liberalization-and-Markup-Dispersion/data/AEJ_ind_DID_3-digit.dta"))
 setDT(df)
 
@@ -64,10 +74,16 @@ df[, pre_post := fcase(
   rel_year >= 0, "post",
   default = "control"
 )]
+```
+:::
 
 
-# CCE DID ----------------------------------------------------------------------
-# %% 
+## CCE DID 
+
+
+::: {.cell}
+
+```{.r .cell-code}
 setorder(df, sic3, year)
 setDT(df)
 df$y <- df$ln_theil
@@ -82,8 +98,12 @@ df <- df[n == 8, ]
 
 T0 <- 2001
 df[, g := ifelse(hightariff == TRUE, 2002, Inf)]
+```
+:::
 
-# %% 
+::: {.cell}
+
+```{.r .cell-code}
 collapse = df[, 
   .(
     mean_ln_theil_tfp = mean(ln_theil_tfp, na.rm = TRUE), 
@@ -106,17 +126,35 @@ collapse = df[,
   ) + 
   labs(x = NULL, y = r'($\ln($Theil TFP$)$)') + 
   kfbmisc::theme_kyle(base_size = 10))
+```
 
-#' Linearly Interpolate 2002 and 2004:
-# %% 
+::: {.cell-output-display}
+![](index_files/figure-html/unnamed-chunk-4-1.png){width=672}
+:::
+:::
+
+
+Linearly Interpolate 2002 and 2004:
+
+
+::: {.cell}
+
+```{.r .cell-code}
 df[, 
   x1 := 
     ifelse(year == 2003, (x1[year == 2002] + x1[year == 2004])/2, x1), 
   by = "sic3"
 ]
+```
+:::
 
-## CCE pooled estimate of \beta hat --------------------------------------------
-# %% 
+
+### CCE pooled estimate of \beta hat 
+
+
+::: {.cell}
+
+```{.r .cell-code}
 # CSAs of y and Xs
 Fhat <- df |>
   setDT() |> 
@@ -160,10 +198,16 @@ for (id in unique(df[, sic3])) {
 }
 
 bhat <- solve(B) %*% A
+```
+:::
 
 
-## Imputation of covariates and outcome ----------------------------------------
-# %% 
+### Imputation of covariates and outcome 
+
+
+::: {.cell}
+
+```{.r .cell-code}
 for (sic3_id in unique(df[g < Inf, sic3])) {
 
   idx = df$sic3 == sic3_id
@@ -200,18 +244,32 @@ for (sic3_id in unique(df[g < Inf, sic3])) {
 
   df[idx, "y_0hat_obs_x"] = y_0hat_obs_x
 }
+```
+:::
 
-#' Difference variables: Z_{it} - \hat{Z}_{it}(0):
-# %% 
+
+Difference variables: Z_{it} - \hat{Z}_{it}(0):
+
+
+::: {.cell}
+
+```{.r .cell-code}
 df$y_diff <- df$y - df$y_0hat
 df$y_diff_obs_x <- df$y - df$y_0hat_obs_x
 df$x1_diff <- (df$x1 - df$x1_0hat)
 df$mediated1_diff <- df$x1_diff * bhat[1]
 df$x2_diff <- (df$x2 - df$x2_0hat)
 df$mediated2_diff <- df$x2_diff * bhat[2]
+```
+:::
 
-## Estimate Effects ------------------------------------------------------------
-# %% 
+
+### Estimate Effects 
+
+
+::: {.cell}
+
+```{.r .cell-code}
 # Log(theil)
 est_ln_theil_cce <- feols(
   y_diff ~ 0 + i(rel_year),
@@ -243,22 +301,78 @@ est_x1_pre_post <- feols(
   df[g < Inf, ],
   vcov = "hc1"
 )
+```
+:::
 
-# %%
+::: {.cell}
+
+```{.r .cell-code}
 feols(
   y_diff ~ 0 + i(rel_year), 
   df[g < Inf, ],
   vcov = "hc1"
 ) |>
   summary()
+```
 
+::: {.cell-output .cell-output-stdout}
+
+```
+OLS estimation, Dep. Var.: y_diff
+Observations: 592
+Standard-errors: Heteroskedasticity-robust 
+              Estimate Std. Error   t value   Pr(>|t|)    
+rel_year::-4  0.005297   0.005939  0.891862 3.7283e-01    
+rel_year::-3 -0.009575   0.010736 -0.891862 3.7283e-01    
+rel_year::-2  0.003556   0.003987  0.891862 3.7283e-01    
+rel_year::-1  0.000721   0.000809  0.891862 3.7283e-01    
+rel_year::0  -0.028059   0.015569 -1.802245 7.2022e-02 .  
+rel_year::1  -0.067973   0.020600 -3.299580 1.0273e-03 ** 
+rel_year::2  -0.079376   0.018199 -4.361469 1.5273e-05 ***
+rel_year::3  -0.074862   0.022908 -3.267889 1.1471e-03 ** 
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+RMSE: 0.124177   Adj. R2: 0.059606
+```
+
+
+:::
+
+```{.r .cell-code}
 feols(
   y_diff ~ 0 + i(rel_year), 
   df[g < Inf, ]
 ) |>
   summary()
+```
 
-# %% 
+::: {.cell-output .cell-output-stdout}
+
+```
+OLS estimation, Dep. Var.: y_diff
+Observations: 592
+Standard-errors: IID 
+              Estimate Std. Error   t value   Pr(>|t|)    
+rel_year::-4  0.005297   0.014534  0.364468 7.1564e-01    
+rel_year::-3 -0.009575   0.014534 -0.658784 5.1029e-01    
+rel_year::-2  0.003556   0.014534  0.244678 8.0679e-01    
+rel_year::-1  0.000721   0.014534  0.049638 9.6043e-01    
+rel_year::0  -0.028059   0.014534 -1.930601 5.4016e-02 .  
+rel_year::1  -0.067973   0.014534 -4.676876 3.6220e-06 ***
+rel_year::2  -0.079376   0.014534 -5.461448 6.9958e-08 ***
+rel_year::3  -0.074862   0.014534 -5.150862 3.5508e-07 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+RMSE: 0.124177   Adj. R2: 0.059606
+```
+
+
+:::
+:::
+
+::: {.cell}
+
+```{.r .cell-code}
 est_y_post <- feols(
   y_diff ~ 0 + i(rel_year), 
   df[g < Inf, ],
@@ -269,21 +383,54 @@ est_x1_post <- feols(
   df[g < Inf, ], 
   vcov = "hc1"
 ) 
+```
+:::
 
-# %% 
-#| results: asis
+::: {.cell}
+
+```{.r .cell-code}
 esttable(list(est_y_post, est_x1_post))
+```
 
-# %% 
+::: {.cell-output .cell-output-stdout}
+
+```
+<div class = "etable"><img src = "./index_files/figure-html/etable_tex_2024-02-29_1277471880.png"></div>
+```
+
+
+:::
+
+```{.r .cell-code}
 coefplot(list(est_y_post, est_x1_post))
+```
 
-# %%
-#| results: asis
+::: {.cell-output-display}
+![](index_files/figure-html/unnamed-chunk-12-1.png){width=672}
+:::
+
+```{.r .cell-code}
 esttable(list(est_ln_theil_cce, est_x1_cce))
+```
 
-# Plot Results ----------------------------------------------------------------
-## Graph: CCEDID ---------------------------------------------------------------
-# %%
+::: {.cell-output .cell-output-stdout}
+
+```
+<div class = "etable"><img src = "./index_files/figure-html/etable_tex_2024-02-29_1277471880.png"></div>
+```
+
+
+:::
+:::
+
+
+## Plot Results 
+### Graph: CCEDID 
+
+
+::: {.cell}
+
+```{.r .cell-code}
 ests <- broom::tidy(est_ln_theil_cce)
 setDT(ests)
 ests$rel_year <- stringr::str_replace(ests$term, "rel_year::", "") |>
@@ -302,8 +449,12 @@ ests_pre_post = rbindlist(list(
   ests_pre_post[pre_post == "post", ]
 ))
 ests_pre_post$x = c(-4, -1, 0, 3)
+```
+:::
 
-# %%
+::: {.cell}
+
+```{.r .cell-code}
 (p <- ggplot() +
   geom_hline(yintercept = 0, linetype = "dashed") +
   geom_vline(xintercept = 2002, linetype = "dashed") +
@@ -371,15 +522,30 @@ ests_pre_post$x = c(-4, -1, 0, 3)
     axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
     axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))
   ))
+```
 
-# %% 
+::: {.cell-output-display}
+![](index_files/figure-html/unnamed-chunk-14-1.png){width=672}
+:::
+:::
+
+::: {.cell}
+
+```{.r .cell-code}
 kfbmisc::tikzsave(
-  here("out/figures/trade-cce_est_interpolated.pdf"), 
+  here("figures/trade-cce_est_interpolated.pdf"), 
   p, width = 5.5, height = 2.5
 )
+```
+:::
 
-## Graph: X1 Mediated ----------------------------------------------------------
-# %%
+
+### Graph: X1 Mediated 
+
+
+::: {.cell}
+
+```{.r .cell-code}
 ests <- broom::tidy(est_x1_cce)
 setDT(ests)
 ests$rel_year <- stringr::str_replace(ests$term, "rel_year::", "") |>
@@ -398,8 +564,12 @@ ests_pre_post = rbindlist(list(
   ests_pre_post[pre_post == "post", ]
 ))
 ests_pre_post$x = c(-4, -1, 0, 3)
+```
+:::
 
-# %%
+::: {.cell}
+
+```{.r .cell-code}
 (p <- ggplot() +
   geom_hline(yintercept = 0, linetype = "dashed") +
   geom_vline(xintercept = 2002, linetype = "dashed") +
@@ -475,15 +645,30 @@ ests_pre_post$x = c(-4, -1, 0, 3)
     axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
     axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))
   ))
+```
 
-# %%
+::: {.cell-output-display}
+![](index_files/figure-html/unnamed-chunk-17-1.png){width=672}
+:::
+:::
+
+::: {.cell}
+
+```{.r .cell-code}
 kfbmisc::tikzsave(
-  here("out/figures/trade-cce_mediated_est_interpolated.pdf"),
+  here("figures/trade-cce_mediated_est_interpolated.pdf"),
   p, width = 5.5, height = 2.5
 )
+```
+:::
 
-## Graph: Using observed X vs. X(0) --------------------------------------------
-# %%
+
+### Graph: Using observed X vs. X(0) 
+
+
+::: {.cell}
+
+```{.r .cell-code}
 est1 <- broom::tidy(est_ln_theil_cce)
 est1$estimator <- r'(CCEDID using $\hat{X}_{it}(0)$)'
 est1$estimator_num <- 1
@@ -500,8 +685,12 @@ ests[, rel_year := data.table::fcase(
   estimator_num == 2, rel_year + 0.075
 )]
 ests$estimator <- forcats::as_factor(ests$estimator)
+```
+:::
 
-# %%
+::: {.cell}
+
+```{.r .cell-code}
 (p <- ggplot() +
   geom_hline(yintercept = 0, linetype = "dashed") +
   geom_vline(xintercept = 2002, linetype = "dashed") +
@@ -550,9 +739,19 @@ ests$estimator <- forcats::as_factor(ests$estimator)
     axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
     axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))
   ))
+```
 
-# %%
+::: {.cell-output-display}
+![](index_files/figure-html/unnamed-chunk-20-1.png){width=672}
+:::
+:::
+
+::: {.cell}
+
+```{.r .cell-code}
 kfbmisc::tikzsave(
-  here("out/figures/trade-x0-vs-obs-x_interpolated.pdf"), 
+  here("figures/trade-x0-vs-obs-x_interpolated.pdf"), 
   p, , width = 5.5, height = 2.5
 )
+```
+:::
