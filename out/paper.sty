@@ -19,9 +19,16 @@
 \usepackage{tikz}
 
 \usepackage{xcolor}
-\definecolor{purple}{HTML}{5601A4}
+\definecolor{teal}{HTML}{1A505A}
 \usepackage[breaklinks=true]{hyperref}
 \hypersetup{
   colorlinks = true,
-  allcolors = purple
+  allcolors = teal
 }
+
+% Fix \input with tables
+% \input fails when \\ is at end of external .tex file
+\makeatletter
+\let\input\@@input
+\makeatother
+

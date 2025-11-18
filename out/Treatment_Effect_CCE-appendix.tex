@@ -1,16 +1,21 @@
 \documentclass[12pt,fleqn]{article}
 \usepackage{paper}
 
-\title{\textsc{Online Appendix to ``Simple Treatment Effect Estimation in Fixed-$T$ Panels with Interactive Fixed Effects''}}
-\author{
-  \and Nicholas Brown\\
-  {\small Queen's University} \and Kyle Butts\\
-  {\small University of Arkansas} \and Joakim Westerlund\thanks{Corresponding author: Department of Economics, Lund University, Box 7082, 220 07 Lund, Sweden. Telephone: +46 46 222 8997. Fax: +46 46 222 4613. E-mail address: \texttt{joakim.westerlund@nek.lu.se}.}\\
-  {\small Lund University}\\
-  {\small and}\\
-  {\small Deakin University}
-}
-\date{June 15, 2024}
+% Change to \boolfalse to make anonymous
+\usepackage{etoolbox}
+\newbool{INCLUDE_AUTHORS}
+\booltrue{INCLUDE_AUTHORS}
+
+\title{\textsc{Online Appendix to ``Direct and Indirect Treatment Effects with Time-Varying Covariates"}}
+\ifbool{INCLUDE_AUTHORS}{\author{
+    \and Nicholas L. Brown\\
+    {\small Florida State University} \and Kyle Butts\\
+    {\small University of Arkansas} \and Joakim Westerlund\thanks{Corresponding author: Department of Economics, Lund University, Box 7082, 220 07 Lund, Sweden. Telephone: +46 46 222 8997. Fax: +46 46 222 4613. E-mail address: \texttt{joakim.westerlund@nek.lu.se}.}\\
+    {\small Lund University}\\
+    {\small and}\\
+    {\small Deakin University}
+}}{}
+\date{December 9, 2024}
 
 \begin{document}
 \maketitle
@@ -18,7 +23,7 @@
 
 \begin{abstract}
 \setlength{\baselineskip}{0.83cm}
-This appendix provides (1) the proofs of Theorems 1--3 reported in the main paper, (2) a detailed account of the presence of covariates without common factor representation, and (3) the details of the bootstrap approach mentioned in the main paper.
+This appendix provides (1) the proofs of Theorems 1 and 2 reported in the main paper, (2) a detailed account of the presence of covariates without common factor representation, and (3) the details of the bootstrap approach mentioned in the main paper.
 \end{abstract}
 
 \setlength{\baselineskip}{0.83cm}
@@ -30,7 +35,13 @@ This appendix provides (1) the proofs of Theorems 1--3 reported in the main pape
 
 \bigskip
 
-\noindent We begin by considering the step-1 estimator of $\*f_t$. In so doing, it is useful to let $N_g := |\mathcal{I}_{g}|$ for $g\in \{0,...,G\}$, just as in the main paper, and to denote by $\overline{\*a}_t := N_0^{-1}\sum_{i \in \mathcal{I}_0} \*a_{i,t}$ the cross-sectional average of any vector $\*a_{i,t}$ for the group of untreated units ($g= 0$). In this notation, $\widehat{\*{f}}_t = \overline {\*z}_t$. By combining the models for $y_{i,t}$ and $\*x_{i,t}$ for untreated units, we arrive at the following static factor model for $\*z_{i,t}$:
+\noindent We first note that the proof in this appendix contains a slight generalization of the main results. Instead of assuming common slopes $\+\beta$, we assume unit-specific slopes $\+\beta_i$ that satisfy the following random effects condition:
+\begin{equation}
+    \+\beta_i = \+\beta + \eta_i
+\end{equation}
+where $\+\eta_i$ is mean zero and independent of all random components in the model. Such an assumption is common in the factor model literature. 
+
+We begin by considering the step-1 estimator of $\*f_t$. In so doing, it is useful to let $N_g := |\mathcal{I}_{g}|$ for $g\in \{0,...,G\}$, just as in the main paper, and to denote by $\overline{\*a}_t := N_0^{-1}\sum_{i \in \mathcal{I}_0} \*a_{i,t}$ the cross-sectional average of any vector $\*a_{i,t}$ for the group of untreated units ($g= 0$). In this notation, $\widehat{\*{f}}_t = \overline {\*z}_t$. By combining the models for $y_{i,t}$ and $\*x_{i,t}$ for untreated units, we arrive at the following static factor model for $\*z_{i,t}$:
 \begin{align}
 \*z_{i,t} = \+\Lambda_i'\*f_t + \*e_{i,t},
 \end{align}
@@ -739,7 +750,7 @@ where $\+\Psi_t- \widehat{\*f}_t$ is negligible, as $\overline{\*z}_t \to_p \mat
 
 \section{Bootstrap}
 
-Bootstrap methods are often superior to asymptotic theory when it comes to approximating the exact distributions of estimators. And they are particularly convenient in situations when conventional ``plug-in'' standard errors and confidence intervals are not available. This last observation has led to a surge in the use of the bootstrap in the treatment effects literature (see, for example, \citealp{Callaway_Karami_2020}. \citealp{chan2022pcdid}, \citealp{Gobillon_Magnac_2016}, and \citealp{Xu_2017}). However, most studies do not establish the asymptotically validity of the particular bootstrap that they are using. In fact, the only exception known to is \citet{Callaway_SantAnna_2020}, who propose a multiplier-type bootstrap procedure. The problem with this procedure is that it is not suitable in the presence of interactive effects.
+Bootstrap methods are often superior to asymptotic theory when it comes to approximating the exact distributions of estimators. And they are particularly convenient in situations when conventional ``plug-in'' standard errors and confidence intervals are not available. This last observation has led to a surge in the use of the bootstrap in the treatment effects literature (see, for example, \citealp{Callaway_Karami_2023}. \citealp{chan2022pcdid}, \citealp{Gobillon_Magnac_2016}, and \citealp{xu2017generalized}). However, most studies do not establish the asymptotically validity of the particular bootstrap that they are using. In fact, the only exception known to is \citet{Callaway_SantAnna_2020}, who propose a multiplier-type bootstrap procedure. The problem with this procedure is that it is not suitable in the presence of interactive effects.
 
 In this section, we build on a recent strand of literature concerned with bootstrapping factor-augmented panel data regressions (see, for example,
 \citealp{de2024cross}, and \citealp{westerlund2019cce}) to develop an asymptotically valid bootstrap procedure for the proposed TECCE estimator. The algorithm that we consider is similar to the one employed by \citet{westerlund2019cce}, and proceeds as follows:

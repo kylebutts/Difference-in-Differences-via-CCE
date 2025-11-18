@@ -61,6 +61,9 @@ df <- df |>
     tariff = avgtariff_ind3 / 100
   )
 
+df <- df |> 
+  arrange(sic3, year)
+
 # Figure 4 ---------------------------------------------------------------------
 # %%
 feols(

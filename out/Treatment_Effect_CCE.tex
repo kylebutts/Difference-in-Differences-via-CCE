@@ -1,0 +1,687 @@
+\documentclass[12pt,fleqn]{article}
+\usepackage{paper}
+
+
+% Change to \boolfalse to make anonymous
+\usepackage{etoolbox}
+\newbool{INCLUDE_AUTHORS}
+\booltrue{INCLUDE_AUTHORS}
+
+\title{\textsc{Direct and Indirect Treatment Effects with Time-Varying Covariates}\thanks{Westerlund would like to thank the Knut and Alice Wallenberg Foundation for financial support through a Wallenberg Academy Fellowship.}}
+\ifbool{INCLUDE_AUTHORS}{\author{
+    \and Nicholas L. Brown\\
+    {\small Florida State University} \and Kyle Butts\\
+    {\small University of Arkansas} \and Joakim Westerlund\thanks{Corresponding author: Department of Economics, Lund University, Box 7082, 220 07 Lund, Sweden. Telephone: +46 46 222 8997. Fax: +46 46 222 4613. E-mail address: \texttt{joakim.westerlund@nek.lu.se}.}\\
+    {\small Lund University}\\
+    {\small and}\\
+    {\small Deakin University}
+}}{}
+\date{December 9, 2024}
+
+\newbool{INCLUDE_COMMENTS}
+\boolfalse{INCLUDE_COMMENTS}
+\newcommand{\nick}[1]{\color[HTML]{db2777} Nick: #1}
+\newcommand{\kyle}[1]{{\color[HTML]{db2777} Kyle: #1}}
+
+\begin{document}
+\maketitle
+%\doublespacing
+
+\vspace{-\medskipamount}
+\begin{abstract}
+\setlength{\baselineskip}{0.7cm}
+We propose a simple approach to treatment effect estimation that is valid when the number of time periods is small and the parallel trends condition is violated due to the presence of interactive fixed effects. We show that if there are time-varying covariates that are linear in the same factors as the outcome variable, we can estimate not only the usual dynamic average treatment effects on the treated, but we can also separate the effect of treatment into different causal channels. The asymptotic properties of the estimator are established and their accuracy in small samples is investigated using Monte Carlo simulations. The procedure is illustrated using as an example the effect of increased trade competition on firm markups in China. We estimate that about half of the impact of China's entrance into the WTO on markup dispersion came from the changes in industry-level productivity.
+\end{abstract}
+
+\setlength{\baselineskip}{0.83cm}
+
+\textbf{JEL Classification:} C31, C33, C38.
+
+\textbf{Keywords:} Treatments effects estimation; fixed-$T$; interactive fixed effects; common correlated effects; mediation analysis.
+
+\newpage
+
+\section{Introduction}
+
+Treatment effects studies using panel data typically estimate linear models with additive unit and time fixed effects. Such fixed effects are consistent with the so-called ``parallel trends" assumption, which demands that the average outcomes for treated and untreated cross-sectional units would have followed the same path over time in absence of treatment. Because this assumption is implausible in many settings, much effort has been spent trying to control for violations through the inclusion of covariates. A common approach estimates either time-varying slopes on time-invariant/`baseline' covariates or unit-varying slopes on covariates that only vary over time, like linear time trends \citep{Abadie_2005,Kim_Oka2014,Callaway_SantAnna_2020,Wooldridge_2021_two_way_mundlak,borusyak2024revisiting}. These methods usually model parallel trend deviations as a product of time-varying slopes and baseline covariates: the former captures the trend itself, and the latter measures the unit's exposure to the trend. The problem is that many drivers of non-parallel trending are unobserved and lack good proxies.\footnote{For example, in studies with time-varying-only covariates, deterministic linear and quadratic trends are often the only candidates, even though there is plenty of evidence to suggest that they are not enough \citep{Kim_Oka2014}.} Moreover, covariates that vary over time and across individuals likely contain more information on the non-trending behavior. However, when these covariates are affected by treatment, including them in estimation will introduce bias and may cause more harm than good \citep{angrist2009mostly,Caetano_Callaway_Payne_Rodrigues_2022}.
+
+The present paper is motivated by the problem of incorporating data sets with rich controls into treatment effect estimation. We start by modeling the non-parallel trending behavior via interactive fixed effects, which are the product of time effects (called ``factors") and unit effects (called ``factor loadings").\footnote{The usual two-way error model with additive time and unit fixed effects is a special case of the interactive effects model. As such, parallel trends is a special case of our modeling assumptions.} Our approach assumes that researchers have access to a set of time-varying covariates that are impacted by the same set of time effects that drive non-parallel trending behavior in the outcome variable. This assumption coincides with the common correlated effects (CCE) setting of \citet{pesaran2006estimation}, a popular approach in the factor-model literature and one that is known to perform well in finite samples \citep{westerlund2019cce}. We then show that dynamic average treatment effects on the treated are estimable by recovering the unobserved factors via cross-sectional averages of the outcome variable and the covariates. 
+
+Our approach is similar in spirit to \citet{FHS_2019}. They consider a model where treatment is correlated with an unobserved confound $c_{i,t}$. They also assume the existence of covariates that are linear in $c_{i,t}$ but unaffected by treatment. These covariates are then used to control for deviations from parallel trends due to $c_{i,t}$. Our approach primarily differs in that we impose separability in $c_{i,t}$: we assume it can be expressed as the product of two unobserved components, $f_t \times \lambda_i$. In doing so, we can recover the untreated potential outcomes post-treatment and allow the covariates to change arbitrarily after receiving treatment. This approach offers some benefits over alternative methods, which we discuss below. Moreover, our treatment effect estimator can allow for arbitrary treatment effect heterogeneity, which has proven a concern for many standard estimators. 
+% In short, we require a stronger restriction on the confound but can estimate the effect of treatment on covariates. 
+
+Our paper allows for treatment to change the value of the covariates which then have a subsequent impact on the outcome, what the mediation literature calls this an `indirect effect'. The factor assumption on the covariates allows us to estimate how much treatment shifts the value of the control variables. When the covariates directly affect the outcome, i.e. the causal effect of x on y is non-zero, our estimator can breakdown how much of the estimated treatment effect is driven by treatment changing the value of a specific covariate. Applied work will often perform auxiliary treatment effect estimates using control variables as an outcome to assess if a causal mechanism operates through some covariate. Our method formalizes this kind of analysis to quantify the magnitude of potential mechanisms.
+
+% The main object of interest is the average treatment effect on the treated (ATT), which is the average difference between the actual and counterfactual post-treatment outcomes of treated cross-sectional units (or some other aggregate like dynamic event-study type ATT). This average cannot be directly calculated since the counterfactual outcome is unobserved. We therefore use the CCE approach to estimate it. 
+Our proposed treatment effect estimator, dubbed ``TECCE", is computed in three simple steps. We begin by estimating the common factors using the CCE approach of forming cross-sectional averages of all the observables from the never-treated sample. We then estimate the factor loadings by regressing the outcome variable for each cross-sectional unit on the first-step factor estimates. In the third and final step, we estimate the counterfactual outcome by taking the product of the first-step factor and second-step loading estimates. Average treatment effects are estimated as the average difference between the observed treated and estimated counterfactual outcomes.
+
+% \kyle{I think this could be better as saying: `Then, we show how researchers can analyze how covariates contribute to the overall ATT. We propose a similar imputation procedure to estimate how much treatment shifts the value of the covariates and then multiply these level shifts by their marginal effects to estimate indirect effects.' Do you think this sounds better?} \nick{I think it's fine for now}
+
+Researchers interested in studying the extent to which the covariates contribute to the ATT can do so by repeating steps two and three of the estimation procedure while conditioning on the observed (possibly treatment-affected) covariates. This procedure gives an estimator of the part of the ATT that is not due to the covariates, which can be subtracted off the initial ATT estimator to produce an estimator of the part of the ATT that is due to the covariates.
+
+The new estimator is shown to be consistent and asymptotically normal under general conditions provided only that the number of treated and untreated units is large, a result that is verified in finite samples by means of Monte Carlo simulations. This result is noteworthy because the TECCE estimation procedure described in the previous paragraph does not require explicit accounting of the covariates in steps two and three. In spite of this, consistency and asymptotic normality hold regardless of whether the covariate values are changed by treatment. 
+
+There are three primary benefits to our estimator. First, and most importantly, it allows for treatment-affected covariates and enables researchers to separate the part of the treatment effect that is due to the covariates changing values from the part that is not. We can even obtain valid confidence intervals for the distinct causal mechanisms. As far as we are aware, there is currently no other treatment effects approach with this level of flexibility. 
+
+Second, our new estimator does not require the number of time periods $T$ to be large. Interactive fixed effects approaches tend to be ``data hungry"; a common requirement is that both $T$ and $N$ are large \citep{Gobillon_Magnac_2016,xu2017generalized,Arkhangelsky_2021_synthetic_DID,chan2022pcdid}, which is a problem because in treatment effects studies $T$ is often small \citep{Bertrand_etal_2004}. The new procedure accounts for this smallness of $T$ and is as a result widely applicable to applied microeconomic problems.
+
+Finally, it is user-friendly and computationally simple. Estimation only requires the computation of sample averages and linear regression. \citet{Gobillon_Magnac_2016}, \citet{xu2017generalized}, and \citet{chan2022pcdid} use principal components (PC) estimation to control for the factors. Such an approach is based on solving a non-convex optimization problem, which means that it can be difficult to get to converge.\footnote{Even if it does converge, it may not be to the global optimum \citep{Moon_Weidner_2019}.} 
+\citet{brown2022generalized} and \citet{Callaway_Karami_2023} use overidentified generalized method of moments (GMM) estimators, requiring valid instruments that may not be available in practice. 
+\citet{Callaway_Tsyawo_2023} use properties of a staggered-rollout setting to create instruments, but are limited in the parameters they can identify. 
+These methods may also not converge to a global maximum in practice \citep{Hayakawa_2016}. Both GMM and PC approaches require knowing the number of unobserved effects, which is a difficult estimation problem \citep{Moon_Weidner_2019,breitung2021alternative}. Even if the number of factors is estimable, the resulting PC and GMM estimators still suffer from ``post-selection bias'' see \citep{leeb2005model}. The new procedure does not require accurate estimation of the number of factors.
+
+As an empirical illustration, we consider the effect of China's accession into the World Trade Organization (WTO) in 2001 on the dispersion of industry-level markups. Our results suggest that the increased competition generated by the accession lead to reduced markup dispersion. Moreover, we find that almost half of this reduction was brought about by a decrease in marginal cost dispersion.
+
+The rest of the paper is structured as follows. Section 2 presents the model and defines the ATT, the estimation of which is the concern of Section 3. Sections 4, 5 and 6 contain the asymptotic, Monte Carlo results, and empirical studies, respectively. Section 7 concludes. All proofs are relegated to the appendix.
+
+\section{The model}
+
+We are interested in estimating the ATT of a particular treatment on some outcome variable $y_{i,t}$, observable for $i\in \{1,...,N\}$ cross-sectional units and $t\in\{1,...,T\}$ time periods. We allow for the possibility that the $N$ units can be divided into groups within which treatment timing is the same. There are $G < \infty$ such groups indexed by $g \in \{1,...,G\}$. Treated units never leave their groups but remain exposed for all periods after entering treatment; that is, treatment is of the ``staggered roll-out'' type. Untreated units are members of group $g=0$.
+
+The timing of the treatment could be viewed as the outcome of a random process that is dealt with through suitable conditioning. We instead follow \citet{Arkhangelsky_2021_synthetic_DID} and \citet{borusyak2024revisiting} and view both the treatment timing and the drivers of non-parallel trending as fixed, which has the advantage that it places no assumption on their joint distribution or the distribution of treatment timing.\footnote{
+    In the below notation, expectations are taken over particular treatment cohorts.
+}
+It is particularly well suited for applications where treatment timing is not explicitly randomized, as in our empirical illustration of Section 6. We denote by $g_i \in\{ 0,...,G \}$ a variable stating the group membership of cross-sectional unit $i$, and by $\mathcal{I}_g := \{i: g_i = g \} \subset \{1,...,N\}$ the set of cross-sectional units that are members of group $g \in \{ 0,...,G \}$, where $a := b$ means that $a$ is defined by $b$. The set of untreated units is denoted $\mathcal{I}_0$, and it is convenient to let $\mathcal{I}_0^c := \{1,...,N\} \setminus \mathcal{I}_0$ denote the set of treated units. The number of cross-sectional units within group $g$ is given by the cardinality $N_g := |\mathcal{I}_g|$. Exact conditions on $N_0,...,N_G$ will be specified later. For now, we just assume that these quantities are ``large".\footnote{Hence, as usual, we assume that there are both treated and untreated units in the sample. The condition that $N_0,...,N_G$ are all large is also very common, although it is not always articulated in the same way as here. Many studies assume the probability of treatment is strictly positive \citep{Abadie_2005,Callaway_SantAnna_2020,SantAnna_Zhao2020}, which in the current fixed treatment allocation context is tantamount to requiring that $N_g/N \to \delta >0$ as $N_g,\,N \to \infty$.} We denote $T_{0}$ as the first period before any unit is treated, so that the first treatment starts in period $T_0+1$. Unlike $N_0,...,N_G$, the number of pre-treatment periods $T_{0}$ does not have to be large, provided that it is larger than the number of estimated factors. We describe this condition later. The start of the treatment of group $g > 0$ is denoted $t_g$.
+
+Denote by $y_{i,t}(g)$ the ``potential" outcome of cross-sectional unit $i$ had it been member of group $g$ in period $t$. The observed outcome for unit $i$ at time $t$ is given by $y_{i,t} := y_{i,t}(g_i)$. In this notation, the unit-specific treatment effect for a unit $i$ that is member of treatment group $g_i = g > 0$ in post-treatment periods $t > T_0$ is given by
+\begin{align}
+\Delta_{i,t} := y_{i,t} - y_{i,t}(0) \label{te}
+\end{align}
+where $y_{i,t}(0)$ is the untreated potential outcome.\footnote{See \citealp{borusyak2024revisiting} for a similar definition} Because we do not observe $y_{i,t}(0)$ for treated units in post-treatment periods, $\Delta_{i,t}$ must be treated as unknown and estimated from the data. Of course, because $T$ is fixed, accurate estimation of $\Delta_{i,t}$ itself is impossible. The object of interest is therefore not $\Delta_{i,t}$ but the ATT, $\mathbb{E}(\Delta_{i,t})$, which we now characterize.
+
+\bigskip
+
+\noindent \textbf{Assumption 1.} $\Delta_{i,t} = \mathrm{ATT}_{g,t} + \upsilon_{i,t}$, where $\mathrm{ATT}_{g,t}$ is non-random and $\upsilon_{i,t}$ is a mean zero random error that is independent of all other random elements of the model.
+
+\bigskip
+
+Assumption 1 implies that $\mathbb{E}(\Delta_{i,t}) = \mathrm{ATT}_{g,t}$, which is the same ``group-time" ATT considered by \citet{Callaway_SantAnna_2020}.\footnote{Most studies in the literature do not use random coefficient conditions like Assumption 1, but state their conditions directly in terms of the (conditional) expectations of those random coefficients \citep{Gobillon_Magnac_2016,Callaway_SantAnna_2020,chan2022pcdid}.} 
+Except for the constancy-within-groups condition, the ATT is unrestricted, which means that it is allowed to vary freely over both groups and time. One implication of this is that the effect of the treatment need not take place abruptly but can be gradual in nature. This is in contrast to existing studies that typically make quite strong assumptions about the variability of the ATT. 
+
+\bigskip
+
+\noindent \textbf{Assumption 2.} $y_{i,t} = y_{i,t}(0)$ for $t \leq T_0$.
+
+\bigskip
+
+Assumption 2 is similar to Assumption 11 in \citet{Callaway_Karami_2023} and Assumption 3 in \citet{Callaway_SantAnna_2020}. It requires that there is no treatment effect before any unit receives treatment. Once one group enters treatment, however, anticipation is not ruled out for other groups. This condition seems reasonable because before the first group enters treatment, the units might not know what to expect. Once treatment roll-out has commenced, however, it is possible that not-yet-treated units learn from the treated.
+
+We typically do not observe $y_{i,t}$ in isolation but together with covariates whose outcome may again depend on treatment status. In our empirical illustration, we estimate the effect of China's accession into the WTO on industry-level markup dispersion while controlling for the dispersion in marginal costs. According to theory, increased competition may affect markups directly through changes in market structure and indirectly through changes in marginal costs. We therefore introduce the $m\times 1$ vector $\*x_{i,t}(g)$, whose realized value is given by $\*x_{i,t} := \*x_{i,t}(g_i)$.\footnote{Note how $\*x_{i,t} = \*x_{i,t}(0)$ for $t \leq T_0$ is a necessary condition for Assumption 2. We therefore require that $\*x_{i,t}$ satisfies the same anticipation condition as $y_{i,t}$.}
+
+\bigskip
+
+\noindent \textbf{Assumption 3.}
+\begin{align*}
+y_{i,t}(0) = \+\beta'\*x_{i,t}(0) + \+\alpha_i'\*f_t + \varepsilon_{i,t},
+\end{align*}
+where $\+\beta$ is a $m\times 1$ vector of slope coefficients, $\*f_t$ is a $r \times 1$ vector of unobservable common factors, $\+\alpha_i$ is a $r\times 1$ vector of factor loadings, and $\varepsilon_{i,t}$ is a mean zero random error. Both $\*f_t$ and $\+\alpha_i$ are assumed to be non-random.
+
+\bigskip
+
+Assumption 3 specifies $y_{i,t}(0)$ as a linear function of $\*x_{i,t}(0)$, which is commonly imposed in empirical and econometric work, including \citet{Wooldridge_2021_two_way_mundlak}, \citet{Callaway_Karami_2023}, \citet{Callaway_Tsyawo_2023}, \cite{brown2022generalized}, and \citet{borusyak2024revisiting}.\footnote{
+    There are some exceptions based on non-parametric approaches  \citep{Abadie_2005,SantAnna_Zhao2020,Callaway_SantAnna_2020}. However, these suffer from the ``curse of dimensionality" problem, the solution of which typically involves imposing additional structure, and still the small-sample properties can be unacceptably poor unless sample sizes are very large, so linearity is often used in applications. Non-parametric approaches typically also place strong distributional assumptions directly on the observed data. A very common condition is that $y_{i,t}$ and $\*x_{i,t}$ are independently and identically distributed (iid) over $i$, which is unrealistic.
+} We differ from these approaches in that we allow the covariates' distributions to vary with treatment status. 
+
+The interactive fixed effects are given by $\+\alpha_i'\*f_t$. The standard approach in the treatment effects literature is to include additive time and unit fixed effects (see \citealp{Caetano_Callaway_Payne_Rodrigues_2022}, and \citealp{Callaway_Karami_2023} for recent discussions). Such effects are nested within our interactive specification, as is clear from noting that $\+\alpha_i'\*f_t = \eta_i + \theta_t$ in the special case when $\*f_t = [1, \theta_t]'$ and $\+\alpha_i = [\eta_i, 1]'$. 
+A major advantage of the interactive specification when compared to the additive one is that it accommodates violations of the parallel trends condition. Indeed, unless $\*f_t = \*f$ for all $t$, trends will not be parallel unless $\+\alpha_i = \+\alpha_j$ for all pairs $i$ and $j$.\footnote{The parallel trends condition requires that $\mathbb{E}[\Delta y_{i,t}(0)|\Delta \*x_{i,t}(0) ] = \mathbb{E}[\Delta y_{j,t}(0)|\Delta\*x_{j,t}(0) ]$ for all $i \in \mathcal{I}_0$, $j \in \mathcal{I}_0^c$ and $t > T_0$, which in terms of the model in Assumption 1 reads $\+\beta'\Delta\*x_{i,t}(0) + \+\alpha_i'\Delta\*f_t = \+\beta'\Delta\*x_{j,t}(0) + \+\alpha_j'\Delta\*f_t$. A necessary condition for this last equality to hold is that the factor loadings are equal on average between treated and never-treated groups \citep{brown2022generalized}.} 
+Hence, by leaving $\*f_t$ and $\+\alpha_i$ unrestricted, we can accommodate very general forms of non-parallel behavior. 
+In fact, the interactive effects specification considered here is general even when compared to other specifications of the same type, which typically assume that either $\*f_t$ or $\+\alpha_i$, or both, follow certain probability laws \citep{Gobillon_Magnac_2016,xu2017generalized,Callaway_Karami_2023,Callaway_Tsyawo_2023,brown2022generalized}.\footnote{An example of a common assumption is that $\*f_t$ is generated from a stationary stochastic process like in \citet{Gobillon_Magnac_2016} and \citet{xu2017generalized}, which is likely restrictive in the present context because it rules out factors that are, for example, breaking or trending.} Because the factor model and treatment timing is fixed, they are allowed to be arbitrarily related to each other as in \citet{Arkhangelsky_2021_synthetic_DID} and \citet{borusyak2024revisiting}. 
+
+\bigskip
+
+\noindent \textbf{Assumption 4.}
+\begin{align*}
+\*x_{i,t}(0) = \+\lambda_i'\*f_t + \*v_{i,t},
+\end{align*}
+where $\+\lambda_i$ is a $r \times m$ matrix of non-random factor loadings and $\*v_{i,t}$ is a $m \times 1$ vector of mean zero errors that are independent of $\varepsilon_{i,t}$.
+
+\bigskip
+
+Assumption 4 allow $\*x_{i,t}(0)$ to load on the same set of factors as $y_{i,t}(0)$, which means that it may be endogenous. Hence, in contrast to much of the previous literature, here treatment is not the only source of endogeneity. 
+The common dependence on $\*f_t$ is consistent with the empirical observation that many variables are affected by the same common shocks \citep{westerlund2019cce}. The factors need not be the same, though, as loadings may be zero. There might therefore be factors that are unique to $\*x_{i,t}(0)$ and/or $y_{i,t}(0)$. 
+
+The condition that $\*x_{i,t}(0)$ loads linearly on $\*f_t$ rules out specifications featuring, for example, dummy variables, powers or products of the covariates. However, additional covariates can be easily accommodated in the outcome model provided that they satisfy standard exogeneity conditions, as we explain in the online appendix.\footnote{If there are no covariates available, we define $\+\beta'\*x_{i,t}(0) := 0$ in Assumption 3. In this case, Assumption 4 is not needed. Our estimator can still be constructed using only the outcome variable.} 
+These covariates can be `controlled for' in the final imputation procedure, but are not useful for estimating $\*f_t$, and so we cannot use them to estimate a causal channel.
+
+Most papers in the literature do not place any parametric assumptions on the covariates.\footnote{One exception is given by \citet{Caetano_Callaway_Payne_Rodrigues_2022}, which is also one of the few studies in the literature to allow for treatment-affected covariates.} However, they assume instead that the covariates are exogenous (to treatment) and iid over the cross-section \citep{Abadie_2005,Callaway_SantAnna_2020,Callaway_Karami_2023,brown2022generalized,Callaway_Tsyawo_2023,Caetano_Callaway_Payne_Rodrigues_2022}, which is more restrictive than Assumption 4. In fact, the only studies that come close to ours in terms of the generality of the allowable covariates are \citet{Gobillon_Magnac_2016}, \citet{xu2017generalized}, and \citet{chan2022pcdid}. They allow the covariates to be arbitrarily correlated with the interactive fixed effects, which represents a more general consideration than Assumption 4. However, they require instead that the covariates are stationary and unaffected by treatment, which is not required here.\footnote{They also require that $T$ is large and that the number of common factors, $r$, can be accurately estimated, which is again not a requirement in the present paper.}
+
+\citet{Caetano_Callaway_Payne_Rodrigues_2022} is one of the few papers in the literature to allow for covariates affected by treatment. They focus on the ATT; however, they also say that ``it would be interesting to extend our arguments to additionally identifying direct and indirect effects of participating in the treatment" (page 6). We provide such an extension. In order to separate the part of the ATT that is due to changing values of the covariates from the part that is not, we define
+\begin{align}
+\+\tau_{i,t} := \*x_{i,t} - \*x_{i,t}(0)
+\end{align}
+for a unit $i$ that is member of group $g_i = g > 0$ in post-treatment periods $t > T_0$. In view of Assumption 3, the covariates' contribution to the unit-specific treatment effect on $y_{i,t}$ is given by $\+\beta'[\*x_{i,t}(g) - \*x_{i,t}(0)] = \+\beta'\+\tau_{i,t}$. We can allow $\+\tau_{i,t} = 0$ so that the covariates are not affected by treatment. Thus, we can accommodate covariates that are linear in the common factors, whether or not they are affected by treatment, along with covariates that are not affected by treatment but may have a nonlinear relationship to the factors. We also define the difference between these effects;
+\begin{align}
+\eta_{i,t} :=  \Delta_{i,t} - \+\beta'\+\tau_{i,t}.
+\end{align}
+In the terminology of the mediation literature, $\eta_{i,t}$ is the ``direct" effect of treatment and $\+\beta'\+\tau_{i,t}$ is the ``indirect" effect of treatment mediated through the covariates \citep{huber2014identifying}.
+
+The random coefficient condition in Assumption 1 is enough if the purpose is to just estimate the ATT. If the purpose is to estimate also the direct and indirect ATTs, henceforth abbreviated ``DATT" and ``IATT", respectively, more conditions of the same type are needed.
+
+\bigskip
+
+\noindent \textbf{Assumption 5.} $\+\tau_{i,t}= \+\tau_{g,t} + \+\zeta_{i,t}$, where $\+\tau_{g,t}$ is non-random, and $\+\zeta_{i,t}$ are mean zero random errors that are independent of all other random elements of the model.
+
+\bigskip
+
+Assumption 5 implies that
+\begin{align}
+\mathbb{E}(\+\beta'\+\tau_{i,t}) = \+\beta'\+\tau_{g,t} =: \mathrm{IATT}_{g,t}.
+\end{align}
+Further use of Assumption 1 gives
+\begin{align}
+\mathbb{E}(\eta_{i,t}) = \mathbb{E}(\Delta_{i,t}) - \mathbb{E}(\+\beta'\+\tau_{i,t}) = \mathrm{ATT}_{g,t} - \mathrm{IATT}_{g,t} =: \mathrm{DATT}_{g,t}
+\end{align}
+or, equivalently,
+\begin{align}
+\mathrm{ATT}_{g,t} = \mathrm{DATT}_{g,t} + \mathrm{IATT}_{g,t}.
+\end{align}
+
+\section{The TECCE estimator}
+
+\subsection{The ATT}
+
+We need an estimate of $y_{i,t}(0)$ in order to estimate the ATT. Interestingly, because the objective here is to estimate only the ATT and not the other parameters of the model, the estimation of $y_{i,t}(0)$ only requires accounting for the interactive fixed effects. We use the fact that the never-treated data is asymptotically linear in the common factors. For example, note that 
+\begin{equation}
+    \frac{1}{N_0} \sum_{i \in \mathcal{I}_0} \*x_{i,t} = \overline{\+\lambda}' \*f_t + o_p(1) 
+\end{equation}
+for $t = 1,...,T$. We can also include the outcome's average because Assumptions 3 and 4 imply that $y_{i,t}$ is also linear in $\*f_t$. Thus, the cross-sectional averages of the data can be used to asymptotically control for the factor space and allow us to recover the untreated potential outcomes for treated units.\footnote{The cross-sectional averages are not consistent estimates of the factors because the factor loadings are also unobserved. However, they will asymptotically span the space that contains the common factors, which is sufficient for our purposes. See \citet{westerlund2019cce} for details.}
+
+\bigskip
+
+\noindent \textbf{Counterfactual estimation procedure:}
+
+\begin{enumerate}
+\item For all $t$, compute
+\begin{align}
+\widehat{\*f}_t := \frac{1}{N_0}\sum_{i \in \mathcal{I}_0} \*z_{i,t},\label{fhat}
+\end{align}
+where $\*z_{i,t} := [y_{i,t},\*x_{i,t}']'$ is a $(m+1)\times 1$ vector containing all the observables. 
+
+\item Estimate the following regression by OLS for all $i$ and $t \leq T_0$:
+\begin{align}
+y_{i,t} = \*a_i'\widehat{\*f}_t + u_{i,t}, \label{preregr}
+\end{align}
+where $\*a_i$ is a $(m+1)\times 1$ vector of factor loadings and $u_{i,t}$ is an error term. Define the $T_0\times 1$ vector $\*y_{i} := [y_{i,1},...,y_{i,T_0}]'$ and the $T_0\times (m+1)$ matrix $\widehat{\*f} := [\widehat{\*f}_{1},...,\widehat{\*f}_{T_0}]'$. In this notation, the OLS estimator of $\*a_i$ is given by
+\begin{align}
+\widehat{\*a}_i := (\widehat{\*f}'\widehat{\*f})^{-1}\widehat{\*f}'\*y_{i},
+\end{align}
+which is computed for all $i$.
+
+\item The sought counterfactual estimator is given by
+\begin{align}
+\widehat y_{i,t}(0) := \widehat{\*a}_i'\widehat{\*f}_t,
+\end{align}
+which is available for all treated observations $i\in \mathcal{I}_0^c$ and $t > T_0$. Here $\{\widehat{\*a}_i\}_{i\in \mathcal{I}_0^c}$ is from step 2, while $\{\widehat{\*f}_t\}_{t > T_0}$ is from step 1.
+\end{enumerate}
+
+The fact that $\widehat{\*f}_t$ is computed with the untreated units only is crucial since in the present paper both $y_{i,t}$ and $\*x_{i,t}$ can depend on the treatment, which may lead to inconsistency if we use the entire sample. With $y_{i,t}(g) = y_{i,t}$ known and $y_{i,t}(0)$ estimated, the estimated treatment effect is given by
+\begin{align}
+\widehat \Delta_{i,t} := y_{i,t} - \widehat y_{i,t}(0)  \label{theat}
+\end{align}
+for $i \in \mathcal{I}_0^c$ and $t > T_0$. The TECCE estimator of $\mathrm{ATT}_{g,t}$ for group $g>0$ at time $t$ is obtained by averaging over all group members;
+\begin{align}
+\widehat{\mathrm{ATT}}_{g,t} := \frac{1}{N_g}\sum_{i \in \mathcal{I}_g} \widehat \Delta_{i,t}. \label{atthat}
+\end{align}
+
+A major point about the above estimation procedure is that there is no need to account for the covariates in steps 1 and 2. The intuition for why is as follows: the estimated unit-specific treatment effect can be written as
+\begin{align}
+\widehat \Delta_{i,t} = y_{i,t} - \widehat{\*a}_i'\widehat{\*f}_t = y_{i,t} - \*y_{i}'\widehat{\*f}(\widehat{\*f}'\widehat{\*f})^{-1}\widehat{\*f}_t,
+\end{align}
+which is a ``defactored" version $y_{i,t}$.\footnote{This insight is similar to equations (8) and (9) of \citet{FHS_2019}.} Asymptotically the defactoring eliminates the interactive fixed effects. This means that the source of the endogeneity of $\*x_{i,t}$ is gone and therefore the covariates can be ignored without risking omitted variables bias. The defactoring is also the reason for why the procedure works in spite of the fact that $\widehat{\*a}_i$ is not consistent and in fact remains random even asymptotically because $T$ is fixed. The defactoring leads to increased variance; however, the interactive fixed effects are gone and so the asymptotic validity of the procedure is unaffected. Hence, similarly to studies such as \citet{SantAnna_Zhao2020}, our main concern here is not efficiency, but robust estimation and inference. If there are covariates present that are either known not to have a factor structure or there is uncertainty over the process that generated them, the above procedure has to be modified as explained in the online appendix.
+
+As \citet{Caetano_Callaway_Payne_Rodrigues_2022} point out, the validity of estimates of the ATT typically depend on whether or not the covariates are affected by treatment status. Most studies circumvent this problem by assuming that there are no covariates at all \citep{Arkhangelsky_2021_synthetic_DID,brown2022generalized}, that any covariates are time-invariant \citep{Wooldridge_2021_two_way_mundlak,Callaway_Karami_2023,Callaway_Tsyawo_2023} or, perhaps most commonly, that the covariates may depend on time but that they are unaffected by treatment \citep{Gobillon_Magnac_2016,xu2017generalized,chan2022pcdid}. The problem here is that if there are time-varying covariates present that depend on the treatment status, approaches that fail to properly control for these will be subject to omitted variables bias. However, the solution is not as simple as just including the relevant treatment-affected covariates into the model. For example, if we are estimating the effect of a certain policy aimed at reducing unemployment, we might want to control for the poverty rate.\footnote{See \citet{Caetano_Callaway_Payne_Rodrigues_2022} for more examples of this type.} Because such policies might indirectly reduce poverty, the poverty rate covariate will absorb some of the treatment effect, typically referred to as ``post-treatment bias". Because of this, treatment-affected covariates are often considered to be ``bad controls" \citep{angrist2009mostly}. There is therefore a dilemma; while including the covariates induces post-treatment bias, excluding them induces omitted variables bias \citep{aklin2017can}. The defactoring implicit in TECCE not only eliminates the source of the omitted variables bias, but also enables estimation of the ATT without including the treatment-affected covariates. It therefore resolves the dilemma.
+
+\subsection{The direct and indirect ATTs}
+
+We demonstrated in Section 2 that the ATT can be decomposed into the DATT and the IATT. We now show how to estimate these constituent parts. The idea behind our estimator of the DATT builds on the discussion of the previous subsection about bad controls. In particular, by making the counterfactual estimation procedure conditional on observed $\*x_{i,t}$, we no longer estimate the ATT but instead estimate the DATT. In other words, including the bad controls induces post-treatment bias that is exactly equal to the DATT.\footnote{The fact that controlling the covariates alters the object being estimated is important not only for the present paper, but also when considering the works of others. As alluded to earlier, many studies assume that the covariates are unaffected by treatment and use the observed covariates in their ATT estimations. Logic based on our findings suggests that if the unaffected covariates assumption is false, these estimators will only capture the DATT. The Monte Carlo and empirical studies of Sections 5 and 6 elaborate on this point.}
+
+Controlling for $\*x_{i,t}$ requires two changes to the counterfactual estimation procedure presented in Section 3.1. First, the appropriate step-2 regression model to be estimated is no longer given by \eqref{preregr} but by
+\begin{align}
+y_{i,t} = \+\beta'\*x_{i,t} + \*a_i'\widehat{\*f}_t + u_{i,t}.
+\end{align}
+Define the $T_0\times m$ matrix $\*x_{i} := [\*x_{i,1},...,\*x_{i,T_0}]'$ and the $T_0\times T_0$ matrix $\*M_{\*A} := \*I_{T_0} - \*A(\*A'\*A)^{-1}\*A'$, where $\*A$ is any $T_0$-rowed matrix. The estimators of $\+\beta$ and $\*a_i$ in the above model can now be written in the following way:
+\begin{align}
+\widehat{\+\beta} &:= \left(\sum_{i=1}^N  \*x_{i}'\*M_{\widehat{\*f}}\*x_{i}\right)^{-1}\sum_{i=1}^N \*x_{i}' \*M_{\widehat{\*f}}\*y_{i},\\
+\widehat{\*a}_i &:= (\widehat{\*f}'\widehat{\*f})^{-1}\widehat{\*f}'(\*y_{i}-\*x_{i}\widehat{\+\beta}).
+\end{align}
+
+Second, the step-3 counterfactual estimator is now given by
+\begin{align}
+\widehat y_{i,t}(0) := \widehat{\+\beta}'\*x_{i,t} +  \widehat{\*a}_i'\widehat{\*f}_t.
+\end{align}
+
+Given the above changes, the estimated DATT for group $g$ at time $t$ is entirely analogous to the estimated ATT;
+\begin{align}
+\widehat{\mathrm{DATT}}_{g,t} := \frac{1}{N_g}\sum_{i \in \mathcal{I}_g} \widehat \eta_{i,t},
+\end{align}
+where $\widehat \eta_{i,t} := y_{i,t} - \widehat{y}_{i,t}(0)$. The IATT can be estimated by simply subtracting off $\widehat{\mathrm{DATT}}_{g,t}$ from $\widehat{\mathrm{ATT}}_{g,t}$;
+\begin{align}
+\widehat{\mathrm{IATT}}_{g,t} : = \widehat{\mathrm{ATT}}_{g,t} - \widehat{\mathrm{DATT}}_{g,t} .
+\end{align}
+
+\section{Asymptotic results}
+
+We can now study the asymptotic properties of the estimated ATT and its direct and indirect parts. Assumptions 1--5 characterize the model. In order to establish the required asymptotic results, more conditions are need.
+
+\bigskip
+
+\noindent \textbf{Assumption 6.} $\upsilon_{i,t}$, $\+\zeta_{i,t}$, $\varepsilon_{i,t}$ and $\*v_{i,t}$ are all independently distributed across $i$ with finite fourth-order cumulants. Also, $\lim_{N_g\to\infty}N_g^{-1}\sum_{i\in \mathcal{I}_g} \mathbb{E}  (\varepsilon_{i,t}^{2}) = : \sigma^2_{\varepsilon,g,t}$ and the $m \times m$ matrix $\lim_{N_g\to\infty}N_g^{-1}\sum_{i\in \mathcal{I}_g}\mathbb{E}  (\*v_{i,t}\*v_{i,t}') =: \+\Sigma_{\*v,g,t}$ exist and are positive definite for all $g$.
+
+\bigskip
+
+\noindent \textbf{Assumption 7.} The $r\times (m+1)$ matrix $\+\Lambda_i := [\+\alpha_i +\+\lambda_i\+\beta, \+\lambda_i]$ is such that $N_0^{-1}\sum_{i \in \mathcal{I}_{0}} \+\Lambda_i$ has full row rank $r$.
+
+\bigskip
+
+\noindent \textbf{Assumption 8.} $T_0 > m+1$.
+
+\bigskip
+
+\noindent \textbf{Assumption 9.} The $r \times r$ matrix $\sum_{t=1}^{T_0}\*f_t\*f_t'$ is positive definite.
+
+\bigskip
+
+\noindent \textbf{Assumption 10.} The $m \times m$ matrix $\mathrm{plim}_{N\to\infty}N^{-1}\sum_{i=1}^N \*x_{i}'\*M_{\widehat{\*f}} \*x_{i}$ exist and is positive definite.
+
+\bigskip
+
+Assumption 6 is not particularly restrictive in the sense that $y_{i,t}$ and $\*x_{i,t}$ are still allowed to be strongly cross-sectionally correlated through $\+\lambda_i' \*f_{t}$.\footnote{We illustrated this point using $\*x_{i,t}(0)$. By Assumptions 4 and 6, $\mathbb{E}[\*x_{i,t}(0)\*x_{j,t}(0)'] = \+\lambda_i'\*f_t\*f_t'\+\lambda_j$, which is not zero unless the loadings are. Interactive fixed effects therefore provide a means to accommodate strong cross-sectional dependence. See \citet{chudik2011weak} for a thorough discussion of the notions of weak and strong cross-sectional dependence.}  While we do require that the covariance matrices of $\varepsilon_{i,t}$ and $\*v_{i,t}$ are positive definite, we place no such restrictions on the covariance matrices of $\upsilon_{i,t}$ and $\+\zeta_{i,t}$.
+
+Step 1 of the counterfactual estimation procedure uses the cross-sectional averages of the observables to estimate the factors. We therefore require that those averages are informative about the factors. Assumption 7 rules out situations in which there are factors present but their effect on $\widehat{\*f}_t$ averages out. Another situation that is ruled out by this assumption is when $m+1 \geq r$, so that the number of factors is larger than the number of cross-sectional averages used to estimate them.\footnote{See \citet{Juodis_etal_2021} for a discussion and some results for the case when Assumption 7 fails.} One way to relax this condition is if some of the factors are ``observed", like a unit-specific intercept or time trend, because Assumption 7 only applies to the loadings of unobserved factors. Observed factors can be appended to $\*f_t$ in Assumptions 3 and 4, and to $\widehat{\*f}_t$ in step 1 of the counterfactual estimation procedure. The rest is unaffected. In Section 6, we elaborate on this point and explain how to test Assumption 7.
+
+Assumptions 8--10 are non-collinearity conditions. Assumptions 8 and 9 ensure that the $(m+1)\times (m+1)$ matrix $\widehat{\*f}'\widehat{\*f}$ appearing in the step-2 estimator of $\*a_i$ is positive definite both asymptotically and in small samples.\footnote{Because our estimator of $\*a_i$ comes from a regression on pre-treatment observations, we need at least as many degrees of freedom as allowable factors. This assumption is similar in principle to requiring at least two time periods for a fixed effects regression.} Assumption 10 generalizes the usual ``within assumption" in the unit-specific fixed effects only model, which rules out time-invariant covariates. Assumption 10 rules out more general ``low-rank" covariates, such as deterministic constant and trend terms that only vary over time, as it is almost always done in models with interactive effects.\footnote{See \citet{moon2015linear} for a discussion.} The reason for this condition is that if there are such low rank covariates present, they will be captured by $\widehat{\*f}_t$, and therefore they cannot be included also in $\*x_{i}$. Fortunately, there is an easy fix to this problem, which is to treat all low rank covariates as observed factors and to append them to $\widehat{\*f}$. An important point about Assumptions 6--10 is that the time series properties of $\*f_t$, $\varepsilon_{i,t}$ and $\*v_{i,t}$ are essentially unrestricted. Note in particular how, unlike most other treatment effects studies, stationarity and homoskedasticity are not needed.
+
+We are now ready to state Theorem 1, which contains our first main result.
+
+\bigskip
+
+\noindent \textbf{Theorem 1.} \emph{Suppose that Assumptions 1--4 and 6--9 are met. Then, uniformly in $g \in \{1,...,G\}$ and $t\in \{T_0+1,...,T\}$, as $N_g,\,N_0\to\infty$ with $N_g/N_0 \to \delta < \infty$,}
+\begin{align}
+\frac{\sqrt{N_g}(\widehat{\mathrm{ATT}}_{g,t} - \mathrm{ATT}_{g,t})}{\sqrt{\mathrm{var}(\widehat{\mathrm{ATT}}_{g,t})}} \to_d N(0, 1 ),
+\end{align}
+\emph{where $\to_d$ signifies convergence in distribution and the definition of $\mathrm{var}(\widehat{\mathrm{ATT}}_{g,t})$ is provided in the online appendix.}
+
+\bigskip
+
+Theorem 1 does not require that Assumptions 5 and 10 hold, which is natural since the estimation of the ATT does not require explicit conditioning on $\*x_{i,t}$. Asymptotic normality therefore holds with only minimal conditions on $\*x_{i,t}$.
+
+Theorem 1 implies that $\widehat{\mathrm{ATT}}_{g,t}$ is consistent for $\mathrm{ATT}_{g,t}$ and that the rate of convergence is $N^{-1/2}$. In the treatment effects literature it is common to plot estimates of the ATT over time and to interpret variations as being due to treatment effect dynamics. Theorem 1 says that $\widehat{\mathrm{ATT}}_{g,t}$ can be used for the same purpose. If one is not interested in dynamics but just want a summary measure of the evidence, $\widehat{\mathrm{ATT}}_{g,t}$ can be averaged over $g$ or $t$.\footnote{See \citet{Callaway_SantAnna_2020} for a thorough discussion of various ways in which $\mathrm{ATT}_{g,t}$ can be meaningfully averaged.} Since $G$ and $T-T_0$ are both fixed, the consistency in Theorem 1 naturally carries over to such averages.
+
+Inference based on Theorem 1 requires a consistent estimator of $\mathrm{var}(\widehat{\mathrm{ATT}}_{g,t})$. Unrestricted treatment effect heterogeneity is known to be problematic for variance estimation in the sense that exact asymptotic inference is not always possible \citep{deChaisemartin_DHaultfoeuille_2020,borusyak2024revisiting}. Another problem is the presence of unobserved common factors and the additional estimation uncertainty that they bring. This problem does not necessarily interfere with asymptotic inference; however, it does require additional conditions to ensure that the factor estimation error is negligible. We provide a nonparametric variance estimator in the online appendix that is similar to \citet{pesaran2006estimation}. One can also use the usual nonparametric panel bootstrap.\footnote{See \citet{westerlund2019cce} and \citet{Brown_Schmidt_Wooldridge_2021}.}
+
+\bigskip
+
+\noindent \textbf{Theorem 2.} \emph{Suppose that Assumptions 1--10 are met. Then, the results reported in Theorems 1 and 2 for $\widehat{\mathrm{ATT}}_{g,t}$ apply also to $\widehat{\mathrm{DATT}}_{g,t}$ and $\widehat{\mathrm{IATT}}_{g,t}$.}
+
+\bigskip
+
+Theorem 2 implies that the above discussion of Theorems 1 for $\widehat{\mathrm{ATT}}_{g,t}$ applies also to $\widehat{\mathrm{DATT}}_{g,t}$ and $\widehat{\mathrm{IATT}}_{g,t}$. The variance estimates are formed the same way as the $\widehat{\mathrm{ATT}}_{g,t}$ and definitions are given in the online appendix.
+
+\section{Simulations}
+
+We now present our simulation exercise. We compare our TECCE estimator to two popular estimators that can also accommodate time-varying covariates. The first is the generalized synthetic control (GSC) estimator of \citet{xu2017generalized}. Like our approach, it imputes post-treatment untreated counterfactual outcomes under the assumption of a factor model. It specifically uses the principal components method of \citet{bai2009panel} estimated via the untreated observations. It can jointly estimate the unobserved factors, factor loadings, and slope coefficients, but consistency requires $T \rightarrow \infty$, so we should expect it to perform poorly when $N$ dominates $T$. The GSC estimator here uses $r = 1$, which is a courtesy because PC estimation generally requires correct specification of the number of factors, unlike TECCE. We also consider the TWFE imputation estimator of \citet{Wooldridge_2021_two_way_mundlak} and \citet{borusyak2024revisiting}. They estimate a two-way error model via OLS on the untreated sample and can also include known covariates. We should expect this estimator to perform poorly when parallel trends fails and the unobserved effects take a multiplicative form. For both estimators, we include a specification with and without controlling for covariates linearly. 
+
+We generate our data according to the following model:
+\begin{gather}
+    y_{i,t} = d_{i,t}  + \*x_{i,t}  + f_t \alpha_i + \epsilon_{i,t}\\
+    \*x_{i,t} = d_{i,t} \tau + f_t \lambda_i + \*v_{i,t}
+\end{gather}
+where $d_{i,t}$ is an indicator variable that is 1 if unit $i$ is treated at time $t$. The direct effect $\eta$ and slope coefficient $\beta$ are therefore always set to 1. Half of the sample is treated and half is untreated, with treatment occurring in the last time period in each experiment. We generate the factor loadings as 
+\begin{equation}
+  \begin{pmatrix} 
+  \alpha_i \\ 
+  \lambda_i 
+  \end{pmatrix}
+  \sim 
+  \mathcal{N}\left( 
+    \begin{bmatrix}
+      2 + \kappa D_i \\
+      2 + \kappa D_i 
+    \end{bmatrix}, 
+    \begin{bmatrix}
+      0.5 & 0.25 \\
+      0.25 & 0.5
+    \end{bmatrix}
+  \right)
+\end{equation}
+The $\kappa$ parameter indicates a ``break" in the factor loadings. When $\kappa = 0$, parallel trends holds because there is no systemic difference in the distribution of the heterogeneity between treated and untreated units. TWFE will be consistent and should perform well in this setting \citep{Callaway_Karami_2023}. We also include an indirect treatment effect $\tau$ which we set to different values. When $\tau = 0$, the covariates may help alleviate parallel trend violations because they do not themselves affect the outcome differentially after treatment. The idiosyncratic errors $\epsilon_{i,t}$ and $v_{i,t}$ are iid draws from $N(0, .4^2)$. Adding serial correlation and heteroskedasticity would only further worsen the performance of the OLS estimators GSC and TWFE relative to our TECCE. 
+
+We generate two main types of trending behavior. In one set, $f_t = 1$ and trends are parallel, meaning we would expect each estimator to perform reasonably well. In the second set, $f_t = 1 + t / 8$, corresponding to a linear trend. This factor model combined with $\kappa \neq 0$ implies a particular type of non-parallel trending behavior. We vary $N \in \{50, 300\}$ and $T \in \{5, 10, 15\}$. 
+For each simulation, we draw $f$ with 15 elements and keep the last $T$ elements so that $f_T$ has the same expected value across simulations.\footnote{
+  If we did not fix the magnitude of $f_T$, then the value of non-parallel trending would grow with $T$.
+}
+Each experiment is conducted $1,500$ times. Tables \ref{tab:mc_1}--\ref{tab:mc_3} report the bias and RMSE of each estimator with respect to the overall ATT, which $\Delta = 1$ when $\tau = 0$ and $\Delta = 2$ when $\tau = 1$. 
+
+\begin{center}
+  {\sc Insert Tables \ref{tab:mc_1}, \ref{tab:mc_2}, and \ref{tab:mc_3} here}
+\end{center}
+
+As expected, all three estimators perform well when the factor is constant over time, i.e. parallel trends holds. The only time GSC and TWFE perform poorly under parallel trends is when they control for covariates in the presence of indirect effects. As we described in Section 3, including covariates linearly will absorb the indirect effect of treatment. In this case, the GSC and TWFE estimators controlling linearly for $\*x_{i,t}$ have a bias of $-1$, meaning they are unbiased for the direct effect of treatment, but biased for the overall ATT. We can also see that both TECCE and the two TWFE specifications perform well under the linear trend when $\kappa = 0$. Even though the interactive effect is non-trivial, there are no systemic differences between the treated and untreated groups, so parallel trends holds unconditionally. GSC performs poorly because it is estimating an interactive effect with a very small time series sample. As PC methods generally require $T \rightarrow \infty$ and are designed for scenarios with many time observations, we should expect GSC to perform poorly in this situation. 
+
+Controlling for a covariate can sometimes alleviate bias for TWFE and GSC. Table \ref{tab:mc_2} shows what happens when treatment is correlated with unobserved factor loadings, including the loadings in the control, but there is no indirect effect of treatment. The covariates help explain some of the non-parallel trending behavior without inducing bias. However, even in this setting, TECCE has a bias that is zero to two decimal points and outperforms both GSC and TWFE in the presence of a random trend. With TECCE, we do not need to take a stance on whether or not treatment affects the outcome through the covariates. 
+
+Table \ref{tab:mc_3} presents a best case scenario for TECCE over GSC and TWFE. This specification includes factor loadings that are correlated with treatment status and an indirect effect of $\tau = 1$. Interestingly, when $f_t = 1$, GSC and TWFE without controls performs well in estimating the overall ATT, but have fairly constant biases of $-1$ when including controls. This fact should be unsurprising when we recall that $y_{i,t}(0)$ is linear in the additive fixed effect \emph{and} the overall ATT because $\*x_{i,t}(0)$ is linear in the additive fixed effect and the indirect ATT. We again demonstrate that including a ``bad control" still allows us to estimate the direct ATT. When $f_t$ is set as a random trend, both specifications of GSC and TWFE perform poorly. Neither method adequately captures the indirect transmission of treatment through $\*x_{i,t}$. However, unlike these estimators, the TECCE estimator performs well in any of the following scenarios, making it a preferable alternative when one wishes to include covariates but is unsure how the treatment and control distributions change over time. 
+
+
+
+% \textbf{(XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX)}
+
+% We now present the results of our simulation exercise. We compare our TECCE of the overall ATT to a TWFE estimator and the generalized synthetic control (GSC) estimator of \citet{xu2017generalized}. The GSC estimator uses an imputation-based approach to recovering the untreated potential outcomes post-treatment via a principal components estimator of the factors using all untreated data. It should generally behave well when the number of pre-treatment periods is large and covariates are not affected by treatment. TWFE refers to the imputation-based estimator of \citet{Wooldridge_2021_two_way_mundlak} and \citet{borusyak2024revisiting} that estimate unit and time fixed effects using the untreated sample. This estimator should perform well only when the factor model takes the additive form and when covariates are unaffected by treatment. 
+
+% There are $N \in \{50, 300\}$ units with $T \in \{5, 10, 15\}$ periods that will vary across simulations. 
+% We consider a common intervention where one group is subject to treatment after $T_0 > 1$ the other group stays untreated. 
+% The first half of units are untreated ($D_i = 0$) and the second half are treated ($D_i = 1$).
+% Let $d_{i,t} = D_i \one \left\{ t > T_0 \right\}$ be the treatment indicator.
+
+% We have a single factor ($r = 1$) that can take one of three forms:
+% \begin{itemize}
+%   \item Constant: $f_t = 1$ for all $t$
+%   \item Linear Trend: $f_t = 1 + t/8$ 
+%   % \item Autocorrelated: $f_t = 1.5 + v_t$ where $v_t$ is an AR(1) process with autocorrelation coefficient of 0.6
+%   % KYLE: Should we include the third-factor? Two is probably fine
+% \end{itemize}
+
+% We generate our data according to the following model:
+% \begin{gather}
+%     y_{i,t} = d_{i,t} \eta + x_{i,t} \beta + f_t \alpha_i + \epsilon_{i,t}\\
+%     x_{i,t} = d_{i,t} \tau + f_t \lambda_i + v_{i,t}
+% \end{gather}
+% $\eta$ is the direct effect and since $\beta = 1$, $\tau$ is the indirect effect.
+% The factor loadings are generated as 
+% $$
+%   \begin{pmatrix} \alpha_i \\ \lambda_i \end{pmatrix}
+%   \sim 
+%   \mathcal{N}\left( 
+%     \begin{bmatrix}
+%       2 + \kappa D_i \\
+%       2 + \kappa D_i 
+%     \end{bmatrix}, 
+%     \begin{bmatrix}
+%       0.5 & 0.25 \\
+%       0.25 & 0.5
+%     \end{bmatrix}
+%   \right)
+% $$
+% where $\kappa$ is a (potential) break in factor loadings for the treated group.
+% Last, the error terms $\varepsilon_{y,it}$ and $ \varepsilon_{x,it}$ are (for now) drawn iid independent of everything as $\mathcal{N}(0, 0.4^2)$. 
+% \kyle{The results seem fine as is, but I could change this to AR(1) errors?}
+
+% The simulations vary by (1) the factor specification; (2) $\kappa \in 0, -0.5$; (3) $\tau \in 0, 0.5$. I do not vary $\eta$ because it does not change the results. 
+% For the generalized synthetic control, we set $r = 1$ to be known.
+% For both the TWFE and the GSC estimator, we run a model including $x_{it}$ and a model not including $x_{it}$ to illustrate the problem with `bad controls'.
+
+
+% \subsection*{Results}
+
+% \begin{center}
+% {\sc Insert Tables \ref{tab:mc_1}, \ref{tab:mc_2}, and \ref{tab:mc_3} here}
+% \end{center}
+
+% The results are mostly as expected. When $f_t$ is a constant, then all estimators show very little to no bias except when $\tau_x = 1$. When $\tau_x = 1$, TWFE with $x_{it}$ as a covariate is biased by $\tau_x$
+
+% When $f_t$ is a linear-trend, $\kappa = 0$, and $\tau_x = 0$, surprisingly the generalized synthetic control estimator without fixed effects is positively biased.
+
+% When $\kappa = -0.5$ (so that the treated unit experiences slower growth) and $\tau_x = 0$, the TWFE estimators are biased as expected (controlling for $x_{it}$ seems to help slightly). 
+% But strangely, gsynth without unit FE is biased positively.
+
+
+
+
+
+
+
+
+
+
+
+\section{Empirical illustration}
+
+Since its membership in the WTO in 2001, China's role in the world economy has grown enormously. As a result, the pro-competitive effects of China's WTO accession have attracted considerable attention, so much so that there is by now a separate strand of literature devoted to them. The bulk of the evidence seems to suggest that both the level and dispersion of markups have gone down following the WTO entry, and that this development has had important welfare effects (\citealp{Hsu_etal_2020}).
+
+The standard approach to studying WTO membership on market characteristics is to exploit differences in tariffs across industries. For example, one can split industries into a treatment and a control group, where the former is relatively more exposed to the WTO accession. Given that pre-WTO tariffs varied greatly across industries, industries that had previously been protected with high tariffs experienced greater tariff reduction. They should therefore be relatively more exposed to the ``treatment". The effect of the WTO accession is then estimated via a difference-in-differences-style OLS regression in which markup is regressed onto a dummy variable that takes on the value one for treated industries in post-WTO periods, control variables, and industry and time fixed effects.
+
+While popular, the standard approach to WTO evaluation has (at least) two drawbacks. First, it requires the parallel trends assumption, which may not be realistic in this context. A commonly cited reason is that certain industries have more lobbying power for protection and are thus less responsive to changes in the macroeconomy. Tariffs may be granted to domestic special interest groups, the pressure of which may vary over time \citep{Xiang_etal_2017,Fan_etal_2018,Deng_etal_2018}. Differences in lobbying power may therefore cause the treatment and control groups to differ systematically over time, even if China had not joined the WTO in 2001.\footnote{Similarly, policymakers may lower tariffs selectively in industries that are able to compete with relatively less expensive imports, for example, in industries experiencing a productivity boom \citep{Brandt_etal_2017}.} Because many sources of possible non-parallel trending are unknown and lack good proxies, it is common to control for industry-specific linear time trends \citep{Liu_Qiu_2016,Mao_Xu_2019}. Deterministic trends can account for some non-parallel trending but not all. Moreover, results tend to be highly sensitive to the inclusion of such trends.\footnote{Some studies include common controls that are thought to be highly correlated with various kinds of protectionism, such as wage rates, employment, exports, and imports \citep{Hsu_etal_2020}. Again the results tend to be very sensitive.}
+
+The second main drawback of the standard approach is that it cannot handle covariates that are affected by treatment. This issue is important because the literature has identified many channels through which the WTO accession may affect markups \citep{Brandt_etal_2017,Fan_etal_2018,Deng_etal_2018,Mao_Xu_2019,Liu_Ma_2021}. Two common examples are the price- and cost-change channels. Markup is defined as the ratio of price to marginal cost. Thus, markup changes can come from price changes, cost changes, or both. It is therefore common to include one of these variables as a covariate, and to estimate the effect of the WTO accession on it to understand the causal mechanism of treatment \citep{lu2015trade,Fan_etal_2018,Mao_Xu_2019}. But then we know from Section 3 that treatment-affected covariates require special treatment or else the estimated ATT will be misleading. Specifically, the inclusion of such covariates will absorb some effect of treatment. The following quotation, taken from \citet[page 116]{Fan_etal_2018}, suggests that researchers are aware of this problem: ``If the marginal-cost channel indeed plays a role, then once the marginal costs are included as an explanatory variable, we would witness attenuation of the impact of input tariffs on markups."
+
+
+The present paper is not the first to point to these shortcomings, but it is the first to consider an econometric approach that is designed to deal with both. The TECCE approach allows for interactive fixed effects in which there may be unobserved differences between cross-sectional units that change over time as a result of common shocks. The parallel trend condition is therefore not required, which is a substantial advantage when compared to the standard fixed effects-based approach. Another advantage of the approach that we exploit in this section is that it not only allows for covariates that may be affected by treatment but that it makes it possible to assess the relative importance of the direct and indirect treatment channels. It should therefore be well suited for the problem at hand.
+
+The data set that we use is taken from \citet{lu2015trade} and comprises 164 industries (three-digit Chinese industrial classification) observed over the 1998--2005 period.\footnote{See also \citet{Deng_etal_2018} who use the same data.} The smallness of $T$ here, which is a feature of most data sets in the literature, means that it is important to use techniques that work even if $T$ is not large. The Monte Carlo results reported in Section 5 suggest that the proposed TECCE approach should work well. Following \citet{lu2015trade}, the outcome variable is markup dispersion, as measured by the markup Theil index (in logs). Industries are split in half into the treatment and control groups based on whether they faced tariffs above or below the sample median in 2001.
+
+We focus on the \citet{lu2015trade} study in part because of their analysis of the price- and cost-change channels (see their Section E). The authors use the TFP Theil index as a proxy for marginal costs. They argue that its inclusion allows them to partially isolate the price-change channel. In order to assess the ATT of the WTO accession on costs, the authors run a second OLS regression with the TFP Theil index as dependent variable and markup dispersion as a covariate. The estimated ATTs are significant, which is taken as evidence that both channels are operational. The purpose of this illustration is to assess whether or not the treatment affects the controls.
+
+The above discussion suggests that in terms of the notation of Section 2, $y_{i,t}$ is the markup Theil index and $\*x_{i,t}$ is the TFP Theil index. The estimated factors in $\widehat{\*f}_t$ are made up of the cross-sectional averages of these variables. A constant is included as an observed factor (as explained in Section 4), which is tantamount to allowing for industry fixed effects. We therefore allow for one known and two unknown factors. In order to assess if this is enough, we apply the rank classifier of \citet{De_Vos_2024test}. The estimated number of factors and rank of the matrix of average factor loadings are equal to one and two, respectively, suggesting that Assumption 7 is met.
+
+\begin{center}
+{\sc Insert Figure \ref{fig:trade} about here}
+\end{center}
+
+The estimated overall and indirect ATTs are reported in Figure \ref{fig:trade}. The estimates are reported for each year and averaged over all the post- and pre-treatment periods, as is customary in the literature. Both types are reported together with 95\% confidence intervals. We first note that both the total and indirect ATT estimates are negative, suggesting that markup dispersion decreased more in industries that had relatively high tariffs in 2001. Given that industries with higher initial tariffs experienced greater tariff reduction, these results imply that the WTO accession reduced markup dispersion. We also note that all pre-treatment estimates are close to zero, which implies that our method adequately captures the non-parallel trending in markups before 2001.
+
+While insignificant in 2002 and 2003, the year-specific total ATTs reported in Figure \ref{fig:trade} (a) are significant in 2004 and 2005. The point estimate in 2003 is notably noisy. A possible reason for this is that the industry classification system changed in 2003, as noted by, for example, \citet{lu2015trade} and \citet{Chen_etal_2019}. The estimated average ATT during the whole post-treatment period is about $-0.1$ and significant, consistent with the results of \citet{Chen_etal_2019}.
+
+We also look at the estimated indirect ATT to understand the impact of productivity changes on markups. According to the results reported in Figure \ref{fig:trade} (b), the estimated IATTs are negative and significant in the post-treatment period and insignificant in the pre-treatment period. \citet{lu2015trade} estimate the ATT on the TFP Theil index and find it to be significantly negative; however, their approach does not allow them to infer whether this negative response of the TFP Theil index has an effect on the markup Theil index. According to our results, the estimated IATTs are sizable, accounting for almost half of the total ATTs. This result is important in itself, but also for what it means for the results in \citet{lu2015trade}, which are based on including the TFP Theil index as a covariate. In particular, we know from before that this type of conditioning will absorb the indirect effect. In this case, since both ATTs are estimated to be negative, and the magnitude of the indirect ATTs are about half of the overall ATTs, conditioning on the TFP Theil index will lead to an underestimation of the total ATTs by about 50\%.
+
+\section{Conclusion}
+
+In this paper, we propose a new estimator of the ATT, dubbed ``TECCE", that is applicable in panels with few time periods when the parallel trends condition fails because of the presence of interactive fixed effects. It can incorporate time- and unit-varying covariates that load on the same factors as the outcome variable. This assumption allows us to use the cross-sectional averages of the observables to estimate the untreated potential outcomes in post-treatment time periods. The covariates are allowed to depend on the treatment status so that TECCE makes it possible separate the direct ATT that is unrelated to the covariates from the indirect ATT that works through those covariates. The estimator is shown to be consistent and asymptotically normal, thereby enabling standard inference, provided only that the number of cross-sectional units, $N$, is large. This condition is a great advantage in practice because in the literature, many data sets involve only a few time periods $T$. We consider one such small-$T$ data set in our empirical illustration and estimate the effect of China's accession into the WTO on the dispersion of industry-level markups. Our results suggest that not adequately capturing changes in productivity leads to drastic underestimation of trade liberalization on markups. 
+
+
+
+
+
+
+
+
+\newpage
+
+\bibliography{references}
+
+\newpage
+
+
+
+
+
+\begin{table}[tbh]
+  \caption{Monte Carlo results with $\kappa = 0$ and $\tau = 0$.}
+  \label{tab:mc_1}
+  \begin{center}\begin{spacing}{1.1}
+    \begin{tabular}{
+      @{} r @{\extracolsep{6pt}} r 
+      @{\extracolsep{12pt}} r @{\extracolsep{6pt}} rrrrr 
+      @{}
+    }
+      \toprule  
+      & & & \multicolumn{3}{c}{\small GSC}  & \multicolumn{2}{c}{\small TWFE} \\ 
+      \cline{4-6} \cline{7-8}
+      \multicolumn{1}{c}{\small $N$} & \multicolumn{1}{c}{\small $T$} & 
+      \multicolumn{1}{c}{\small TECCE} & \multicolumn{1}{c}{\small No Controls} & \multicolumn{1}{c}{\small + $\*x_{i,t}$} & \multicolumn{1}{c}{\small + TWFE} & \multicolumn{1}{c}{\small No Controls} & \multicolumn{1}{c}{\small + $\*x_{i,t}$} \\ 
+      \midrule
+
+      \\[-8pt]
+      \multicolumn{7}{c}{\small\textbf{Factor specification:} $f_t = 1$}
+      \\[4pt]
+
+      \input{tables/simulation/tab-fact_constant-dgp_1-eps_auto_0.tex}
+
+      \\[-6pt]
+      \multicolumn{7}{c}{\small\textbf{Factor specification:} $f_t = 1 + t/8$}
+      \\[4pt]
+
+      \input{tables/simulation/tab-fact_linear_trend-dgp_1-eps_auto_0.tex}
+
+%       \\[-6pt]
+%       \multicolumn{7}{c}{\small\textbf{Factor specification:} $f_t = 1.5 + v_t$}
+%       \\[4pt]
+% 
+%       \input{tables/simulation/tab-fact_autocorrelated-dgp_1-eps_auto_0.tex}
+      
+      \bottomrule
+    \end{tabular}
+    \end{spacing}\end{center}
+    \vspace{-.75cm}
+    {\footnotesize\emph{Notes:} This table reports the bias and RMSE under different simulation specifications. Each row presents the bias and the RMSE in brackets below. The TECCE estimator is this paper's proposed estimator. GSC corresponds to the generalized synthetic control estimator from \citet{xu2017generalized}. TWFE corresponds to the imputation estimator of \citet{borusyak2024revisiting} which uses a two-way fixed effect model. The column labeled No Controls does not control linearly for $x_{it}$ while the column labeled $+ x_{it}$ does. 1,500 simulation draws.}
+
+\end{table}
+
+\begin{table}[tbh]
+  \caption{Monte Carlo results with $\kappa = -0.5$ and $\tau = 0$.}
+  \label{tab:mc_2}
+  \begin{center}\begin{spacing}{1.1}
+    \begin{tabular}{
+      @{} r @{\extracolsep{6pt}} r 
+      @{\extracolsep{12pt}} r @{\extracolsep{6pt}} rrrrr 
+      @{}
+    }
+      \toprule  
+      & & & \multicolumn{3}{c}{\small GSC}  & \multicolumn{2}{c}{\small TWFE} \\ 
+      \cline{4-6} \cline{7-8}
+      \multicolumn{1}{c}{\small $N$} & \multicolumn{1}{c}{\small $T$} & 
+      \multicolumn{1}{c}{\small TECCE} & \multicolumn{1}{c}{\small No Controls} & \multicolumn{1}{c}{\small + $\*x_{i,t}$} & \multicolumn{1}{c}{\small + TWFE} & \multicolumn{1}{c}{\small No Controls} & \multicolumn{1}{c}{\small + $\*x_{i,t}$} \\ 
+      \midrule
+
+      \\[-8pt]
+      \multicolumn{7}{c}{\small\textbf{Factor specification:} $f_t = 1$}
+      \\[4pt]
+
+      \input{tables/simulation/tab-fact_constant-dgp_2-eps_auto_0.tex}
+
+      \\[-6pt]
+      \multicolumn{7}{c}{\small\textbf{Factor specification:} $f_t = 1 + t/8$}
+      \\[4pt]
+
+      \input{tables/simulation/tab-fact_linear_trend-dgp_2-eps_auto_0.tex}
+
+      % \\[-6pt]
+      % \multicolumn{7}{c}{\small\textbf{Factor specification:} $f_t = 1.5 + v_t$}
+      % \\[4pt]
+
+      % \input{tables/simulation/tab-fact_autocorrelated-dgp_2-eps_auto_0.tex}
+      
+      \bottomrule
+    \end{tabular}
+
+    \medskip
+      \end{spacing}\end{center}
+      \vspace{-.75cm}
+    {\footnotesize\emph{Notes:} This table reports the bias and RMSE under different simulation specifications. Each row presents the bias and the RMSE in brackets below. The TECCE estimator is this paper's proposed estimator. GSC corresponds to the generalized synthetic control estimator from \citet{xu2017generalized}. TWFE corresponds to the imputation estimator of \citet{borusyak2024revisiting} which uses a two-way fixed effect model. The column labeled No Controls does not control linearly for $x_{it}$ while the column labeled $+ x_{it}$ does. 1,500 simulation draws.}
+
+\end{table}
+
+\begin{table}[tbh]
+  \caption{Monte Carlo results with $\kappa = -0.5$ and $\tau = 0$ with autocorrelated $\varepsilon$.}
+  \label{tab:mc_2_autocorrelated}
+  \begin{center}\begin{spacing}{1.1}
+    \begin{tabular}{
+      @{} r @{\extracolsep{6pt}} r 
+      @{\extracolsep{12pt}} r @{\extracolsep{6pt}} rrrrr 
+      @{}
+    }
+      \toprule  
+      & & & \multicolumn{3}{c}{\small GSC}  & \multicolumn{2}{c}{\small TWFE} \\ 
+      \cline{4-6} \cline{7-8}
+      \multicolumn{1}{c}{\small $N$} & \multicolumn{1}{c}{\small $T$} & 
+      \multicolumn{1}{c}{\small TECCE} & \multicolumn{1}{c}{\small No Controls} & \multicolumn{1}{c}{\small + $\*x_{i,t}$} & \multicolumn{1}{c}{\small + TWFE} & \multicolumn{1}{c}{\small No Controls} & \multicolumn{1}{c}{\small + $\*x_{i,t}$} \\ 
+      \midrule
+
+      \\[-8pt]
+      \multicolumn{7}{c}{\small\textbf{Factor specification:} $f_t = 1$}
+      \\[4pt]
+
+      \input{tables/simulation/tab-fact_constant-dgp_2-eps_auto_1.tex}
+
+      \\[-6pt]
+      \multicolumn{7}{c}{\small\textbf{Factor specification:} $f_t = 1 + t/8$}
+      \\[4pt]
+
+      \input{tables/simulation/tab-fact_linear_trend-dgp_2-eps_auto_1.tex}
+
+      % \\[-6pt]
+      % \multicolumn{7}{c}{\small\textbf{Factor specification:} $f_t = 1.5 + v_t$}
+      % \\[4pt]
+
+      % \input{tables/simulation/tab-fact_autocorrelated-dgp_2-eps_auto_1.tex}
+      
+      \bottomrule
+    \end{tabular}
+
+    \medskip
+      \end{spacing}\end{center}
+      \vspace{-.75cm}
+    {\footnotesize\emph{Notes:} This table reports the bias and RMSE under different simulation specifications. Each row presents the bias and the RMSE in brackets below. The TECCE estimator is this paper's proposed estimator. GSC corresponds to the generalized synthetic control estimator from \citet{xu2017generalized}. TWFE corresponds to the imputation estimator of \citet{borusyak2024revisiting} which uses a two-way fixed effect model. The column labeled No Controls does not control linearly for $x_{it}$ while the column labeled $+ x_{it}$ does. 1,500 simulation draws.}
+
+\end{table}
+
+\begin{table}[tbh]
+  \caption{Monte Carlo results with $\kappa = -0.5$ and $\tau = 1$.}
+  \label{tab:mc_3}
+  \begin{center}\begin{spacing}{1.1}
+    \begin{tabular}{
+      @{} r @{\extracolsep{6pt}} r 
+      @{\extracolsep{12pt}} r @{\extracolsep{6pt}} rrrrr 
+      @{}
+    }
+      \toprule  
+      & & & \multicolumn{3}{c}{\small GSC}  & \multicolumn{2}{c}{\small TWFE} \\ 
+      \cline{4-6} \cline{7-8}
+      \multicolumn{1}{c}{\small $N$} & \multicolumn{1}{c}{\small $T$} & 
+      \multicolumn{1}{c}{\small TECCE} & \multicolumn{1}{c}{\small No Controls} & \multicolumn{1}{c}{\small + $\*x_{i,t}$} & \multicolumn{1}{c}{\small + TWFE} & \multicolumn{1}{c}{\small No Controls} & \multicolumn{1}{c}{\small + $\*x_{i,t}$} \\ 
+      \midrule
+
+      \\[-8pt]
+      \multicolumn{7}{c}{\small\textbf{Factor specification:} $f_t = 1$}
+      \\[4pt]
+
+      \input{tables/simulation/tab-fact_constant-dgp_3-eps_auto_0.tex}
+
+      \\[-6pt]
+      \multicolumn{7}{c}{\small\textbf{Factor specification:} $f_t = 1 + t/8$}
+      \\[4pt]
+
+      \input{tables/simulation/tab-fact_linear_trend-dgp_3-eps_auto_0.tex}
+
+      % \\[-6pt]
+      % \multicolumn{7}{c}{\small\textbf{Factor specification:} $f_t = 1.5 + v_t$}
+      % \\[4pt]
+
+      % \input{tables/simulation/tab-fact_autocorrelated-dgp_3-eps_auto_0.tex}
+      
+      \bottomrule
+    \end{tabular}
+
+    \end{spacing}\end{center}
+    \vspace{-.75cm}
+    {\footnotesize\emph{Notes:} This table reports the bias and RMSE under different simulation specifications. Each row presents the bias and the RMSE in brackets below. The TECCE estimator is this paper's proposed estimator. GSC corresponds to the generalized synthetic control estimator from \citet{xu2017generalized}. TWFE corresponds to the imputation estimator of \citet{borusyak2024revisiting} which uses a two-way fixed effect model. The column labeled No Controls does not control linearly for $x_{it}$ while the column labeled $+ x_{it}$ does. 1,500 simulation draws.}
+  
+\end{table}
+
+
+\begin{figure}
+    \caption{Estimated ATTs of China's WTO accession in 2001 on the markup Theil index.}
+    \label{fig:trade}
+
+    \begin{subfigure}[b]{\textwidth}
+        \caption{Estimated total ATT}\vspace{-6pt}
+        \input{figures/trade-cce_est.tex}
+    \end{subfigure}
+
+    \vspace{-9pt}
+    \begin{subfigure}[b]{\textwidth}
+        \caption{Estimated indirect ATT via TFP dispersion}\vspace{-7pt}
+        \input{figures/trade-cce_mediated_est.tex}
+    \end{subfigure}
+    
+    {\footnotesize\emph{Notes:} The figures present ATT estimates and 95\% confidence intervals for the effect of China's WTO accession in 2001 on the dispersion of markups as measured by the markup Theil index. The treatment group comprise all industries that in 2001 had above-median tariff rates. Estimates are computed using the TECCE estimator with the TFP Theil index as a covariate. A constant is included as an observed factor. Figure (a) presents estimates of the total ATT and figure (b) presents the estimated indirect ATT operating through the TFP Theil index. $\hat{\beta}$ in figure (b) refers to the estimated slope on the TFP Theil index in the markup Theil index regression.}
+\end{figure}
+
+
+
+
+
+\end{document}
+
+
+
+
