@@ -4,12 +4,7 @@ library(tinytable)
 library(here)
 library(kfbmisc) # remotes::install_github("kylebutts/kfbmisc")
 
-# fs::dir_create(here("out/tables/simulation/"))
-
-# sim_results <- here("data/simulations/sim_results.csv") |>
-#   read_csv(show_col_types = FALSE)
-
-sim_results <- here("data/simulations-new/sim_results.csv") |>
+sim_results <- here("data/simulations/sim_results.csv") |>
   read_csv(show_col_types = FALSE) |>
   filter(estimator != "gsynth + unit FE") |> # Don't use for now
   mutate(
@@ -22,13 +17,7 @@ sim_results <- here("data/simulations-new/sim_results.csv") |>
     ),
   )
 
-# res <- sim_results |>
-#   filter(
-#     fact_label == "Linear Trend",
-#     avg_diff_in_loading == -0.5,
-#     tau_x == 1
-#   )
-
+# %%
 make_table <- function(res, tbl_caption) {
   table_order <- c(
     "TECCE" = "TECCE",
@@ -80,7 +69,6 @@ make_table <- function(res, tbl_caption) {
   return(tab)
 }
 
-# %%
 make_panels <- function(sim_results) {
   nested <- sim_results |>
     arrange(dgp_num) |>

@@ -4,9 +4,11 @@ library(tinytable)
 library(here)
 library(kfbmisc) # remotes::install_github("kylebutts/kfbmisc")
 
-# sim_results <- here("data/simulations/sim_results.csv") |>
-#   read_csv(show_col_types = FALSE)
+sim_results <- here("data/simulations/sim_results.csv") |>
+  read_csv(show_col_types = FALSE)
 
+
+# %%
 make_table <- function(res) {
   estimator_order <- c(
     "TECCE",
@@ -41,9 +43,9 @@ make_table <- function(res) {
     (\(x) x@body)()
 }
 
-# %%
 make_panels <- function(sim_results) {
   results_wider <- sim_results |>
+    filter(T %in% c(5, 15)) |>
     select(
       N,
       T,
@@ -105,20 +107,20 @@ make_panels <- function(sim_results) {
 
       tab_data <- tab_data |> select(-statistic)
       tab_data |>
-        tt(
+        tinytable::tt(
           caption = tbl_caption
         ) |>
-        format_tt(
+        tinytable::format_tt(
           i = which(!rmse_rows),
           j = 3:ncol(tab_data),
           sprintf = "%0.2f"
         ) |>
-        format_tt(
+        tinytable::format_tt(
           i = which(rmse_rows),
           j = 3:ncol(tab_data),
           sprintf = "[%0.3f]"
         ) |>
-        format_tt(
+        tinytable::format_tt(
           i = which(rmse_rows),
           j = c("N", "T"),
           fn = function(x) {

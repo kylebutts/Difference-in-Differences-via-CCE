@@ -7,6 +7,20 @@ rAR <- function(T, rho = 0.75) {
 }
 
 # %%
+convert_to_data_frame <- function(y, X, d_it) {
+  N <- ncol(y)
+  T <- nrow(y)
+  df <- data.frame(
+    id = rep(1:N, each = T),
+    t = rep(1:T, times = N),
+    y = c(y),
+    X = c(X),
+    treat = c(d_it)
+  )
+}
+
+
+# %%
 library(fixest)
 est_twfe_imputation <- function(y, X, d_it) {
   df <- convert_to_data_frame(y, X, d_it)
@@ -58,77 +72,213 @@ est_tecce <- function(y, X, d_it) {
   return(est)
 }
 
-# %%
-library(gsynth)
-source(here::here("code/simulations/src/gsynth_remove_error.R"))
-est_gsynth <- function(y, X, d_it, r = 1) {
-  df <- convert_to_data_frame(y, X, d_it)
-  res <- gsynth(
-    data = df,
-    Y = "y",
-    D = "treat",
-    index = c("id", "t"),
-    r = r,
-    force = "none",
-    min.T0 = 4,
-    CV = FALSE,
-    se = FALSE
-  )
-  est <- res$att.avg
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+## Xu by hand
+est_xu_with_X <- function(y, X, d_it, r = 1) {
+  T <- nrow(y)
+  N <- ncol(y)
+  k <- ncol(X) / N
 
-  return(est)
+  # Bai (2009) procedure to estimate factors and loadings using control group
+  control_idx <- which(colSums(d_it) == 0)
+  y_control <- y[, control_idx]
+  X_control <- X[, control_idx]
+
+  ## Initial estimate of beta, factors, and loadings
+  vy <- as.vector(y_control)
+  ## Temp: subtract grand mean
+  ## vy <- vy - mean(vy)
+  vx <- as.vector(X_control)
+  ## Temp: subtract grand mean
+  ## vx <- vx - mean(vx)
+  inv_xx <- solve(crossprod(vx, vx))
+  b_0 <- inv_xx %*% crossprod(vx, vy)
+  w <- matrix(vy - vx %*% b_0, ncol = length(control_idx), byrow = FALSE)
+
+  svd_res <- svd(w %*% t(w))
+  f <- svd_res$u[, 1:r, drop = FALSE] * sqrt(T)
+  l <- t(w) %*% f / T
+  b <- inv_xx %*% crossprod(vx, vy - as.vector(f %*% t(l)))
+
+  ## Iterate until convergence
+  j <- 1
+  while (max(abs(b - b_0)) > 1e-3 && j <= 1000) {
+    b_0 <- b
+    w <- matrix(vy - vx %*% b_0, ncol = length(control_idx), byrow = FALSE)
+    svd_res <- svd(w %*% t(w))
+    f <- svd_res$u[, 1:r, drop = FALSE] * sqrt(T)
+    l <- t(w) %*% f / T
+    b <- inv_xx %*% crossprod(vx, vy - as.vector(f %*% t(l)))
+    j <- j + 1
+  }
+
+  # Estimate treatment effects
+  T_0 <- max(which(rowSums(d_it) == 0))
+  f_0 <- f[1:T_0, , drop = FALSE]
+  treated_idx <- which(colSums(d_it) > 0)
+
+  yh <- matrix(NA, nrow = T, ncol = length(treated_idx))
+  for (i in seq_along(treated_idx)) {
+    unit_idx <- treated_idx[i]
+    X_unit <- X[, (unit_idx - 1) * k + (1:k), drop = FALSE]
+    ai <- solve(
+      crossprod(f_0),
+      crossprod(
+        f_0,
+        y[1:T_0, unit_idx] -
+          X[1:T_0, (unit_idx - 1) * k + (1:k), drop = FALSE] %*% b
+      )
+    )
+    yh[, i] <- X_unit %*% b + f %*% ai
+  }
+
+  di <- y[, treated_idx] - yh
+  d <- rowMeans(di)
+
+  # Overall ATT (average of post-treatment effects)
+  post_period <- (T_0 + 1):T
+  overall_att <- mean(d[post_period])
+
+  return(overall_att)
 }
-est_gsynth_with_x <- function(y, X, d_it, r = 1) {
+
+est_xu <- function(y, d_it, r = 1) {
+  T <- nrow(y)
+  N <- ncol(y)
+
+  # Bai (2009) procedure to estimate factors and loadings using control group
+  control_idx <- which(colSums(d_it) == 0)
+  y_control <- y[, control_idx]
+
+  ## Initial estimate of factors and loadings
+  vy <- as.vector(y_control)
+  w <- matrix(vy, ncol = length(control_idx), byrow = FALSE)
+
+  svd_res <- svd(w %*% t(w))
+  f <- svd_res$u[, 1:r, drop = FALSE] * sqrt(T)
+  l <- t(w) %*% f / T
+
+  # Estimate treatment effects
+  T_0 <- max(which(rowSums(d_it) == 0))
+  f_0 <- f[1:T_0, , drop = FALSE]
+  treated_idx <- which(colSums(d_it) > 0)
+
+  yh <- matrix(NA, nrow = T, ncol = length(treated_idx))
+  for (i in seq_along(treated_idx)) {
+    unit_idx <- treated_idx[i]
+    ai <- solve(
+      crossprod(f_0),
+      crossprod(
+        f_0,
+        y[1:T_0, unit_idx]
+      )
+    )
+    yh[, i] <- f %*% ai
+  }
+
+  di <- y[, treated_idx] - yh
+  d <- rowMeans(di)
+
+  # Overall ATT (average of post-treatment effects)
+  post_period <- (T_0 + 1):T
+  overall_att <- mean(d[post_period])
+
+  return(overall_att)
+}
+
+
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+test_xu <- function(y, X, d_it, r = 1) {
+  T <- nrow(y)
+  N <- ncol(y)
+  k <- ncol(X) / N
+
+  # Bai (2009) procedure to estimate factors and loadings using control group
+  control_idx <- which(colSums(d_it) == 0)
+  y_control <- y[, control_idx]
+  X_control <- X[, control_idx]
+
+  ## Initial estimate of beta, factors, and loadings
+  vy <- as.vector(y_control)
+  ## Temp: subtract grand mean
+  ## vy <- vy - mean(vy)
+  vx <- as.vector(X_control)
+  ## Temp: subtract grand mean
+  ## vx <- vx - mean(vx)
+
+  inv_xx <- solve(crossprod(vx, vx))
+  b_0 <- inv_xx %*% crossprod(vx, vy)
+  w <- matrix(vy - vx %*% b_0, ncol = length(control_idx), byrow = FALSE)
+
+  svd_res <- svd(w %*% t(w))
+  f <- svd_res$u[, 1:r, drop = FALSE] * sqrt(T)
+  l <- t(w) %*% f / T
+  b <- inv_xx %*% crossprod(vx, vy - as.vector(f %*% t(l)))
+
+  ## Iterate until convergence
+  j <- 1
+  while (max(abs(b - b_0)) > 1e-3 && j <= 1000) {
+    b_0 <- b
+    w <- matrix(vy - vx %*% b_0, ncol = length(control_idx), byrow = FALSE)
+    svd_res <- svd(w %*% t(w))
+    f <- svd_res$u[, 1:r, drop = FALSE] * sqrt(T)
+    l <- t(w) %*% f / T
+    b <- inv_xx %*% crossprod(vx, vy - as.vector(f %*% t(l)))
+    j <- j + 1
+  }
+
+  # Estimate treatment effects
+  T_0 <- max(which(rowSums(d_it) == 0))
+  f_0 <- f[1:T_0, , drop = FALSE]
+  treated_idx <- which(colSums(d_it) > 0)
+
+  yh <- matrix(NA, nrow = T, ncol = length(treated_idx))
+  for (i in seq_along(treated_idx)) {
+    unit_idx <- treated_idx[i]
+    X_unit <- X[, (unit_idx - 1) * k + (1:k), drop = FALSE]
+    ai <- solve(
+      crossprod(f_0),
+      crossprod(
+        f_0,
+        y[1:T_0, unit_idx] -
+          X[1:T_0, (unit_idx - 1) * k + (1:k), drop = FALSE] %*% b
+      )
+    )
+    yh[, i] <- X_unit %*% b + f %*% ai
+  }
+
+  di <- y[, treated_idx] - yh
+  d <- rowMeans(di)
+
+  # Overall ATT (average of post-treatment effects)
+  post_period <- (T_0 + 1):T
+  overall_att <- mean(d[post_period])
+
+  Y.ct.bar <- rowMeans(yh)
+
+  return(list(beta_xu = b, Y.ct.bar_xu = Y.ct.bar))
+}
+
+test_gsynth_with_x <- function(y, X, d_it, r = 1) {
   df <- convert_to_data_frame(y, X, d_it)
-  res <- gsynth(
+  res <- gsynth::gsynth(
     data = df,
     Y = "y",
     D = "treat",
     X = "X",
     index = c("id", "t"),
-    r = r,
     force = "none",
-    min.T0 = 4,
-    CV = FALSE,
-    se = FALSE
-  )
-  est <- res$att.avg
-
-  return(est)
-}
-est_gsynth_unit_fe <- function(y, X, d_it, r = 1) {
-  df <- convert_to_data_frame(y, X, d_it)
-  res <- gsynth(
-    data = df,
-    Y = "y",
-    D = "treat",
-    index = c("id", "t"),
+    estimator = "ife",
     r = r,
-    force = "unit",
-    min.T0 = 4,
     CV = FALSE,
+    min.T0 = 4,
     se = FALSE
   )
-  est <- res$att.avg
 
-  return(est)
-}
-est_gsynth_twfe <- function(y, X, d_it, r = 1) {
-  df <- convert_to_data_frame(y, X, d_it)
-  res <- gsynth(
-    data = df,
-    Y = "y",
-    D = "treat",
-    index = c("id", "t"),
-    r = r,
-    force = "two-way",
-    min.T0 = 4,
-    CV = FALSE,
-    se = FALSE
-  )
-  est <- res$att.avg
-
-  return(est)
+  return(list(
+    beta_gsynth = res$beta,
+    Y.ct.bar_gsynth = res$Y.bar[, "Y.ct.bar"]
+  ))
 }
 
 
@@ -217,22 +367,57 @@ run_simulations <- function(
     # T X N matrix of X_it
     X <- F %*% t(lambda_i) + d_it * tau_x + eps_x
 
-    # T X N matrix of y_it(0)
+    # T X N matrix of y_it
     y <- X * beta + F %*% t(alpha_i) + d_it * eta_y + eps_y
+    y0 <- X * beta + F %*% t(alpha_i) + eps_y
 
     tau_hat_1 <- est_tecce(y, X, d_it)
-    tau_hat_2 <- est_gsynth(y, X, d_it, r = 1)
-    tau_hat_3 <- est_gsynth_with_x(y, X, d_it, r = 1)
-    tau_hat_4 <- est_gsynth_twfe(y, X, d_it, r = 1)
-    tau_hat_5 <- est_twfe_imputation(y, X, d_it)
-    tau_hat_6 <- est_twfe_imputation_cov(y, X, d_it)
+    tau_hat_2 <- est_xu(y, d_it, r = 1)
+    tau_hat_3 <- est_xu_with_X(y, X, d_it, r = 1)
+    tau_hat_4 <- est_twfe_imputation(y, X, d_it)
+    tau_hat_5 <- est_twfe_imputation_cov(y, X, d_it)
 
     bias1[is] <- (tau_hat_1 - true_att)
     bias2[is] <- (tau_hat_2 - true_att)
     bias3[is] <- (tau_hat_3 - true_att)
     bias4[is] <- (tau_hat_4 - true_att)
     bias5[is] <- (tau_hat_5 - true_att)
-    bias6[is] <- (tau_hat_6 - true_att)
+
+    ## Testing
+    # res_test_xu <- test_xu(y, X, d_it, r = 1)
+    # cat("xu: \n")
+    # print(res_test_xu)
+    # cat("\n")
+    #
+    # res_test_gsynth <- test_gsynth_with_x(y, X, d_it, r = 1)
+    # cat("gsynth: \n")
+    # print(res_test_gsynth)
+    # cat("\n")
+    #
+    # res_test_gsynth_r_2 <- test_gsynth_with_x(y, X, d_it, r = 2)
+    # cat("gsynth: \n")
+    # print(res_test_gsynth)
+    # cat("\n")
+    #
+    # ggplot() +
+    # geom_point(aes(x = 1:T, y = res_test_xu$Y.ct.bar_xu, color = "By hand")) +
+    # geom_point(aes(
+    # x = 1:T,
+    # y = res_test_gsynth$Y.ct.bar_gsynth,
+    # color = "gsynth"
+    # )) +
+    # geom_point(aes(
+    # x = 1:T,
+    # y = res_test_gsynth_r_2$Y.ct.bar_gsynth,
+    # color = "gsynth (r = 2)"
+    # )) +
+    # geom_point(aes(
+    # x = 1:T,
+    # y = rowMeans(y0[, D_i == 1]),
+    # color = "true trend for treated"
+    # )) +
+    # labs(x = NULL, color = NULL, y = "\\bar{Y}(0) for treated units") +
+    # kfbmisc::theme_kyle(base_size = 14, legend = "top")
   }
 
   mean_biases <- c(
@@ -240,40 +425,35 @@ run_simulations <- function(
     mean(bias2),
     mean(bias3),
     mean(bias4),
-    mean(bias5),
-    mean(bias6)
+    mean(bias5)
   )
   mean_abs_biases <- c(
     mean(abs(bias1)),
     mean(abs(bias2)),
     mean(abs(bias3)),
     mean(abs(bias4)),
-    mean(abs(bias5)),
-    mean(abs(bias6))
+    mean(abs(bias5))
   )
   mean_rmses <- c(
     sqrt(mean(bias1^2)),
     sqrt(mean(bias2^2)),
     sqrt(mean(bias3^2)),
     sqrt(mean(bias4^2)),
-    sqrt(mean(bias5^2)),
-    sqrt(mean(bias6^2))
+    sqrt(mean(bias5^2))
   )
   bias_emp_ci_lower <- unname(c(
     quantile(bias1, 0.025),
     quantile(bias2, 0.025),
     quantile(bias3, 0.025),
     quantile(bias4, 0.025),
-    quantile(bias5, 0.025),
-    quantile(bias6, 0.025)
+    quantile(bias5, 0.025)
   ))
   bias_emp_ci_upper <- unname(c(
     quantile(bias1, 0.975),
     quantile(bias2, 0.975),
     quantile(bias3, 0.975),
     quantile(bias4, 0.975),
-    quantile(bias5, 0.975),
-    quantile(bias6, 0.975)
+    quantile(bias5, 0.975)
   ))
 
   ## Asymptotic confidence interval vs. empirical
@@ -285,7 +465,7 @@ run_simulations <- function(
       "TECCE",
       "gsynth",
       "gsynth with Control",
-      "gsynth with TWFE",
+      # "xu",
       "TWFE via OLS",
       "TWFE with Control"
     ),
@@ -309,16 +489,4 @@ run_simulations <- function(
   res$true_att = true_att
 
   return(res)
-}
-
-convert_to_data_frame <- function(y, X, d_it) {
-  N <- ncol(y)
-  T <- nrow(y)
-  df <- data.frame(
-    id = rep(1:N, each = T),
-    t = rep(1:T, times = N),
-    y = c(y),
-    X = c(X),
-    treat = c(d_it)
-  )
 }

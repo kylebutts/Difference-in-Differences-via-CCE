@@ -4,7 +4,7 @@ library(future)
 library(furrr)
 library(progressr)
 
-source(here("code/simulations-new/sim_helpers.R"))
+source(here("code/simulations/sim_helpers.R"))
 
 # Full set of simulations ------------------------------------------------------
 # %%
@@ -26,31 +26,17 @@ sims <- expand_grid(
   )
 )
 
-# sims <- expand_grid(
-#   expand_grid(
-#     N = c(50, 100, 300),
-#     T = c(5, 10, 15)
-#   ),
-#   tibble(
-#     dgp_num = 1:3,
-#     fact_label = rep(c("Constant", "Linear Trend", "Autocorrelated"), each = 1),
-#     avg_diff_in_loading = rep(c(0), times = 3),
-#     eta_y = rep(c(0), times = 3),
-#     tau_x = rep(c(0), times = 3)
-#   )
-# )
-
 # %%
 set.seed(20241114)
 future::plan("multicore", workers = 6)
-nsim <- 250
+nsim <- 1000
 
 sim_results <- seq_len(nrow(sims)) |>
-  # purrr::map(
   furrr::future_map(
     function(i) {
       sim <- sims[i, ]
-      # catma("sim: {i}\n")
+      # cat(glue("sim: {i}\n"))
+
       res <- run_simulations(
         nsim = nsim,
         N = sim$N,
@@ -83,10 +69,9 @@ sim_results <- sim_results |>
     )
   )
 
-
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-fs::dir_create(here("data/simulations-new/"))
+fs::dir_create(here("data/simulations/"))
 write_csv(
   x = sim_results,
-  here("data/simulations-new/sim_results.csv")
+  here("data/simulations/sim_results.csv")
 )

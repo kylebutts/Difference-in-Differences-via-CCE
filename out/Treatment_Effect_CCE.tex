@@ -487,36 +487,38 @@ In this paper, we propose a new estimator of the ATT, dubbed ``TECCE", that is a
 \begin{table}[tbh]
   \caption{Monte Carlo results with $\kappa = 0$ and $\tau = 0$.}
   \label{tab:mc_1}
+
+  % \footnotesize
   \begin{center}\begin{spacing}{1.1}
     \begin{tabular}{
       @{} r @{\extracolsep{6pt}} r 
-      @{\extracolsep{12pt}} r @{\extracolsep{6pt}} rrrrr 
+      @{\extracolsep{12pt}} r @{\extracolsep{6pt}} rrrr
       @{}
     }
       \toprule  
-      & & & \multicolumn{3}{c}{\small GSC}  & \multicolumn{2}{c}{\small TWFE} \\ 
-      \cline{4-6} \cline{7-8}
+      & & & \multicolumn{2}{c}{\small GSC}  & \multicolumn{2}{c}{\small TWFE} \\ 
+      \cline{4-5} \cline{6-7}
       \multicolumn{1}{c}{\small $N$} & \multicolumn{1}{c}{\small $T$} & 
-      \multicolumn{1}{c}{\small TECCE} & \multicolumn{1}{c}{\small No Controls} & \multicolumn{1}{c}{\small + $\*x_{i,t}$} & \multicolumn{1}{c}{\small + TWFE} & \multicolumn{1}{c}{\small No Controls} & \multicolumn{1}{c}{\small + $\*x_{i,t}$} \\ 
+      \multicolumn{1}{c}{\small TECCE} & \multicolumn{1}{c}{\small No Controls} & \multicolumn{1}{c}{\small + $\*x_{i,t}$} & \multicolumn{1}{c}{\small No Controls} & \multicolumn{1}{c}{\small + $\*x_{i,t}$} \\ 
       \midrule
 
       \\[-8pt]
-      \multicolumn{7}{c}{\small\textbf{Factor specification:} $f_t = 1$}
+      \multicolumn{6}{c}{\small\textbf{Factor specification:} $f_t = 1$}
       \\[4pt]
 
       \input{tables/simulation/tab-fact_constant-dgp_1-eps_auto_0.tex}
 
       \\[-6pt]
-      \multicolumn{7}{c}{\small\textbf{Factor specification:} $f_t = 1 + t/8$}
+      \multicolumn{6}{c}{\small\textbf{Factor specification:} $f_t = 1 + t/8$}
       \\[4pt]
 
       \input{tables/simulation/tab-fact_linear_trend-dgp_1-eps_auto_0.tex}
 
-%       \\[-6pt]
-%       \multicolumn{7}{c}{\small\textbf{Factor specification:} $f_t = 1.5 + v_t$}
-%       \\[4pt]
-% 
-%       \input{tables/simulation/tab-fact_autocorrelated-dgp_1-eps_auto_0.tex}
+      \\[-6pt]
+      \multicolumn{6}{c}{\small\textbf{Factor specification:} $f_t = 1.5 + v_t$}
+      \\[4pt]
+
+      \input{tables/simulation/tab-fact_autocorrelated-dgp_1-eps_auto_0.tex}
       
       \bottomrule
     \end{tabular}
@@ -529,87 +531,42 @@ In this paper, we propose a new estimator of the ATT, dubbed ``TECCE", that is a
 \begin{table}[tbh]
   \caption{Monte Carlo results with $\kappa = -0.5$ and $\tau = 0$.}
   \label{tab:mc_2}
+  % \footnotesize
   \begin{center}\begin{spacing}{1.1}
     \begin{tabular}{
       @{} r @{\extracolsep{6pt}} r 
-      @{\extracolsep{12pt}} r @{\extracolsep{6pt}} rrrrr 
+      @{\extracolsep{12pt}} r @{\extracolsep{6pt}} rrrr
       @{}
     }
       \toprule  
-      & & & \multicolumn{3}{c}{\small GSC}  & \multicolumn{2}{c}{\small TWFE} \\ 
-      \cline{4-6} \cline{7-8}
+      & & & \multicolumn{2}{c}{\small GSC}  & \multicolumn{2}{c}{\small TWFE} \\ 
+      \cline{4-5} \cline{6-7}
       \multicolumn{1}{c}{\small $N$} & \multicolumn{1}{c}{\small $T$} & 
-      \multicolumn{1}{c}{\small TECCE} & \multicolumn{1}{c}{\small No Controls} & \multicolumn{1}{c}{\small + $\*x_{i,t}$} & \multicolumn{1}{c}{\small + TWFE} & \multicolumn{1}{c}{\small No Controls} & \multicolumn{1}{c}{\small + $\*x_{i,t}$} \\ 
+      \multicolumn{1}{c}{\small TECCE} & \multicolumn{1}{c}{\small No Controls} & \multicolumn{1}{c}{\small + $\*x_{i,t}$} & \multicolumn{1}{c}{\small No Controls} & \multicolumn{1}{c}{\small + $\*x_{i,t}$} \\ 
       \midrule
 
       \\[-8pt]
-      \multicolumn{7}{c}{\small\textbf{Factor specification:} $f_t = 1$}
+      \multicolumn{6}{c}{\small\textbf{Factor specification:} $f_t = 1$}
       \\[4pt]
 
       \input{tables/simulation/tab-fact_constant-dgp_2-eps_auto_0.tex}
 
       \\[-6pt]
-      \multicolumn{7}{c}{\small\textbf{Factor specification:} $f_t = 1 + t/8$}
+      \multicolumn{6}{c}{\small\textbf{Factor specification:} $f_t = 1 + t/8$}
       \\[4pt]
 
       \input{tables/simulation/tab-fact_linear_trend-dgp_2-eps_auto_0.tex}
 
-      % \\[-6pt]
-      % \multicolumn{7}{c}{\small\textbf{Factor specification:} $f_t = 1.5 + v_t$}
-      % \\[4pt]
-
-      % \input{tables/simulation/tab-fact_autocorrelated-dgp_2-eps_auto_0.tex}
-      
-      \bottomrule
-    \end{tabular}
-
-    \medskip
-      \end{spacing}\end{center}
-      \vspace{-.75cm}
-    {\footnotesize\emph{Notes:} This table reports the bias and RMSE under different simulation specifications. Each row presents the bias and the RMSE in brackets below. The TECCE estimator is this paper's proposed estimator. GSC corresponds to the generalized synthetic control estimator from \citet{xu2017generalized}. TWFE corresponds to the imputation estimator of \citet{borusyak2024revisiting} which uses a two-way fixed effect model. The column labeled No Controls does not control linearly for $x_{it}$ while the column labeled $+ x_{it}$ does. 1,500 simulation draws.}
-
-\end{table}
-
-\begin{table}[tbh]
-  \caption{Monte Carlo results with $\kappa = -0.5$ and $\tau = 0$ with autocorrelated $\varepsilon$.}
-  \label{tab:mc_2_autocorrelated}
-  \begin{center}\begin{spacing}{1.1}
-    \begin{tabular}{
-      @{} r @{\extracolsep{6pt}} r 
-      @{\extracolsep{12pt}} r @{\extracolsep{6pt}} rrrrr 
-      @{}
-    }
-      \toprule  
-      & & & \multicolumn{3}{c}{\small GSC}  & \multicolumn{2}{c}{\small TWFE} \\ 
-      \cline{4-6} \cline{7-8}
-      \multicolumn{1}{c}{\small $N$} & \multicolumn{1}{c}{\small $T$} & 
-      \multicolumn{1}{c}{\small TECCE} & \multicolumn{1}{c}{\small No Controls} & \multicolumn{1}{c}{\small + $\*x_{i,t}$} & \multicolumn{1}{c}{\small + TWFE} & \multicolumn{1}{c}{\small No Controls} & \multicolumn{1}{c}{\small + $\*x_{i,t}$} \\ 
-      \midrule
-
-      \\[-8pt]
-      \multicolumn{7}{c}{\small\textbf{Factor specification:} $f_t = 1$}
-      \\[4pt]
-
-      \input{tables/simulation/tab-fact_constant-dgp_2-eps_auto_1.tex}
-
       \\[-6pt]
-      \multicolumn{7}{c}{\small\textbf{Factor specification:} $f_t = 1 + t/8$}
+      \multicolumn{6}{c}{\small\textbf{Factor specification:} $f_t = 1.5 + v_t$}
       \\[4pt]
 
-      \input{tables/simulation/tab-fact_linear_trend-dgp_2-eps_auto_1.tex}
-
-      % \\[-6pt]
-      % \multicolumn{7}{c}{\small\textbf{Factor specification:} $f_t = 1.5 + v_t$}
-      % \\[4pt]
-
-      % \input{tables/simulation/tab-fact_autocorrelated-dgp_2-eps_auto_1.tex}
+      \input{tables/simulation/tab-fact_autocorrelated-dgp_2-eps_auto_0.tex}
       
       \bottomrule
     \end{tabular}
-
-    \medskip
-      \end{spacing}\end{center}
-      \vspace{-.75cm}
+    \end{spacing}\end{center}
+  \vspace{-.75cm}
     {\footnotesize\emph{Notes:} This table reports the bias and RMSE under different simulation specifications. Each row presents the bias and the RMSE in brackets below. The TECCE estimator is this paper's proposed estimator. GSC corresponds to the generalized synthetic control estimator from \citet{xu2017generalized}. TWFE corresponds to the imputation estimator of \citet{borusyak2024revisiting} which uses a two-way fixed effect model. The column labeled No Controls does not control linearly for $x_{it}$ while the column labeled $+ x_{it}$ does. 1,500 simulation draws.}
 
 \end{table}
@@ -617,40 +574,40 @@ In this paper, we propose a new estimator of the ATT, dubbed ``TECCE", that is a
 \begin{table}[tbh]
   \caption{Monte Carlo results with $\kappa = -0.5$ and $\tau = 1$.}
   \label{tab:mc_3}
-  \begin{center}\begin{spacing}{1.1}
+  
+    \begin{center}\begin{spacing}{1.1}
     \begin{tabular}{
       @{} r @{\extracolsep{6pt}} r 
-      @{\extracolsep{12pt}} r @{\extracolsep{6pt}} rrrrr 
+      @{\extracolsep{12pt}} r @{\extracolsep{6pt}} rrrr
       @{}
     }
       \toprule  
-      & & & \multicolumn{3}{c}{\small GSC}  & \multicolumn{2}{c}{\small TWFE} \\ 
-      \cline{4-6} \cline{7-8}
+      & & & \multicolumn{2}{c}{\small GSC}  & \multicolumn{2}{c}{\small TWFE} \\ 
+      \cline{4-5} \cline{6-7}
       \multicolumn{1}{c}{\small $N$} & \multicolumn{1}{c}{\small $T$} & 
-      \multicolumn{1}{c}{\small TECCE} & \multicolumn{1}{c}{\small No Controls} & \multicolumn{1}{c}{\small + $\*x_{i,t}$} & \multicolumn{1}{c}{\small + TWFE} & \multicolumn{1}{c}{\small No Controls} & \multicolumn{1}{c}{\small + $\*x_{i,t}$} \\ 
+      \multicolumn{1}{c}{\small TECCE} & \multicolumn{1}{c}{\small No Controls} & \multicolumn{1}{c}{\small + $\*x_{i,t}$} & \multicolumn{1}{c}{\small No Controls} & \multicolumn{1}{c}{\small + $\*x_{i,t}$} \\ 
       \midrule
 
       \\[-8pt]
-      \multicolumn{7}{c}{\small\textbf{Factor specification:} $f_t = 1$}
+      \multicolumn{6}{c}{\small\textbf{Factor specification:} $f_t = 1$}
       \\[4pt]
 
       \input{tables/simulation/tab-fact_constant-dgp_3-eps_auto_0.tex}
 
       \\[-6pt]
-      \multicolumn{7}{c}{\small\textbf{Factor specification:} $f_t = 1 + t/8$}
+      \multicolumn{6}{c}{\small\textbf{Factor specification:} $f_t = 1 + t/8$}
       \\[4pt]
 
       \input{tables/simulation/tab-fact_linear_trend-dgp_3-eps_auto_0.tex}
 
-      % \\[-6pt]
-      % \multicolumn{7}{c}{\small\textbf{Factor specification:} $f_t = 1.5 + v_t$}
-      % \\[4pt]
+      \\[-6pt]
+      \multicolumn{6}{c}{\small\textbf{Factor specification:} $f_t = 1.5 + v_t$}
+      \\[4pt]
 
-      % \input{tables/simulation/tab-fact_autocorrelated-dgp_3-eps_auto_0.tex}
+      \input{tables/simulation/tab-fact_autocorrelated-dgp_3-eps_auto_0.tex}
       
       \bottomrule
     \end{tabular}
-
     \end{spacing}\end{center}
     \vspace{-.75cm}
     {\footnotesize\emph{Notes:} This table reports the bias and RMSE under different simulation specifications. Each row presents the bias and the RMSE in brackets below. The TECCE estimator is this paper's proposed estimator. GSC corresponds to the generalized synthetic control estimator from \citet{xu2017generalized}. TWFE corresponds to the imputation estimator of \citet{borusyak2024revisiting} which uses a two-way fixed effect model. The column labeled No Controls does not control linearly for $x_{it}$ while the column labeled $+ x_{it}$ does. 1,500 simulation draws.}
